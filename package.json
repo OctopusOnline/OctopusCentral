@@ -1,5 +1,5 @@
 {
-  "name": "@official5ETa/OctopusCentral",
+  "name": "octopus-central",
   "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
