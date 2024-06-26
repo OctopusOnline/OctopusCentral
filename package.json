@@ -1,0 +1,23 @@
+{
+  "name": "@official5ETa/OctopusCentral",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "test": "exit 0",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "publish": "npm publish"
+  },
+  "author": "official5ETa",
+  "license": "Apache-2.0 license",
+  "publishConfig": {
+    "@official5ETa:registry": "https://npm.pkg.github.com"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.2"
+  }
+}
