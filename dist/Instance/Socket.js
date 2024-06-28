@@ -19,38 +19,44 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _Instance_id;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var _Socket_port;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Instance = void 0;
-const Socket_1 = require("./Socket");
-const Settings_1 = require("./Settings");
-class Instance {
-    get id() { return __classPrivateFieldGet(this, _Instance_id, "f"); }
-    constructor(connection, id) {
-        this.table = 'Instances';
-        _Instance_id.set(this, void 0);
-        if (!connection)
-            throw new Error('no database connection given');
-        this.connection = connection;
-        __classPrivateFieldSet(this, _Instance_id, id, "f");
-        this.settings = new Settings_1.Settings(this);
-        this.socket = new Socket_1.Socket(this);
+exports.Socket = void 0;
+const express_1 = __importDefault(require("express"));
+const http_1 = __importDefault(require("http"));
+const socket_io_1 = require("socket.io");
+class Socket {
+    get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
+    set port(port) {
+        if (typeof port !== 'number')
+            throw new Error('port must be a number');
+        if (port <= 0)
+            throw new Error('port must be greater than zero');
+        if (port > 65535)
+            throw new Error('port must be smaller than 65535');
+        __classPrivateFieldSet(this, _Socket_port, port, "f");
     }
-    init() {
+    constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
+        _Socket_port.set(this, void 0);
+        this.instance = instance;
+        this.server = server;
+        this.io = new socket_io_1.Server(this.server);
+        __classPrivateFieldSet(this, _Socket_port, port, "f");
+    }
+    start() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.connection.query(`
-      CREATE TABLE IF NOT EXISTS ${this.table} (
-        id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
-      )
-    `);
-            if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
-                __classPrivateFieldSet(this, _Instance_id, Number((yield this.connection.query(`INSERT INTO ${this.table} (id) VALUES (NULL)`)).insertId), "f");
-            else
-                yield this.connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
-            yield this.settings.init();
+            yield new Promise(resolve => this.server.listen(this.port, () => resolve(this)));
+        });
+    }
+    stop() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }
 }
-exports.Instance = Instance;
-_Instance_id = new WeakMap();
-//# sourceMappingURL=index.js.map
+exports.Socket = Socket;
+_Socket_port = new WeakMap();
+//# sourceMappingURL=Socket.js.map

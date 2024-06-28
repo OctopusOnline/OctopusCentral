@@ -1,4 +1,5 @@
 import { Connection } from 'mysql2';
+import { Socket } from './Socket';
 import { Settings } from './Settings';
 
 export class Instance {
@@ -7,6 +8,7 @@ export class Instance {
   #id?: number;
   readonly connection: Connection;
 
+  readonly socket: Socket;
   readonly settings: Settings;
 
   get id(): number { return this.#id! }
@@ -17,6 +19,7 @@ export class Instance {
     this.#id = id;
 
     this.settings = new Settings(this);
+    this.socket = new Socket(this);
   }
 
   async init(): Promise<void> {
