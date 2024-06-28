@@ -31,23 +31,29 @@ class Instance {
         _Instance_id.set(this, void 0);
         if (!connection)
             throw new Error('no database connection given');
-        this.connection = connection;
+        this._connection = connection;
         __classPrivateFieldSet(this, _Instance_id, id, "f");
         this.settings = new Settings_1.Settings(this);
         this.socket = new Socket_1.Socket(this);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.connection.query(`
+            yield this._connection.query(`
       CREATE TABLE IF NOT EXISTS ${this.table} (
-        id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
-      )
-    `);
+        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+        socketHostname VARCHAR(255)     NULL
+      )`);
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
-                __classPrivateFieldSet(this, _Instance_id, Number((yield this.connection.query(`INSERT INTO ${this.table} (id) VALUES (NULL)`)).insertId), "f");
+                __classPrivateFieldSet(this, _Instance_id, Number((yield this._connection.query(`INSERT INTO ${this.table} (id) VALUES (NULL)`)).insertId), "f");
             else
-                yield this.connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
+                yield this._connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
             yield this.settings.init();
+            // TODO: socket emit update, when setting value changed
+        });
+    }
+    setSocketHostname(hostname) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._connection.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [hostname, __classPrivateFieldGet(this, _Instance_id, "f")]);
         });
     }
 }

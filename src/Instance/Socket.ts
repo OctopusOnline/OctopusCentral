@@ -1,12 +1,12 @@
-import { Instance } from './index';
+import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
-import { Server as SocketServer } from 'socket.io';
+import { Server as IOServer, Socket as IOSocket } from 'socket.io';
 
 export class Socket {
   private readonly instance: Instance;
   private readonly server: HttpServer;
-  private readonly io: SocketServer;
+  private readonly io: IOServer;
 
   #port: number;
 
@@ -22,8 +22,10 @@ export class Socket {
   constructor(instance: Instance, server: HttpServer = http.createServer(express()), port: number = 1777) {
     this.instance = instance;
     this.server = server;
-    this.io = new SocketServer(this.server);
+    this.io = new IOServer(this.server);
     this.#port = port;
+
+    this.setupSocketHandlers();
   }
 
   async start(): Promise<void> {
@@ -34,5 +36,32 @@ export class Socket {
   async stop(): Promise<void> {
     await new Promise(resolve =>
       this.server.close(() => resolve(this)));
+  }
+
+  private setupSocketHandlers() {
+    this.io.on('connection', (socket: IOSocket) => {
+      socket.on('request', async (sessionId: string, command: string, args: any) => {
+        let data: any, code: number = 200;
+        switch (command) {
+          case 'setting get':
+            data = await this.instance.settings.getSetting(args.name);
+            break;
+
+          case 'setting update':
+            data = await this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max);
+            break;
+
+          case 'setting delete':
+            await this.instance.settings.deleteSetting(args.name);
+            break;
+
+          default:
+            code = 404;
+            return;
+        }
+
+        this.io.emit('response', code, sessionId, data);
+      });
+    });
   }
 }

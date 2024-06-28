@@ -1,18 +1,20 @@
+import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting, SettingValueType, SettingValueTypeType } from './class/Setting';
 
-export class Settings {
+export class Settings extends EventEmitter {
   readonly table: string = 'InstanceSettings';
 
   private readonly instance: Instance;
   private settings: Setting[] = [];
 
   constructor(instance: Instance) {
+    super();
     this.instance = instance;
   }
 
   async init(): Promise<void> {
-    await this.instance.connection.query(`
+    await this.instance._connection.query(`
         CREATE TABLE IF NOT EXISTS ${this.table} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
           instance_id INT UNSIGNED NOT NULL,
@@ -29,7 +31,7 @@ export class Settings {
   }
 
   private async loadSettings(): Promise<Setting[]> {
-    return (await this.instance.connection.execute(`
+    return (await this.instance._connection.execute(`
         SELECT name, value, type, min, max
         FROM ${this.table}
         WHERE instance_id = ?`,
@@ -43,7 +45,7 @@ export class Settings {
   }
 
   private async getSettingId(name: string): Promise<number | undefined> {
-    return (await this.instance.connection.execute(`
+    return (await this.instance._connection.execute(`
         SELECT id
         FROM ${this.table}
         WHERE instance_id = ?
@@ -55,7 +57,9 @@ export class Settings {
   getSetting(
     name: string
   ): Setting | undefined {
-    return this.settings.find(setting => setting.name === name);
+    const setting = this.settings.find(setting => setting.name === name);
+    this.emit('setting get', setting);
+    return setting;
   }
 
   async updateSetting(
@@ -79,14 +83,14 @@ export class Settings {
     const settingId = await this.getSettingId(thisSetting.name);
 
     if (settingId)
-      await this.instance.connection.execute(`
+      await this.instance._connection.execute(`
           UPDATE ${this.table}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]
       );
     else
-      await this.instance.connection.execute(`
+      await this.instance._connection.execute(`
           INSERT INTO ${this.table} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`,
         [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]
@@ -96,6 +100,7 @@ export class Settings {
     if (settingsIndex === -1) this.settings.push(thisSetting);
     else this.settings[settingsIndex] = thisSetting;
 
+    this.emit('setting update', thisSetting);
     return thisSetting;
   }
 
@@ -104,10 +109,12 @@ export class Settings {
   ) {
     const settingName = setting instanceof Setting ? setting.name : setting;
 
-    await this.instance.connection.execute(
+    await this.instance._connection.execute(
       `DELETE FROM ${this.table} WHERE instance_id = ? AND name = ?`,
       [this.instance.id, settingName]
     );
     this.settings = this.settings.filter(({ name }) => name !== settingName);
+
+    this.emit('setting delete', settingName);
   }
 }

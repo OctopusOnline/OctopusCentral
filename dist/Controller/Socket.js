@@ -39,9 +39,9 @@ class Socket {
             throw new Error('port must be smaller than 65535');
         __classPrivateFieldSet(this, _Socket_port, port, "f");
     }
-    constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
+    constructor(controller, server = http_1.default.createServer((0, express_1.default)()), port = 1778) {
         _Socket_port.set(this, void 0);
-        this.instance = instance;
+        this.controller = controller;
         this.server = server;
         this.io = new socket_io_1.Server(this.server);
         __classPrivateFieldSet(this, _Socket_port, port, "f");
@@ -57,27 +57,38 @@ class Socket {
             yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }
+    // TODO: endpoint to ask for serviceName
+    // TODO: endpoint to ask for all instance IDs
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
-            socket.on('request', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
-                let data, code = 200;
-                switch (command) {
-                    case 'setting get':
-                        data = yield this.instance.settings.getSetting(args.name);
-                        break;
-                    case 'setting update':
-                        data = yield this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max);
-                        break;
-                    case 'setting delete':
-                        yield this.instance.settings.deleteSetting(args.name);
-                        break;
-                    default:
-                        code = 404;
-                        return;
+            socket.on('request instance', (sessionId, instanceId, command, args) => {
+                const instance = this.controller.getInstance(instanceId);
+                if (!(instance === null || instance === void 0 ? void 0 : instance.connected))
+                    socket.emit('response instance', 404, sessionId);
+                else {
+                    this.listenForResponse(socket, instance, sessionId);
+                    instance.socket.emit('request', sessionId, command, args);
                 }
-                this.io.emit('response', code, sessionId, data);
-            }));
+            });
         });
+    }
+    listenForResponse(socket, instance, sessionId) {
+        if (!instance.connected)
+            socket.emit('response instance', 408, sessionId);
+        else
+            instance.socket.once('response', (_code, _sessionId, data) => {
+                if (_sessionId !== sessionId)
+                    this.listenForResponse(socket, instance, sessionId);
+                else
+                    switch (_code) {
+                        case 200:
+                            this.io.emit('response instance', 200, sessionId, data);
+                            break;
+                        case 404:
+                            this.io.emit('response instance', 410, sessionId);
+                            break;
+                    }
+            });
     }
 }
 exports.Socket = Socket;

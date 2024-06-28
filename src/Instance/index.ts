@@ -6,7 +6,7 @@ export class Instance {
   readonly table: string = 'Instances';
 
   #id?: number;
-  readonly connection: Connection;
+  readonly _connection: Connection;
 
   readonly socket: Socket;
   readonly settings: Settings;
@@ -15,7 +15,7 @@ export class Instance {
 
   constructor(connection: Connection, id?: number) {
     if (!connection) throw new Error('no database connection given');
-    this.connection = connection;
+    this._connection = connection;
     this.#id = id;
 
     this.settings = new Settings(this);
@@ -23,16 +23,22 @@ export class Instance {
   }
 
   async init(): Promise<void> {
-    await this.connection.query(`
+    await this._connection.query(`
       CREATE TABLE IF NOT EXISTS ${this.table} (
-        id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
-      )
-    `);
+        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+        socketHostname VARCHAR(255)     NULL
+      )`);
 
     if (this.#id === undefined)
-      this.#id = Number((await this.connection.query(`INSERT INTO ${this.table} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
-    else await this.connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [this.#id]);
+      this.#id = Number((await this._connection.query(`INSERT INTO ${this.table} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
+    else await this._connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [this.#id]);
 
     await this.settings.init();
+
+    // TODO: socket emit update, when setting value changed
+  }
+
+  async setSocketHostname(hostname: string): Promise<void> {
+    await this._connection.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
   }
 }
