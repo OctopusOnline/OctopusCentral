@@ -60,22 +60,20 @@ class Socket {
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('request', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
-                let data, code = 200;
                 switch (command) {
                     case 'setting get':
-                        data = yield this.instance.settings.getSetting(args.name);
+                        socket.emit('response', 200, sessionId, yield this.instance.settings.getSetting(args.name));
                         break;
                     case 'setting update':
-                        data = yield this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max);
+                        socket.emit('response', 200, sessionId, yield this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max));
                         break;
                     case 'setting delete':
                         yield this.instance.settings.deleteSetting(args.name);
+                        socket.emit('response', 200, sessionId);
                         break;
                     default:
-                        code = 404;
-                        return;
+                        socket.emit('response', 404, sessionId);
                 }
-                this.io.emit('response', code, sessionId, data);
             }));
         });
     }
