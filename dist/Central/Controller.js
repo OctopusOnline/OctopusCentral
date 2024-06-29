@@ -22,53 +22,52 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_socket;
+var _Controller_socket;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Instance = void 0;
+exports.Controller = void 0;
 const node_events_1 = __importDefault(require("node:events"));
 const socket_io_client_1 = require("socket.io-client");
-class Instance extends node_events_1.default {
-    get socket() { return __classPrivateFieldGet(this, _Instance_socket, "f"); }
-    get connected() { return !!__classPrivateFieldGet(this, _Instance_socket, "f"); }
-    constructor(id, socketHostname, socketPort = 1777) {
+class Controller extends node_events_1.default {
+    get socket() { return __classPrivateFieldGet(this, _Controller_socket, "f"); }
+    get connected() { return !!__classPrivateFieldGet(this, _Controller_socket, "f"); }
+    constructor(id, socketHost) {
         super();
-        this.socketProtocol = 'http';
-        _Instance_socket.set(this, void 0);
+        _Controller_socket.set(this, void 0);
         this.id = id;
-        this.socketHostname = socketHostname;
-        this.socketPort = socketPort;
+        this.socketHost = socketHost;
     }
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
-            if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
+            if (!this.socketHost)
                 return false;
             if (this.connected && reconnect)
                 yield this.disconnect();
-            const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`);
-            __classPrivateFieldSet(this, _Instance_socket, socket, "f");
+            const socket = (0, socket_io_client_1.io)(this.socketHost);
+            __classPrivateFieldSet(this, _Controller_socket, socket, "f");
+            const _this = this;
             if (!(yield new Promise((resolve => {
                 socket.once('connect', () => {
-                    this.emit('socket connect');
+                    _this.emit('socket connect');
                     resolve(true);
                 });
                 socket.once('connect_error', error => {
-                    this.emit('socket connect_error', error);
+                    _this.emit('socket connect_error', error);
                     resolve(false);
                 });
             })))) {
-                __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
+                _this.disconnect();
                 return false;
             }
             return true;
         });
     }
     disconnect() {
-        if (__classPrivateFieldGet(this, _Instance_socket, "f")) {
-            __classPrivateFieldGet(this, _Instance_socket, "f").close();
-            __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
+        if (__classPrivateFieldGet(this, _Controller_socket, "f")) {
+            __classPrivateFieldGet(this, _Controller_socket, "f").close();
+            __classPrivateFieldSet(this, _Controller_socket, undefined, "f");
         }
     }
 }
-exports.Instance = Instance;
-_Instance_socket = new WeakMap();
-//# sourceMappingURL=Instance.js.map
+exports.Controller = Controller;
+_Controller_socket = new WeakMap();
+//# sourceMappingURL=Controller.js.map

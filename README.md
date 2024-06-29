@@ -1,9 +1,9 @@
 ## service tree
 
 ```
-Client --- Controller --- Instance [1]
-                     |
-                     +--- Instance [2]
-                     |
-                     +--- ...
+Central --- Controller --- Instance [1]
+                      |
+                      +--- Instance [2]
+                      |
+                      +--- ...
 ```

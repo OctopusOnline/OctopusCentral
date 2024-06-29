@@ -48,7 +48,6 @@ class Instance {
             else
                 yield this._connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
             yield this.settings.init();
-            // TODO: socket emit update, when setting value changed
         });
     }
     setSocketHostname(hostname) {

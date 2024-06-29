@@ -34,8 +34,6 @@ export class Instance {
     else await this._connection.execute(`INSERT IGNORE INTO ${this.table} (id) VALUES (?)`, [this.#id]);
 
     await this.settings.init();
-
-    // TODO: socket emit update, when setting value changed
   }
 
   async setSocketHostname(hostname: string): Promise<void> {
