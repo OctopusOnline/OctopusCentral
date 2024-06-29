@@ -2,6 +2,9 @@ import { Connection } from 'mysql2';
 import EventEmitter from 'node:events';
 import { promisify } from 'node:util';
 import { Controller } from './Controller';
+import { Instance } from './Instance';
+
+export type InstanceFilter = { serviceName: string }[];
 
 export class Central extends EventEmitter {
   readonly table: string = 'Controllers';
@@ -29,22 +32,35 @@ export class Central extends EventEmitter {
       )`);
   }
 
-  async addController(controller: Controller, overwrite: boolean = false): Promise<void> {
+  async addController(controller: Controller | number | undefined, socketHost?: string): Promise<Controller | undefined> {
+    if (!(controller instanceof Controller)) {
+      if (controller === undefined)
+        return await this.addController(await this.insertNewController(socketHost));
+      else controller = new Controller(controller, socketHost);
+    }
+
     if (!this.getController(controller.id)) {
       await this.insertController(controller);
       this.#controllers.push(controller);
-    }
-    else if (overwrite) {
-      await this.removeController(controller);
-      await this.addController(controller);
+      return controller;
     }
   }
 
+  private async insertNewController(socketHost?: string): Promise<Controller> {
+    return new Controller(
+      Number((await this._connection.query(`
+          INSERT INTO ${this.table} (socketHost)
+          VALUES (?)`,
+        [socketHost]) as unknown as {insertId:any}).insertId),
+      socketHost);
+  }
+
   private async insertController(controller: Controller): Promise<void> {
-    await this._connection.execute(`
-        INSERT INTO ${this.table} (id, socketHost)
-        VALUES (?, ?)`,
-      [controller.id, controller.socketHost]);
+    if (!await this.loadController(controller.id))
+      await this._connection.execute(`
+          INSERT INTO ${this.table} (id, socketHost)
+          VALUES (?, ?)`,
+        [controller.id, controller.socketHost]);
   }
 
   getController(id: number): Controller | undefined {
@@ -81,6 +97,11 @@ export class Central extends EventEmitter {
     return this.#controllers;
   }
 
+  private async loadController(id: number): Promise<Controller | undefined> {
+    return (await this._connection.query(`SELECT id, socketHost FROM ${this.table} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
+      .map(({ id, socketHost }) => new Controller(id, socketHost || undefined))[0];
+  }
+
   private async loadControllers(): Promise<Controller[]> {
     return (await this._connection.query(`SELECT id, socketHost FROM ${this.table}`) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined));
@@ -102,5 +123,16 @@ export class Central extends EventEmitter {
 
     await promisify(setTimeout)(this.controllersFetchInterval);
     if (this.#running) this.runInterval().then();
+  }
+
+  async getInstances(filter: InstanceFilter = []): Promise<Instance[]> {
+    let instances: Instance[] = [];
+    for (const controller of this.#controllers) {
+      const serviceName: string | undefined = filter.some(_filter => _filter.serviceName)
+        ? await controller.getServiceName() : undefined;
+      if (!serviceName || filter.some(_filter => _filter.serviceName === serviceName))
+        instances = instances.concat(await controller.getInstances() || []);
+    }
+    return instances;
   }
 }

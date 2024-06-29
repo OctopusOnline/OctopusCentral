@@ -11,6 +11,7 @@ export class Socket {
   #port: number;
 
   get port(): number { return this.#port }
+  get running(): boolean { return this.server.listening }
 
   set port(port: number) {
     if (typeof port as unknown !== 'number') throw new Error('port must be a number');

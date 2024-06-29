@@ -49,12 +49,12 @@ export class Socket {
             break;
 
           case 'get instances':
-            const values = args?.values || ['id'];
+            const values: string[] | true = args?.values === true || args?.values || ['id'];
             socket.emit('response controller', 200 as any, sessionId as any, this.controller.instances.map(instance => ({
-              ...(values.includes('id'            ) ? { id             : instance.id             } : {}),
-              ...(values.includes('socketProtocol') ? { socketProtocol : instance.socketProtocol } : {}),
-              ...(values.includes('socketHostname') ? { socketHostname : instance.socketHostname } : {}),
-              ...(values.includes('socketPort'    ) ? { socketPort     : instance.socketPort     } : {}),
+              ...(values === true || values.includes('id'            ) ? { id             : instance.id             } : {}),
+              ...(values === true || values.includes('socketProtocol') ? { socketProtocol : instance.socketProtocol } : {}),
+              ...(values === true || values.includes('socketHostname') ? { socketHostname : instance.socketHostname } : {}),
+              ...(values === true || values.includes('socketPort'    ) ? { socketPort     : instance.socketPort     } : {}),
             })) as any);
             break;
 
@@ -71,7 +71,7 @@ export class Socket {
       socket.on('request instance', (sessionId: string, instanceId: number, command: string, args: any) => {
         const instance = this.controller.getInstance(instanceId);
         if (!instance?.connected)
-          socket.emit('response instance', 404, sessionId);
+          socket.emit('response instance', 404 as any, sessionId as any);
         else {
           this.listenForResponse(socket, instance, sessionId);
           instance.socket!.emit('request', sessionId, command, args);

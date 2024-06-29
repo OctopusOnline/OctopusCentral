@@ -30,6 +30,7 @@ const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
 class Socket {
     get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
+    get running() { return this.server.listening; }
     set port(port) {
         if (typeof port !== 'number')
             throw new Error('port must be a number');

@@ -106,7 +106,7 @@ export class Settings extends EventEmitter {
 
   async deleteSetting(
     setting: Setting | string
-  ) {
+  ): Promise<void> {
     const settingName = setting instanceof Setting ? setting.name : setting;
 
     await this.instance._connection.execute(

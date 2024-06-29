@@ -26,7 +26,9 @@ var _Controller_socket;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = void 0;
 const node_events_1 = __importDefault(require("node:events"));
+const node_crypto_1 = __importDefault(require("node:crypto"));
 const socket_io_client_1 = require("socket.io-client");
+const Instance_1 = require("./Instance");
 class Controller extends node_events_1.default {
     get socket() { return __classPrivateFieldGet(this, _Controller_socket, "f"); }
     get connected() { return !!__classPrivateFieldGet(this, _Controller_socket, "f"); }
@@ -44,18 +46,17 @@ class Controller extends node_events_1.default {
                 yield this.disconnect();
             const socket = (0, socket_io_client_1.io)(this.socketHost);
             __classPrivateFieldSet(this, _Controller_socket, socket, "f");
-            const _this = this;
             if (!(yield new Promise((resolve => {
                 socket.once('connect', () => {
-                    _this.emit('socket connect');
+                    this.emit('socket connect');
                     resolve(true);
                 });
                 socket.once('connect_error', error => {
-                    _this.emit('socket connect_error', error);
+                    this.emit('socket connect_error', error);
                     resolve(false);
                 });
             })))) {
-                _this.disconnect();
+                this.disconnect();
                 return false;
             }
             return true;
@@ -66,6 +67,50 @@ class Controller extends node_events_1.default {
             __classPrivateFieldGet(this, _Controller_socket, "f").close();
             __classPrivateFieldSet(this, _Controller_socket, undefined, "f");
         }
+    }
+    _request(command, args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.connected)
+                return;
+            const sessionId = node_crypto_1.default.randomBytes(16).toString('hex').toUpperCase();
+            __classPrivateFieldGet(this, _Controller_socket, "f").emit('request controller', sessionId, command, args);
+            return yield this.listenForResponse(sessionId);
+        });
+    }
+    listenForResponse(sessionId) {
+        return new Promise(resolve => {
+            if (!this.connected)
+                resolve({ code: 408, data: undefined });
+            else
+                __classPrivateFieldGet(this, _Controller_socket, "f").once('response controller', (code, _sessionId, data) => __awaiter(this, void 0, void 0, function* () {
+                    return resolve(_sessionId === sessionId
+                        ? { code, data }
+                        : yield this.listenForResponse(sessionId));
+                }));
+        });
+    }
+    _requestData(command, args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this._request(command, args);
+            return !response || response.code !== 200 ? undefined : response.data;
+        });
+    }
+    getServiceName() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('get serviceName');
+        });
+    }
+    getInstances() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const instances = yield this._requestData('get instances', { values: ['id'] });
+            return instances === null || instances === void 0 ? void 0 : instances.map(({ id }) => new Instance_1.Instance(this, id));
+        });
+    }
+    fetchInstances() {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            return ((_a = (yield this._request('fetch instances'))) === null || _a === void 0 ? void 0 : _a.code) === 200 ? true : undefined;
+        });
     }
 }
 exports.Controller = Controller;

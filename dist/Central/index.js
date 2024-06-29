@@ -48,23 +48,34 @@ class Central extends node_events_1.default {
       )`);
         });
     }
-    addController(controller_1) {
-        return __awaiter(this, arguments, void 0, function* (controller, overwrite = false) {
+    addController(controller, socketHost) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!(controller instanceof Controller_1.Controller)) {
+                if (controller === undefined)
+                    return yield this.addController(yield this.insertNewController(socketHost));
+                else
+                    controller = new Controller_1.Controller(controller, socketHost);
+            }
             if (!this.getController(controller.id)) {
                 yield this.insertController(controller);
                 __classPrivateFieldGet(this, _Central_controllers, "f").push(controller);
+                return controller;
             }
-            else if (overwrite) {
-                yield this.removeController(controller);
-                yield this.addController(controller);
-            }
+        });
+    }
+    insertNewController(socketHost) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Controller_1.Controller(Number((yield this._connection.query(`
+          INSERT INTO ${this.table} (socketHost)
+          VALUES (?)`, [socketHost])).insertId), socketHost);
         });
     }
     insertController(controller) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._connection.execute(`
-        INSERT INTO ${this.table} (id, socketHost)
-        VALUES (?, ?)`, [controller.id, controller.socketHost]);
+            if (!(yield this.loadController(controller.id)))
+                yield this._connection.execute(`
+          INSERT INTO ${this.table} (id, socketHost)
+          VALUES (?, ?)`, [controller.id, controller.socketHost]);
         });
     }
     getController(id) {
@@ -100,6 +111,12 @@ class Central extends node_events_1.default {
             return __classPrivateFieldGet(this, _Central_controllers, "f");
         });
     }
+    loadController(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return (yield this._connection.query(`SELECT id, socketHost FROM ${this.table} WHERE id = ?`, [id]))
+                .map(({ id, socketHost }) => new Controller_1.Controller(id, socketHost || undefined))[0];
+        });
+    }
     loadControllers() {
         return __awaiter(this, void 0, void 0, function* () {
             return (yield this._connection.query(`SELECT id, socketHost FROM ${this.table}`))
@@ -126,6 +143,18 @@ class Central extends node_events_1.default {
             yield (0, node_util_1.promisify)(setTimeout)(this.controllersFetchInterval);
             if (__classPrivateFieldGet(this, _Central_running, "f"))
                 this.runInterval().then();
+        });
+    }
+    getInstances() {
+        return __awaiter(this, arguments, void 0, function* (filter = []) {
+            let instances = [];
+            for (const controller of __classPrivateFieldGet(this, _Central_controllers, "f")) {
+                const serviceName = filter.some(_filter => _filter.serviceName)
+                    ? yield controller.getServiceName() : undefined;
+                if (!serviceName || filter.some(_filter => _filter.serviceName === serviceName))
+                    instances = instances.concat((yield controller.getInstances()) || []);
+            }
+            return instances;
         });
     }
 }
