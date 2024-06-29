@@ -41,26 +41,25 @@ export class Socket {
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
       socket.on('request', async (sessionId: string, command: string, args: any) => {
-        let data: any, code: number = 200;
         switch (command) {
           case 'setting get':
-            data = await this.instance.settings.getSetting(args.name);
+            socket.emit('response', 200 as any, sessionId as any,
+              await this.instance.settings.getSetting(args.name) as any);
             break;
 
           case 'setting update':
-            data = await this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max);
+            socket.emit('response', 200 as any, sessionId as any,
+              await this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max) as any);
             break;
 
           case 'setting delete':
             await this.instance.settings.deleteSetting(args.name);
+            socket.emit('response', 200 as any, sessionId as any);
             break;
 
           default:
-            code = 404;
-            return;
+            socket.emit('response', 404 as any, sessionId as any);
         }
-
-        this.io.emit('response', code, sessionId, data);
       });
     });
   }

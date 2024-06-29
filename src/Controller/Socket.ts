@@ -39,11 +39,35 @@ export class Socket {
       this.server.close(() => resolve(this)));
   }
 
-  // TODO: endpoint to ask for serviceName
-  // TODO: endpoint to ask for all instance IDs
-
   private setupSocketHandlers() {
-    this.io.on('connection', (socket: IOSocket) => {
+    this.io.on('connection', (socket: IOSocket) =>
+    {
+      socket.on('request controller', async (sessionId: string, command: string, args: any) => {
+        switch (command) {
+          case 'get serviceName':
+            socket.emit('response controller', 200 as any, sessionId as any, this.controller.serviceName as any);
+            break;
+
+          case 'get instances':
+            const values = args?.values || ['id'];
+            socket.emit('response controller', 200 as any, sessionId as any, this.controller.instances.map(instance => ({
+              ...(values.includes('id'            ) ? { id             : instance.id             } : {}),
+              ...(values.includes('socketProtocol') ? { socketProtocol : instance.socketProtocol } : {}),
+              ...(values.includes('socketHostname') ? { socketHostname : instance.socketHostname } : {}),
+              ...(values.includes('socketPort'    ) ? { socketPort     : instance.socketPort     } : {}),
+            })) as any);
+            break;
+
+          case 'fetch instances':
+            await this.controller.fetchSyncInstances();
+            socket.emit('response controller', 200 as any, sessionId as any);
+            break;
+
+          default:
+            socket.emit('response controller', 404 as any, sessionId as any);
+        }
+      });
+
       socket.on('request instance', (sessionId: string, instanceId: number, command: string, args: any) => {
         const instance = this.controller.getInstance(instanceId);
         if (!instance?.connected)
@@ -65,11 +89,11 @@ export class Socket {
       else switch (_code)
       {
         case 200:
-          this.io.emit('response instance', 200, sessionId, data);
+          socket.emit('response instance', 200 as any, sessionId as any, data);
           break;
 
         case 404:
-          this.io.emit('response instance', 410, sessionId);
+          socket.emit('response instance', 410 as any, sessionId as any);
           break;
       }
     });
