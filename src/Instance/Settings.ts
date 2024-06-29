@@ -1,6 +1,6 @@
 import EventEmitter from 'node:events';
 import { Instance } from '.';
-import { Setting, SettingValueType, SettingValueTypeType } from './class/Setting';
+import { Setting, SettingValueType, SettingValueTypeType } from './Setting';
 
 export class Settings extends EventEmitter {
   readonly table: string = 'InstanceSettings';
