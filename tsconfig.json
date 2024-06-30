@@ -1,14 +1,21 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@octopuscentral/central": ["packages/central/src"],
+      "@octopuscentral/controller": ["packages/controller/src"],
+      "@octopuscentral/instance": ["packages/instance/src"]
+    },
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "target": "ES6",
     "module": "commonjs",
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
+    "declaration": true,
     "sourceMap": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "composite": true
   },
-  "include": ["src"],
-  "exclude": ["node_modules"]
+  "include": ["packages/*/src"],
+  "exclude": ["node_modules", "dist"]
 }
