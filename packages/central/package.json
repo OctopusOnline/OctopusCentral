@@ -21,5 +21,5 @@
     "mysql2": "^3.10.1",
     "socket.io-client": "^4.7.5"
   },
-  "gitHead": "819b46e95ebacd83141eb8aa652988cf102d6531"
+  "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"
 }
