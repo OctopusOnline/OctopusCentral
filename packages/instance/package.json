@@ -5,6 +5,9 @@
   "author": "official5ETa",
   "license": "Apache-2.0 license",
   "main": "dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
@@ -19,5 +22,6 @@
     "express": "^4.19.2",
     "mysql2": "^3.10.1",
     "socket.io": "^4.7.5"
-  }
+  },
+  "gitHead": "819b46e95ebacd83141eb8aa652988cf102d6531"
 }
