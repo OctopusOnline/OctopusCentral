@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/central",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -20,7 +20,7 @@
     "typescript": "^5.5.2"
   },
   "dependencies": {
-    "@octopuscentral/types": "^0.0.1",
+    "@octopuscentral/types": "^1.1.0",
     "socket.io-client": "^4.7.5"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"
