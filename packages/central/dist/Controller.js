@@ -130,6 +130,11 @@ class Controller extends node_events_1.default {
             return yield this._requestData('docker start instance', { id: instance.id });
         });
     }
+    dockerStopInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('docker stop instance', { id: instance.id });
+        });
+    }
 }
 exports.Controller = Controller;
 _Controller_socket = new WeakMap();

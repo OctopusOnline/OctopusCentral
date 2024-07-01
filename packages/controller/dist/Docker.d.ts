@@ -23,4 +23,5 @@ export declare class Docker {
     private fetchSelfContainer;
     private startInstanceContainer;
     startInstance(instance: Instance): Promise<boolean>;
+    stopInstance(instance: Instance): Promise<boolean>;
 }

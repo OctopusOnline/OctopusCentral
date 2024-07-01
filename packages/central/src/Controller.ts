@@ -102,7 +102,11 @@ export class Controller extends EventEmitter {
     return await this._requestData('docker get instanceProps');
   }
 
-  async dockerStartInstance(instance: Instance): Promise<boolean | undefined> {
+  async dockerStartInstance(instance: Instance): Promise<boolean> {
     return await this._requestData('docker start instance', { id: instance.id });
+  }
+
+  async dockerStopInstance(instance: Instance): Promise<boolean> {
+    return await this._requestData('docker stop instance', { id: instance.id });
   }
 }

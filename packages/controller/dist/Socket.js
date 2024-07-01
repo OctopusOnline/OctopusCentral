@@ -60,6 +60,7 @@ class Socket {
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('request controller', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
+                let instance;
                 switch (command) {
                     case 'get serviceName':
                         socket.emit('response controller', 200, sessionId, this.controller.serviceName);
@@ -79,8 +80,12 @@ class Socket {
                         socket.emit('response controller', 200, sessionId, this.controller.docker.instanceProps);
                         break;
                     case 'docker start instance':
-                        const instance = this.controller.getInstance(args.id);
+                        instance = this.controller.getInstance(args.id);
                         socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.startInstance(instance) : undefined));
+                        break;
+                    case 'docker stop instance':
+                        instance = this.controller.getInstance(args.id);
+                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.stopInstance(instance) : undefined));
                         break;
                     default:
                         socket.emit('response controller', 404, sessionId);

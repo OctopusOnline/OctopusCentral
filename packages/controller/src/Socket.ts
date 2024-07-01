@@ -43,6 +43,7 @@ export class Socket {
     this.io.on('connection', (socket: IOSocket) =>
     {
       socket.on('request controller', async (sessionId: string, command: string, args: any) => {
+        let instance: Instance | undefined;
         switch (command) {
           case 'get serviceName':
             socket.emit('response controller', 200 as any, sessionId as any, this.controller.serviceName as any);
@@ -72,9 +73,15 @@ export class Socket {
             break;
 
           case 'docker start instance':
-            const instance = this.controller.getInstance(args.id);
+            instance = this.controller.getInstance(args.id);
             socket.emit('response controller', 200 as any, sessionId as any,
               (instance ? await this.controller.docker.startInstance(instance) : undefined) as any);
+            break;
+
+          case 'docker stop instance':
+            instance = this.controller.getInstance(args.id);
+            socket.emit('response controller', 200 as any, sessionId as any,
+              (instance ? await this.controller.docker.stopInstance(instance) : undefined) as any);
             break;
 
           default:

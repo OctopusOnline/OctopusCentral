@@ -53,8 +53,9 @@ class Docker {
     getContainerName(instance) {
         return this.controller.serviceName + '_instance-' + (instance instanceof Instance_1.Instance ? instance.id : instance);
     }
-    getContainer(name) {
+    getContainer(instance) {
         return __awaiter(this, void 0, void 0, function* () {
+            const name = instance instanceof Instance_1.Instance ? this.getContainerName(instance) : instance;
             return (yield this.client.container.list()).find(container => container.data.Names.includes(`/${name}`)
                 || container.id.startsWith(name));
         });
@@ -82,13 +83,13 @@ class Docker {
     }
     startInstanceContainer(instance_1, network_1) {
         return __awaiter(this, arguments, void 0, function* (instance, network, forceRestart = true, autoReconnect = false) {
-            const containerName = this.getContainerName(instance);
-            const runningContainer = yield this.getContainer(containerName);
+            const runningContainer = yield this.getContainer(instance);
             if (runningContainer) {
                 if (!forceRestart)
                     return;
-                yield runningContainer.delete({ force: true });
+                yield this.stopInstance(instance);
             }
+            const containerName = this.getContainerName(instance);
             const container = yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
@@ -125,6 +126,16 @@ class Docker {
                 return false;
             const container = yield this.startInstanceContainer(instance, network, true, true);
             return !!container && instance.connected;
+        });
+    }
+    stopInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const container = yield this.getContainer(instance);
+            if (container) {
+                yield container.delete({ force: true });
+                return true;
+            }
+            return false;
         });
     }
 }

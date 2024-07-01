@@ -22,5 +22,6 @@ export declare class Controller extends EventEmitter {
     fetchInstances(): Promise<true | undefined>;
     dockerGetClientProps(): Promise<DockerClientProps>;
     dockerGetInstanceProps(): Promise<DockerInstanceProps>;
-    dockerStartInstance(instance: Instance): Promise<boolean | undefined>;
+    dockerStartInstance(instance: Instance): Promise<boolean>;
+    dockerStopInstance(instance: Instance): Promise<boolean>;
 }
