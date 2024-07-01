@@ -6,7 +6,11 @@ import { Controller } from './index';
 import { Instance } from './Instance';
 import { hostname } from 'os';
 
-export interface DockerContainer extends Container {}
+export interface DockerContainer extends Container {
+  State?: {
+    Paused?: boolean;
+  }
+}
 
 export interface DockerNetwork extends Network {
   NetworkID: string;
@@ -49,9 +53,9 @@ export class Docker {
     return this.controller.serviceName + '_instance-' + (instance instanceof Instance ? instance.id : instance);
   }
 
-  private async getContainer(instance: Instance | string): Promise<DockerContainer | undefined> {
+  private async getContainer(instance: Instance | string, onlyRunning: boolean = false): Promise<DockerContainer | undefined> {
     const name: string = instance instanceof Instance ? this.getContainerName(instance) : instance
-    return (await this.client.container.list()).find(container =>
+    return (await this.client.container.list({ all: !onlyRunning })).find(container =>
       (container.data as { Names: string[] }).Names.includes(`/${name}`)
       || container.id.startsWith(name)
     );
@@ -123,7 +127,6 @@ export class Docker {
     if (!network) return false;
 
     const container = await this.startInstanceContainer(instance, network, true, true);
-
     return !!container && instance.connected;
   }
 
@@ -154,11 +157,7 @@ export class Docker {
     return false;
   }
 
-  //async instancePaused(instance: Instance): Promise<boolean | undefined> {
-  //  const container = await this.getContainer(instance);
-  //  if (container) {
-  //    //return container.State.Paused;
-  //}
-  //return;
-  //}
+  async instancePaused(instance: Instance): Promise<boolean | undefined> {
+    return (await this.getContainer(instance))?.State!.Paused;
+  }
 }

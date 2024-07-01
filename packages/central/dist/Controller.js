@@ -145,6 +145,11 @@ class Controller extends node_events_1.default {
             return yield this._requestData('docker unpause instance', { id: instance.id });
         });
     }
+    dockerInstancePaused(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('docker instance paused', { id: instance.id });
+        });
+    }
 }
 exports.Controller = Controller;
 _Controller_socket = new WeakMap();

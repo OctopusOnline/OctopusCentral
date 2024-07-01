@@ -26,4 +26,5 @@ export declare class Controller extends EventEmitter {
     dockerStopInstance(instance: Instance): Promise<boolean>;
     dockerPauseInstance(instance: Instance): Promise<boolean>;
     dockerUnpauseInstance(instance: Instance): Promise<boolean>;
+    dockerInstancePaused(instance: Instance): Promise<boolean | undefined>;
 }

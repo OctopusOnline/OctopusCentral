@@ -53,10 +53,10 @@ class Docker {
     getContainerName(instance) {
         return this.controller.serviceName + '_instance-' + (instance instanceof Instance_1.Instance ? instance.id : instance);
     }
-    getContainer(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
+    getContainer(instance_1) {
+        return __awaiter(this, arguments, void 0, function* (instance, onlyRunning = false) {
             const name = instance instanceof Instance_1.Instance ? this.getContainerName(instance) : instance;
-            return (yield this.client.container.list()).find(container => container.data.Names.includes(`/${name}`)
+            return (yield this.client.container.list({ all: !onlyRunning })).find(container => container.data.Names.includes(`/${name}`)
                 || container.id.startsWith(name));
         });
     }
@@ -156,6 +156,12 @@ class Docker {
                 return true;
             }
             return false;
+        });
+    }
+    instancePaused(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            return (_a = (yield this.getContainer(instance))) === null || _a === void 0 ? void 0 : _a.State.Paused;
         });
     }
 }

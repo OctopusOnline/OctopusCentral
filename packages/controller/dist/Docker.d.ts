@@ -4,6 +4,9 @@ import { Network } from 'node-docker-api/lib/network';
 import { Controller } from './index';
 import { Instance } from './Instance';
 export interface DockerContainer extends Container {
+    State?: {
+        Paused?: boolean;
+    };
 }
 export interface DockerNetwork extends Network {
     NetworkID: string;
@@ -26,4 +29,5 @@ export declare class Docker {
     stopInstance(instance: Instance): Promise<boolean>;
     pauseInstance(instance: Instance): Promise<boolean>;
     unpauseInstance(instance: Instance): Promise<boolean>;
+    instancePaused(instance: Instance): Promise<boolean | undefined>;
 }
