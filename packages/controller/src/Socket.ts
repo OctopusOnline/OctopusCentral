@@ -84,6 +84,18 @@ export class Socket {
               (instance ? await this.controller.docker.stopInstance(instance) : undefined) as any);
             break;
 
+          case 'docker pause instance':
+            instance = this.controller.getInstance(args.id);
+            socket.emit('response controller', 200 as any, sessionId as any,
+              (instance ? await this.controller.docker.pauseInstance(instance) : undefined) as any);
+            break;
+
+          case 'docker unpause instance':
+            instance = this.controller.getInstance(args.id);
+            socket.emit('response controller', 200 as any, sessionId as any,
+              (instance ? await this.controller.docker.unpauseInstance(instance) : undefined) as any);
+            break;
+
           default:
             socket.emit('response controller', 404 as any, sessionId as any);
         }

@@ -24,4 +24,6 @@ export declare class Docker {
     private startInstanceContainer;
     startInstance(instance: Instance): Promise<boolean>;
     stopInstance(instance: Instance): Promise<boolean>;
+    pauseInstance(instance: Instance): Promise<boolean>;
+    unpauseInstance(instance: Instance): Promise<boolean>;
 }

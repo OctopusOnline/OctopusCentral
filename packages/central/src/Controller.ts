@@ -109,4 +109,12 @@ export class Controller extends EventEmitter {
   async dockerStopInstance(instance: Instance): Promise<boolean> {
     return await this._requestData('docker stop instance', { id: instance.id });
   }
+
+  async dockerPauseInstance(instance: Instance): Promise<boolean> {
+    return await this._requestData('docker pause instance', { id: instance.id });
+  }
+
+  async dockerUnpauseInstance(instance: Instance): Promise<boolean> {
+    return await this._requestData('docker unpause instance', { id: instance.id });
+  }
 }

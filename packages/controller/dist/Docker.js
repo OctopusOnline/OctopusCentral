@@ -138,6 +138,26 @@ class Docker {
             return false;
         });
     }
+    pauseInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const container = yield this.getContainer(instance);
+            if (container) {
+                yield container.pause();
+                return true;
+            }
+            return false;
+        });
+    }
+    unpauseInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const container = yield this.getContainer(instance);
+            if (container) {
+                yield container.unpause();
+                return true;
+            }
+            return false;
+        });
+    }
 }
 exports.Docker = Docker;
 _Docker_selfContainer = new WeakMap();

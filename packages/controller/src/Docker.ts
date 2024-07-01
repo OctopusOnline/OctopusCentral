@@ -136,6 +136,29 @@ export class Docker {
     return false;
   }
 
-  // TODO: pauseInstance
-  // TODO: unpauseInstance
+  async pauseInstance(instance: Instance): Promise<boolean> {
+    const container = await this.getContainer(instance);
+    if (container) {
+      await container.pause();
+      return true;
+    }
+    return false;
+  }
+
+  async unpauseInstance(instance: Instance): Promise<boolean> {
+    const container = await this.getContainer(instance);
+    if (container) {
+      await container.unpause();
+      return true;
+    }
+    return false;
+  }
+
+  //async instancePaused(instance: Instance): Promise<boolean | undefined> {
+  //  const container = await this.getContainer(instance);
+  //  if (container) {
+  //    //return container.State.Paused;
+  //}
+  //return;
+  //}
 }

@@ -87,6 +87,14 @@ class Socket {
                         instance = this.controller.getInstance(args.id);
                         socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.stopInstance(instance) : undefined));
                         break;
+                    case 'docker pause instance':
+                        instance = this.controller.getInstance(args.id);
+                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.pauseInstance(instance) : undefined));
+                        break;
+                    case 'docker unpause instance':
+                        instance = this.controller.getInstance(args.id);
+                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.unpauseInstance(instance) : undefined));
+                        break;
                     default:
                         socket.emit('response controller', 404, sessionId);
                 }
