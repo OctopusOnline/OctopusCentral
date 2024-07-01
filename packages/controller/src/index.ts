@@ -1,6 +1,7 @@
+import { DockerInstanceProps } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { Socket } from './Socket';
-import { Docker, DockerInstanceProps } from './Docker';
+import { Docker } from './Docker';
 import { Connection } from 'mysql2';
 import { Instance } from './Instance';
 

@@ -1,21 +1,14 @@
+import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
-import { Container as DockerContainer } from 'node-docker-api/lib/container';
-import { Network as DockerNetwork } from 'node-docker-api/lib/network';
+import { Container } from 'node-docker-api/lib/container';
+import { Network } from 'node-docker-api/lib/network';
 import { Controller } from './index';
 import { Instance } from './Instance';
 import { hostname } from 'os';
 
-export interface DockerClientProps {
-  socketPath: string;
-}
+export interface DockerContainer extends Container {}
 
-export interface DockerInstanceProps {
-  image: string;
-}
-
-export interface Container extends DockerContainer {}
-
-export interface Network extends DockerNetwork {
+export interface DockerNetwork extends Network {
   NetworkID: string;
 }
 
@@ -26,7 +19,7 @@ export class Docker {
   readonly clientProps: DockerClientProps = { socketPath: '/var/run/docker.sock' };
   readonly instanceProps: DockerInstanceProps;
 
-  #selfContainer?: Container;
+  #selfContainer?: DockerContainer;
 
   get connected(): Promise<boolean> {
     const client: DockerClient = this.client;
@@ -56,16 +49,16 @@ export class Docker {
     return this.controller.serviceName + '_instance-' + (instance instanceof Instance ? instance.id : instance);
   }
 
-  private async getContainer(name: string): Promise<Container | undefined> {
+  private async getContainer(name: string): Promise<DockerContainer | undefined> {
     return (await this.client.container.list()).find(container =>
       (container.data as { Names: string[] }).Names.includes(`/${name}`)
       || container.id.startsWith(name)
     );
   }
 
-  private async getContainerNetwork(container: Container): Promise<Network | undefined> {
-    const networks: { [key: string]: Network } | undefined
-      = (container.data as { NetworkSettings: { Networks: object } })?.NetworkSettings?.Networks as { [key: string]: Network };
+  private async getContainerNetwork(container: DockerContainer): Promise<DockerNetwork | undefined> {
+    const networks: { [key: string]: DockerNetwork } | undefined
+      = (container.data as { NetworkSettings: { Networks: object } })?.NetworkSettings?.Networks as { [key: string]: DockerNetwork };
     if (!networks) return;
 
     const networkNames: string[] = Object.keys(networks);
@@ -84,7 +77,7 @@ export class Docker {
       throw new Error(`could not find controller container (${containerName})`);
   }
 
-  private async startInstanceContainer(instance: Instance, network: Network, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<Container | undefined> {
+  private async startInstanceContainer(instance: Instance, network: DockerNetwork, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<DockerContainer | undefined> {
     const containerName: string = this.getContainerName(instance);
 
     const runningContainer = await this.getContainer(containerName);
@@ -93,7 +86,7 @@ export class Docker {
       await runningContainer.delete({ force: true });
     }
 
-    const container: Container = await this.client.container.create({
+    const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
       Tty: true,
       AttachStdin: false,

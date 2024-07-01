@@ -1,0 +1,11 @@
+{
+  "name": "@octopuscentral/types",
+  "version": "0.0.1",
+  "description": "",
+  "author": "official5ETa",
+  "license": "Apache-2.0 license",
+  "main": "types.ts",
+  "publishConfig": {
+    "access": "public"
+  }
+}

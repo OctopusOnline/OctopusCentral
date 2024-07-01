@@ -16,10 +16,11 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
-    "mysql2": "^3.10.1",
+    "mysql2": "^3.10.2",
     "typescript": "^5.5.2"
   },
   "dependencies": {
+    "@octopuscentral/types": "^0.0.1",
     "socket.io-client": "^4.7.5"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"

@@ -2,14 +2,7 @@ import EventEmitter from 'node:events';
 import crypto from 'node:crypto';
 import { io, Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
-
-export interface DockerClientProps {
-  socketPath: string;
-}
-
-export interface DockerInstanceProps {
-  image: string;
-}
+import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
 
 export class Controller extends EventEmitter {
   readonly id: number;
@@ -41,11 +34,11 @@ export class Controller extends EventEmitter {
     this.#socket = socket;
 
     if (!await new Promise<boolean>((resolve => {
-      socket!.once('connect', () => {
+      socket.once('connect', () => {
         this.emit('socket connect');
         resolve(true);
       });
-      socket!.once('connect_error', error => {
+      socket.once('connect_error', error => {
         this.emit('socket connect_error', error);
         resolve(false);
       });

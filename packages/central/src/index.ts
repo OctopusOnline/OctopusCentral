@@ -3,8 +3,7 @@ import EventEmitter from 'node:events';
 import { promisify } from 'node:util';
 import { Controller } from './Controller';
 import { Instance } from './Instance';
-
-export type InstanceFilter = { serviceName: string }[];
+import { CentralInstanceFilter } from '@octopuscentral/types';
 
 export class Central extends EventEmitter {
   readonly table: string = 'Controllers';
@@ -125,7 +124,7 @@ export class Central extends EventEmitter {
     if (this.#running) this.runInterval().then();
   }
 
-  async getInstances(filter: InstanceFilter = []): Promise<Instance[]> {
+  async getInstances(filter: CentralInstanceFilter = []): Promise<Instance[]> {
     let instances: Instance[] = [];
     for (const controller of this.#controllers) {
       const serviceName: string | undefined = filter.some(_filter => _filter.serviceName)

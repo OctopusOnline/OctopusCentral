@@ -1,16 +1,11 @@
-import { Container as DockerContainer } from 'node-docker-api/lib/container';
-import { Network as DockerNetwork } from 'node-docker-api/lib/network';
+import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
+import { Container } from 'node-docker-api/lib/container';
+import { Network } from 'node-docker-api/lib/network';
 import { Controller } from './index';
 import { Instance } from './Instance';
-export interface DockerClientProps {
-    socketPath: string;
+export interface DockerContainer extends Container {
 }
-export interface DockerInstanceProps {
-    image: string;
-}
-export interface Container extends DockerContainer {
-}
-export interface Network extends DockerNetwork {
+export interface DockerNetwork extends Network {
     NetworkID: string;
 }
 export declare class Docker {

@@ -1,5 +1,4 @@
-export type SettingValueType = string | number | boolean | null;
-export type SettingValueTypeType = 'str' | 'num' | 'bol' | 'nul';
+import { SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
 export declare class Setting {
     readonly name: string;
     readonly value: SettingValueType;

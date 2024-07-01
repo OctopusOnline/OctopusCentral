@@ -2,9 +2,7 @@ import { Connection } from 'mysql2';
 import EventEmitter from 'node:events';
 import { Controller } from './Controller';
 import { Instance } from './Instance';
-export type InstanceFilter = {
-    serviceName: string;
-}[];
+import { CentralInstanceFilter } from '@octopuscentral/types';
 export declare class Central extends EventEmitter {
     #private;
     readonly table: string;
@@ -26,5 +24,5 @@ export declare class Central extends EventEmitter {
     connectControllers(): Promise<void>;
     start(): Promise<void>;
     private runInterval;
-    getInstances(filter?: InstanceFilter): Promise<Instance[]>;
+    getInstances(filter?: CentralInstanceFilter): Promise<Instance[]>;
 }

@@ -4,6 +4,7 @@
   "license": "Apache-2.0 license",
   "private": false,
   "workspaces": [
+    "packages/types",
     "packages/central",
     "packages/controller",
     "packages/instance"

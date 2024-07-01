@@ -1,12 +1,7 @@
 import EventEmitter from 'node:events';
 import { Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
-export interface DockerClientProps {
-    socketPath: string;
-}
-export interface DockerInstanceProps {
-    image: string;
-}
+import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
 export declare class Controller extends EventEmitter {
     #private;
     readonly id: number;
