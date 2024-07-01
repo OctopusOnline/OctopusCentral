@@ -63,6 +63,20 @@ export class Socket {
             socket.emit('response controller', 200 as any, sessionId as any);
             break;
 
+          case 'docker get clientProps':
+            socket.emit('response controller', 200 as any, sessionId as any, this.controller.docker.clientProps);
+            break;
+
+          case 'docker get instanceProps':
+            socket.emit('response controller', 200 as any, sessionId as any, this.controller.docker.instanceProps);
+            break;
+
+          case 'docker start instance':
+            const instance = this.controller.getInstance(args.id);
+            socket.emit('response controller', 200 as any, sessionId as any,
+              (instance ? await this.controller.docker.startInstance(instance) : undefined) as any);
+            break;
+
           default:
             socket.emit('response controller', 404 as any, sessionId as any);
         }

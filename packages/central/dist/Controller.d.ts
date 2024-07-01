@@ -1,6 +1,12 @@
 import EventEmitter from 'node:events';
 import { Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
+export interface DockerClientProps {
+    socketPath: string;
+}
+export interface DockerInstanceProps {
+    image: string;
+}
 export declare class Controller extends EventEmitter {
     #private;
     readonly id: number;
@@ -19,4 +25,7 @@ export declare class Controller extends EventEmitter {
     getServiceName(): Promise<string | undefined>;
     getInstances(): Promise<Instance[] | undefined>;
     fetchInstances(): Promise<true | undefined>;
+    dockerGetClientProps(): Promise<DockerClientProps>;
+    dockerGetInstanceProps(): Promise<DockerInstanceProps>;
+    dockerStartInstance(instance: Instance): Promise<boolean | undefined>;
 }

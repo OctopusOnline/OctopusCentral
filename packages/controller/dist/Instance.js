@@ -44,20 +44,24 @@ class Instance extends node_events_1.default {
                 return false;
             if (this.connected && reconnect)
                 yield this.disconnect();
-            const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`);
+            const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
+                reconnection: true,
+                reconnectionAttempts: Infinity
+            });
             __classPrivateFieldSet(this, _Instance_socket, socket, "f");
-            if (!(yield new Promise((resolve => {
+            const connectResult = yield new Promise((resolve => {
                 socket.once('connect', () => {
-                    this.emit('socket connect');
-                    resolve(true);
+                    this.emit('socket connected');
+                    resolve();
                 });
                 socket.once('connect_error', error => {
-                    this.emit('socket connect_error', error);
-                    resolve(false);
+                    this.emit('socket connected', error);
+                    resolve(error);
                 });
-            })))) {
+            }));
+            if (connectResult instanceof Error) {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
-                return false;
+                return connectResult;
             }
             return true;
         });
@@ -66,6 +70,7 @@ class Instance extends node_events_1.default {
         if (__classPrivateFieldGet(this, _Instance_socket, "f")) {
             __classPrivateFieldGet(this, _Instance_socket, "f").close();
             __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
+            this.emit('socket disconnected');
         }
     }
 }

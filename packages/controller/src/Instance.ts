@@ -21,27 +21,31 @@ export class Instance extends EventEmitter {
     this.socketPort = socketPort;
   }
 
-  async connect(reconnect: boolean = false): Promise<boolean> {
+  async connect(reconnect: boolean = false): Promise<boolean | Error> {
     if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
       return false;
     if (this.connected && reconnect)
       await this.disconnect();
 
-    const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`);
+    const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
+      reconnection: true,
+      reconnectionAttempts: Infinity
+    });
     this.#socket = socket;
 
-    if (!await new Promise<boolean>((resolve => {
+    const connectResult = await new Promise<Error | void>((resolve => {
       socket!.once('connect', () => {
-        this.emit('socket connect');
-        resolve(true);
+        this.emit('socket connected');
+        resolve();
       });
       socket!.once('connect_error', error => {
-        this.emit('socket connect_error', error);
-        resolve(false);
+        this.emit('socket connected', error);
+        resolve(error);
       });
-    }))) {
+    }))
+    if (connectResult instanceof Error) {
       this.#socket = undefined;
-      return false;
+      return connectResult;
     }
     return true;
   }
@@ -50,6 +54,7 @@ export class Instance extends EventEmitter {
     if (this.#socket) {
       this.#socket.close();
       this.#socket = undefined;
+      this.emit('socket disconnected');
     }
   }
 }

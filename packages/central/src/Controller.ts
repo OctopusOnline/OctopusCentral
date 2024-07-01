@@ -3,6 +3,14 @@ import crypto from 'node:crypto';
 import { io, Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
 
+export interface DockerClientProps {
+  socketPath: string;
+}
+
+export interface DockerInstanceProps {
+  image: string;
+}
+
 export class Controller extends EventEmitter {
   readonly id: number;
 
@@ -26,7 +34,10 @@ export class Controller extends EventEmitter {
     if (this.connected && reconnect)
       await this.disconnect();
 
-    const socket = io(this.socketHost);
+    const socket = io(this.socketHost, {
+      reconnection: true,
+      reconnectionAttempts: Infinity
+    });
     this.#socket = socket;
 
     if (!await new Promise<boolean>((resolve => {
@@ -88,5 +99,17 @@ export class Controller extends EventEmitter {
 
   async fetchInstances(): Promise<true | undefined> {
     return (await this._request('fetch instances'))?.code === 200 ? true : undefined
+  }
+
+  async dockerGetClientProps(): Promise<DockerClientProps> {
+    return await this._requestData('docker get clientProps');
+  }
+
+  async dockerGetInstanceProps(): Promise<DockerInstanceProps> {
+    return await this._requestData('docker get instanceProps');
+  }
+
+  async dockerStartInstance(instance: Instance): Promise<boolean | undefined> {
+    return await this._requestData('docker start instance', { id: instance.id });
   }
 }

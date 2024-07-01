@@ -19,31 +19,42 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var _Controller_instances, _Controller_running;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = void 0;
+const node_events_1 = __importDefault(require("node:events"));
 const Socket_1 = require("./Socket");
+const Docker_1 = require("./Docker");
 const Instance_1 = require("./Instance");
-const node_util_1 = require("node:util");
-class Controller {
+class Controller extends node_events_1.default {
     get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
-    constructor(serviceName, connection) {
+    constructor(serviceName, database, instanceDockerProps) {
+        super();
         this.table = 'Instances';
         this.instancesFetchInterval = 5000;
         _Controller_instances.set(this, []);
         _Controller_running.set(this, false);
         this.serviceName = serviceName;
-        this._connection = connection;
+        this.database = database;
+        this.docker = new Docker_1.Docker(this, instanceDockerProps);
         this.socket = new Socket_1.Socket(this);
     }
     addInstance(instance, overwrite = false) {
         if (!this.getInstance(instance.id))
-            __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
+            this.addAndSetupInstance(instance);
         else if (overwrite) {
             this.removeInstance(instance);
-            __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
+            this.addAndSetupInstance(instance);
         }
+    }
+    addAndSetupInstance(instance) {
+        __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
+        instance.on('socket connected', (error) => this.emit('instance socket connected', instance, error));
+        instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
     }
     getInstance(id) {
         return __classPrivateFieldGet(this, _Controller_instances, "f").find(_instance => _instance.id === id);
@@ -58,7 +69,7 @@ class Controller {
     }
     loadInstances() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this._connection.query(`SELECT id, socketHostname FROM ${this.table}`))
+            return (yield this.database.query(`SELECT id, socketHostname FROM ${this.table}`))
                 .map(({ id, socketHostname }) => new Instance_1.Instance(id, socketHostname));
         });
     }
@@ -76,6 +87,14 @@ class Controller {
             return __classPrivateFieldGet(this, _Controller_instances, "f");
         });
     }
+    updateInstanceSocketHostname(instance_1, socketHostname_1) {
+        return __awaiter(this, arguments, void 0, function* (instance, socketHostname, autoReconnect = false) {
+            yield this.database.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
+            instance.socketHostname = socketHostname;
+            if (autoReconnect && instance.connected)
+                yield instance.connect(true);
+        });
+    }
     connectInstances() {
         return __awaiter(this, void 0, void 0, function* () {
             for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
@@ -86,17 +105,19 @@ class Controller {
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Controller_running, true, "f");
+            yield this.docker.init();
             yield this.socket.start();
-            this.runInterval().then();
+            yield this.runInterval();
         });
     }
     runInterval() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.fetchSyncInstances();
             yield this.connectInstances();
-            yield (0, node_util_1.promisify)(setTimeout)(this.instancesFetchInterval);
-            if (__classPrivateFieldGet(this, _Controller_running, "f"))
-                this.runInterval().then();
+            setTimeout(() => {
+                if (__classPrivateFieldGet(this, _Controller_running, "f"))
+                    this.runInterval().then();
+            }, this.instancesFetchInterval);
         });
     }
 }

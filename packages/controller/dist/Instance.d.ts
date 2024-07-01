@@ -9,6 +9,6 @@ export declare class Instance extends EventEmitter {
     get socket(): IOSocket | undefined;
     get connected(): boolean;
     constructor(id: number, socketHostname?: string, socketPort?: number);
-    connect(reconnect?: boolean): Promise<boolean>;
+    connect(reconnect?: boolean): Promise<boolean | Error>;
     disconnect(): void;
 }

@@ -50,6 +50,11 @@ class Instance {
             yield this.settings.init();
         });
     }
+    start() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.socket.start();
+        });
+    }
     setSocketHostname(hostname) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this._connection.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [hostname, __classPrivateFieldGet(this, _Instance_id, "f")]);

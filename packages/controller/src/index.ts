@@ -1,16 +1,18 @@
-import { Connection } from 'mysql2';
+import EventEmitter from 'node:events';
 import { Socket } from './Socket';
+import { Docker, DockerInstanceProps } from './Docker';
+import { Connection } from 'mysql2';
 import { Instance } from './Instance';
-import { promisify } from 'node:util';
 
-export class Controller {
+export class Controller extends EventEmitter {
   readonly table: string = 'Instances';
 
   readonly serviceName: string;
   instancesFetchInterval: number = 5000;
 
+  readonly database: Connection;
+  readonly docker: Docker;
   readonly socket: Socket;
-  readonly _connection: Connection;
 
   #instances: Instance[] = [];
   #running: boolean = false;
@@ -18,20 +20,29 @@ export class Controller {
   get instances(): Instance[] { return this.#instances }
   get running(): boolean { return this.#running }
 
-  constructor(serviceName: string, connection: Connection) {
+  constructor(serviceName: string, database: Connection, instanceDockerProps: DockerInstanceProps) {
+    super();
     this.serviceName = serviceName;
-    this._connection = connection;
+    this.database = database;
 
+    this.docker = new Docker(this, instanceDockerProps);
     this.socket = new Socket(this);
   }
 
   addInstance(instance: Instance, overwrite: boolean = false) {
     if (!this.getInstance(instance.id))
-      this.#instances.push(instance);
+      this.addAndSetupInstance(instance);
     else if (overwrite) {
       this.removeInstance(instance);
-      this.#instances.push(instance);
+      this.addAndSetupInstance(instance);
     }
+  }
+
+  private addAndSetupInstance(instance: Instance) {
+    this.#instances.push(instance);
+
+    instance.on('socket connected', (error?: Error) => this.emit('instance socket connected', instance, error));
+    instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
   }
 
   getInstance(id: number): Instance | undefined {
@@ -48,7 +59,7 @@ export class Controller {
   }
 
   private async loadInstances(): Promise<Instance[]> {
-    return (await this._connection.query(`SELECT id, socketHostname FROM ${this.table}`) as unknown as {id: number, socketHostname: string}[])
+    return (await this.database.query(`SELECT id, socketHostname FROM ${this.table}`) as unknown as {id: number, socketHostname: string}[])
       .map(({ id, socketHostname }) => new Instance(id, socketHostname));
   }
 
@@ -68,6 +79,16 @@ export class Controller {
     return this.#instances;
   }
 
+  async updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect: boolean = false): Promise<void> {
+    await this.database.execute(
+      `UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`,
+      [socketHostname, instance.id]);
+    instance.socketHostname = socketHostname;
+
+    if (autoReconnect && instance.connected)
+      await instance.connect(true);
+  }
+
   async connectInstances(): Promise<void> {
     for (const instance of this.#instances)
       if (!instance.connected) await instance.connect();
@@ -75,15 +96,19 @@ export class Controller {
 
   async start(): Promise<void> {
     this.#running = true;
+
+    await this.docker.init();
     await this.socket.start();
-    this.runInterval().then();
+
+    await this.runInterval();
   }
 
   private async runInterval(): Promise<void> {
     await this.fetchSyncInstances();
     await this.connectInstances();
 
-    await promisify(setTimeout)(this.instancesFetchInterval);
-    if (this.#running) this.runInterval().then();
+    setTimeout(() => {
+      if (this.#running) this.runInterval().then();
+    }, this.instancesFetchInterval);
   }
 }

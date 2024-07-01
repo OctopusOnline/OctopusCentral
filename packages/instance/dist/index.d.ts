@@ -10,5 +10,6 @@ export declare class Instance {
     get id(): number;
     constructor(connection: Connection, id?: number);
     init(): Promise<void>;
+    start(): Promise<void>;
     setSocketHostname(hostname: string): Promise<void>;
 }

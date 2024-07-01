@@ -36,6 +36,10 @@ export class Instance {
     await this.settings.init();
   }
 
+  async start(): Promise<void> {
+    await this.socket.start();
+  }
+
   async setSocketHostname(hostname: string): Promise<void> {
     await this._connection.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
   }

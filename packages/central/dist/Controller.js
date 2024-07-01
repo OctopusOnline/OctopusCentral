@@ -44,7 +44,10 @@ class Controller extends node_events_1.default {
                 return false;
             if (this.connected && reconnect)
                 yield this.disconnect();
-            const socket = (0, socket_io_client_1.io)(this.socketHost);
+            const socket = (0, socket_io_client_1.io)(this.socketHost, {
+                reconnection: true,
+                reconnectionAttempts: Infinity
+            });
             __classPrivateFieldSet(this, _Controller_socket, socket, "f");
             if (!(yield new Promise((resolve => {
                 socket.once('connect', () => {
@@ -110,6 +113,21 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             return ((_a = (yield this._request('fetch instances'))) === null || _a === void 0 ? void 0 : _a.code) === 200 ? true : undefined;
+        });
+    }
+    dockerGetClientProps() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('docker get clientProps');
+        });
+    }
+    dockerGetInstanceProps() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('docker get instanceProps');
+        });
+    }
+    dockerStartInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('docker start instance', { id: instance.id });
         });
     }
 }
