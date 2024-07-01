@@ -1,6 +1,6 @@
-import { SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
+import { SettingValueType, SettingValueTypeType, Setting as SettingInterface } from '@octopuscentral/types';
 
-export class Setting {
+export class Setting implements SettingInterface {
   readonly name: string;
   readonly value: SettingValueType;
   readonly type: SettingValueTypeType;

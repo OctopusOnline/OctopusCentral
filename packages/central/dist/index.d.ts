@@ -1,8 +1,10 @@
+import { CentralInstanceFilter } from '@octopuscentral/types';
+import { InstanceSettings } from './InstanceSettings';
 import { Connection } from 'mysql2';
 import EventEmitter from 'node:events';
 import { Controller } from './Controller';
 import { Instance } from './Instance';
-import { CentralInstanceFilter } from '@octopuscentral/types';
+export { Controller, Instance, InstanceSettings };
 export declare class Central extends EventEmitter {
     #private;
     readonly table: string;

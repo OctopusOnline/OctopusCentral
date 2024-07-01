@@ -24,11 +24,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _Controller_instances, _Controller_running;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Controller = void 0;
+exports.Controller = exports.Instance = exports.Socket = exports.Docker = void 0;
+const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
 const Socket_1 = require("./Socket");
+Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 const Docker_1 = require("./Docker");
+Object.defineProperty(exports, "Docker", { enumerable: true, get: function () { return Docker_1.Docker; } });
 const Instance_1 = require("./Instance");
+Object.defineProperty(exports, "Instance", { enumerable: true, get: function () { return Instance_1.Instance; } });
 class Controller extends node_events_1.default {
     get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
@@ -55,6 +59,25 @@ class Controller extends node_events_1.default {
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
         instance.on('socket connected', (error) => this.emit('instance socket connected', instance, error));
         instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
+    }
+    createInstance() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const virtualInstance = new instance_1.Instance(this.database);
+            yield virtualInstance.init();
+            yield this.fetchSyncInstances();
+            return this.getInstance(virtualInstance.id);
+        });
+    }
+    updateInstanceSettings(instance, settings) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (settings.length === 0)
+                return;
+            const virtualInstance = new instance_1.Instance(this.database, instance.id);
+            for (const setting of settings) {
+                const virtualSetting = new instance_1.Setting(setting.name, setting.value, setting.type, setting.min, setting.max);
+                yield virtualInstance.settings.updateSetting(virtualSetting);
+            }
+        });
     }
     getInstance(id) {
         return __classPrivateFieldGet(this, _Controller_instances, "f").find(_instance => _instance.id === id);
@@ -87,7 +110,7 @@ class Controller extends node_events_1.default {
             return __classPrivateFieldGet(this, _Controller_instances, "f");
         });
     }
-    updateInstanceSocketHostname(instance_1, socketHostname_1) {
+    updateInstanceSocketHostname(instance_2, socketHostname_1) {
         return __awaiter(this, arguments, void 0, function* (instance, socketHostname, autoReconnect = false) {
             yield this.database.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
             instance.socketHostname = socketHostname;

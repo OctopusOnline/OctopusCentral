@@ -1,6 +1,9 @@
 import { Connection } from 'mysql2';
+import { Setting } from './Setting';
 import { Socket } from './Socket';
 import { Settings } from './Settings';
+
+export { Settings, Setting, Socket };
 
 export class Instance {
   readonly table: string = 'Instances';

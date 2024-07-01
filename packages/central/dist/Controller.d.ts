@@ -1,7 +1,7 @@
 import EventEmitter from 'node:events';
 import { Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
-import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
+import { DockerClientProps, DockerInstanceProps, Setting } from '@octopuscentral/types';
 export declare class Controller extends EventEmitter {
     #private;
     readonly id: number;
@@ -20,6 +20,8 @@ export declare class Controller extends EventEmitter {
     getServiceName(): Promise<string | undefined>;
     getInstances(): Promise<Instance[] | undefined>;
     fetchInstances(): Promise<true | undefined>;
+    createInstance(): Promise<Instance>;
+    updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<boolean>;
     dockerGetClientProps(): Promise<DockerClientProps>;
     dockerGetInstanceProps(): Promise<DockerInstanceProps>;
     dockerStartInstance(instance: Instance): Promise<boolean>;

@@ -79,6 +79,19 @@ class Socket {
                     case 'docker get instanceProps':
                         socket.emit('response controller', 200, sessionId, this.controller.docker.instanceProps);
                         break;
+                    case 'create instance':
+                        instance = yield this.controller.createInstance();
+                        socket.emit('response controller', 200, sessionId, instance.id);
+                        break;
+                    case 'update instance settings':
+                        instance = this.controller.getInstance(args.id);
+                        if (instance) {
+                            yield this.controller.updateInstanceSettings(instance, args.settings);
+                            socket.emit('response controller', 200, sessionId, true);
+                        }
+                        else
+                            socket.emit('response controller', 200, sessionId, false);
+                        break;
                     case 'docker start instance':
                         instance = this.controller.getInstance(args.id);
                         socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.startInstance(instance) : undefined));

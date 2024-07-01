@@ -2,7 +2,7 @@ import EventEmitter from 'node:events';
 import crypto from 'node:crypto';
 import { io, Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
-import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
+import { DockerClientProps, DockerInstanceProps, Setting } from '@octopuscentral/types';
 
 export class Controller extends EventEmitter {
   readonly id: number;
@@ -92,6 +92,15 @@ export class Controller extends EventEmitter {
 
   async fetchInstances(): Promise<true | undefined> {
     return (await this._request('fetch instances'))?.code === 200 ? true : undefined
+  }
+
+  async createInstance(): Promise<Instance> {
+    const result = await this._requestData('create instance');
+    return new Instance(this, result.id);
+  }
+
+  async updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<boolean> {
+    return await this._requestData('update instance settings', { id: instance.id, settings });
   }
 
   async dockerGetClientProps(): Promise<DockerClientProps> {

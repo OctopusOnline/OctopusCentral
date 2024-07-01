@@ -1,9 +1,10 @@
-import { DockerInstanceProps } from '@octopuscentral/types';
+import { DockerInstanceProps, Setting } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Connection } from 'mysql2';
 import { Instance } from './Instance';
+export { Docker, Socket, Instance };
 export declare class Controller extends EventEmitter {
     #private;
     readonly table: string;
@@ -17,6 +18,8 @@ export declare class Controller extends EventEmitter {
     constructor(serviceName: string, database: Connection, instanceDockerProps: DockerInstanceProps);
     addInstance(instance: Instance, overwrite?: boolean): void;
     private addAndSetupInstance;
+    createInstance(): Promise<Instance>;
+    updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void>;
     getInstance(id: number): Instance | undefined;
     removeInstance(instance: Instance): void;
     private loadInstances;

@@ -1,7 +1,7 @@
 export interface Setting {
   name: string,
   value: SettingValueType,
-  type: SettingValueTypeType,
+  type?: SettingValueTypeType,
   min: number | null,
   max: number | null
 }

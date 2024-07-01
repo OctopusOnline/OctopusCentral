@@ -1,9 +1,12 @@
-import { DockerInstanceProps } from '@octopuscentral/types';
+import { DockerInstanceProps, Setting } from '@octopuscentral/types';
+import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Connection } from 'mysql2';
 import { Instance } from './Instance';
+
+export { Docker, Socket, Instance };
 
 export class Controller extends EventEmitter {
   readonly table: string = 'Instances';
@@ -44,6 +47,29 @@ export class Controller extends EventEmitter {
 
     instance.on('socket connected', (error?: Error) => this.emit('instance socket connected', instance, error));
     instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
+  }
+
+  async createInstance(): Promise<Instance> {
+    const virtualInstance = new VirtualInstance(this.database);
+    await virtualInstance.init();
+    await this.fetchSyncInstances();
+    return this.getInstance(virtualInstance.id)!;
+  }
+
+  async updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void> {
+    if (settings.length === 0) return;
+
+    const virtualInstance = new VirtualInstance(this.database, instance.id);
+    for (const setting of settings) {
+      const virtualSetting = new VirtualSetting(
+        setting.name,
+        setting.value,
+        setting.type,
+        setting.min,
+        setting.max
+      );
+      await virtualInstance.settings.updateSetting(virtualSetting);
+    }
   }
 
   getInstance(id: number): Instance | undefined {

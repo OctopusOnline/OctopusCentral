@@ -115,6 +115,17 @@ class Controller extends node_events_1.default {
             return ((_a = (yield this._request('fetch instances'))) === null || _a === void 0 ? void 0 : _a.code) === 200 ? true : undefined;
         });
     }
+    createInstance() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = yield this._requestData('create instance');
+            return new Instance_1.Instance(this, result.id);
+        });
+    }
+    updateInstanceSettings(instance, settings) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this._requestData('update instance settings', { id: instance.id, settings });
+        });
+    }
     dockerGetClientProps() {
         return __awaiter(this, void 0, void 0, function* () {
             return yield this._requestData('docker get clientProps');

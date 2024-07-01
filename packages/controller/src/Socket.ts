@@ -72,6 +72,20 @@ export class Socket {
             socket.emit('response controller', 200 as any, sessionId as any, this.controller.docker.instanceProps);
             break;
 
+          case 'create instance':
+            instance = await this.controller.createInstance();
+            socket.emit('response controller', 200 as any, sessionId as any, instance.id);
+            break;
+
+          case 'update instance settings':
+            instance = this.controller.getInstance(args.id);
+            if (instance) {
+              await this.controller.updateInstanceSettings(instance, args.settings);
+              socket.emit('response controller', 200 as any, sessionId as any, true);
+            }
+            else socket.emit('response controller', 200 as any, sessionId as any, false);
+            break;
+
           case 'docker start instance':
             instance = this.controller.getInstance(args.id);
             socket.emit('response controller', 200 as any, sessionId as any,
