@@ -4,10 +4,10 @@ export class Setting implements SettingInterface {
   readonly name: string;
   readonly value: SettingValueType;
   readonly type: SettingValueTypeType;
-  readonly min: number | null;
-  readonly max: number | null;
+  readonly min?: number;
+  readonly max?: number;
 
-  constructor(name: string, value: SettingValueType, type?: SettingValueTypeType, min: number | null = null, max: number | null = null) {
+  constructor(name: string, value: SettingValueType, type?: SettingValueTypeType, min?: number, max?: number) {
     if (type !== undefined) this.type = type;
     else if        (value as unknown === null)      this.type = 'nul';
     else if (typeof value as unknown === 'string')  this.type = 'str';

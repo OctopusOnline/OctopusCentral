@@ -2,8 +2,8 @@ export interface Setting {
   name: string,
   value: SettingValueType,
   type?: SettingValueTypeType,
-  min: number | null,
-  max: number | null
+  min?: number,
+  max?: number
 }
 
 export type SettingValueType = string | number | boolean | null;

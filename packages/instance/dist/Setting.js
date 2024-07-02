@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Setting = void 0;
 class Setting {
-    constructor(name, value, type, min = null, max = null) {
+    constructor(name, value, type, min, max) {
         if (type !== undefined)
             this.type = type;
         else if (value === null)

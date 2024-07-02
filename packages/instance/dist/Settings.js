@@ -40,6 +40,12 @@ class Settings extends node_events_1.default {
             yield this.fetchSettings();
         });
     }
+    initSettings() {
+        return __awaiter(this, arguments, void 0, function* (settings = []) {
+            for (const setting of settings)
+                yield this.updateSetting(setting.name, setting.value, setting.type, setting.min, setting.max, false);
+        });
+    }
     loadSettings() {
         return __awaiter(this, void 0, void 0, function* () {
             return (yield this.instance._connection.execute(`
@@ -68,8 +74,8 @@ class Settings extends node_events_1.default {
         this.emit('setting get', setting);
         return setting;
     }
-    updateSetting(setting, settingValue, settingType, settingMin, settingMax) {
-        return __awaiter(this, void 0, void 0, function* () {
+    updateSetting(setting_1, settingValue_1, settingType_1, settingMin_1, settingMax_1) {
+        return __awaiter(this, arguments, void 0, function* (setting, settingValue, settingType, settingMin, settingMax, overwrite = true) {
             let thisSetting;
             if (setting instanceof Setting_1.Setting)
                 thisSetting = setting;
@@ -80,7 +86,7 @@ class Settings extends node_events_1.default {
             else
                 throw new Error('invalid params');
             const settingId = yield this.getSettingId(thisSetting.name);
-            if (settingId)
+            if (settingId && overwrite)
                 yield this.instance._connection.execute(`
           UPDATE ${this.table}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
@@ -93,7 +99,7 @@ class Settings extends node_events_1.default {
             const settingsIndex = this.settings.findIndex(_setting => _setting.name === thisSetting.name);
             if (settingsIndex === -1)
                 this.settings.push(thisSetting);
-            else
+            else if (overwrite)
                 this.settings[settingsIndex] = thisSetting;
             this.emit('setting update', thisSetting);
             return thisSetting;

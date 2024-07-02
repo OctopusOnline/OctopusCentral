@@ -1,4 +1,4 @@
-import { SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
+import { Setting as SettingInterface, SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting } from './Setting';
@@ -29,6 +29,18 @@ export class Settings extends EventEmitter {
         )
       `);
     await this.fetchSettings();
+  }
+
+  async initSettings(settings: SettingInterface[] = []): Promise<void> {
+    for (const setting of settings)
+      await this.updateSetting(
+        setting.name,
+        setting.value,
+        setting.type,
+        setting.min,
+        setting.max,
+        false
+      );
   }
 
   private async loadSettings(): Promise<Setting[]> {
@@ -68,7 +80,8 @@ export class Settings extends EventEmitter {
     settingValue?: SettingValueType,
     settingType?: SettingValueTypeType,
     settingMin?: number,
-    settingMax?: number
+    settingMax?: number,
+    overwrite: boolean = true
   ): Promise<Setting> {
     let thisSetting: Setting;
     if (setting instanceof Setting) thisSetting = setting as Setting;
@@ -83,7 +96,7 @@ export class Settings extends EventEmitter {
 
     const settingId = await this.getSettingId(thisSetting.name);
 
-    if (settingId)
+    if (settingId && overwrite)
       await this.instance._connection.execute(`
           UPDATE ${this.table}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
@@ -99,7 +112,7 @@ export class Settings extends EventEmitter {
 
     const settingsIndex = this.settings.findIndex(_setting => _setting.name === thisSetting.name);
     if (settingsIndex === -1) this.settings.push(thisSetting);
-    else this.settings[settingsIndex] = thisSetting;
+    else if (overwrite) this.settings[settingsIndex] = thisSetting;
 
     this.emit('setting update', thisSetting);
     return thisSetting;
