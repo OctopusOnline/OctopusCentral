@@ -19,8 +19,8 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@octopuscentral/types": "^1.3.2",
     "mysql2": "^3.10.2",
+    "@octopuscentral/types": "^1.3.2",
     "socket.io-client": "^4.7.5"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"

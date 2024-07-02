@@ -21,8 +21,8 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "express": "^4.19.2",
     "mysql2": "^3.10.2",
+    "express": "^4.19.2",
     "socket.io": "^4.7.5"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"
