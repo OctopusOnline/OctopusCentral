@@ -40,8 +40,13 @@ class Settings extends node_events_1.default {
             yield this.fetchSettings();
         });
     }
-    initSettings() {
-        return __awaiter(this, arguments, void 0, function* (settings = []) {
+    initDefaultSettings() {
+        return __awaiter(this, arguments, void 0, function* (settings = {}) {
+            if (!Array.isArray(settings) && typeof settings === 'object')
+                settings = Object.keys(settings).map(key => ({
+                    name: key,
+                    value: settings[key]
+                }));
             for (const setting of settings)
                 yield this.updateSetting(setting.name, setting.value, setting.type, setting.min, setting.max, false);
         });

@@ -1,3 +1,6 @@
+export type SettingValueType = string | number | boolean | null;
+export type SettingValueTypeType = 'str' | 'num' | 'bol' | 'nul';
+
 export interface Setting {
   name: string,
   value: SettingValueType,
@@ -6,5 +9,4 @@ export interface Setting {
   max?: number
 }
 
-export type SettingValueType = string | number | boolean | null;
-export type SettingValueTypeType = 'str' | 'num' | 'bol' | 'nul';
+export type SettingsArrayType = { [key: string]: SettingValueType };

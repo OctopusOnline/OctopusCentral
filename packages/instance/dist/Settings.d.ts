@@ -1,4 +1,4 @@
-import { Setting as SettingInterface, SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
+import { Setting as SettingInterface, SettingsArrayType, SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting } from './Setting';
@@ -8,7 +8,7 @@ export declare class Settings extends EventEmitter {
     private settings;
     constructor(instance: Instance);
     init(): Promise<void>;
-    initSettings(settings?: SettingInterface[]): Promise<void>;
+    initDefaultSettings(settings?: SettingInterface[] | SettingsArrayType): Promise<void>;
     private loadSettings;
     fetchSettings(): Promise<Setting[]>;
     private getSettingId;
