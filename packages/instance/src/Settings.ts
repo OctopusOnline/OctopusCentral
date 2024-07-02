@@ -72,12 +72,44 @@ export class Settings extends EventEmitter {
     ) as unknown as { id: number }[])[0]?.id;
   }
 
-  getSetting(
-    name: string
-  ): Setting | undefined {
+  getSetting(name: string): Setting | undefined {
     const setting = this.settings.find(setting => setting.name === name);
     this.emit('setting get', setting);
     return setting;
+  }
+
+  getSettingValue(name: string): SettingValueType | undefined {
+    return this.getSetting(name)?.value;
+  }
+
+  getSettingStrValue(name: string): string | undefined {
+    const setting = this.getSetting(name);
+    return setting instanceof Setting ? String(setting.value) : undefined;
+  }
+
+  getSettingNumValue(name: string): number | undefined {
+    const setting = this.getSetting(name);
+    if (!(setting instanceof Setting)) return undefined;
+    const value: number = Number(setting.value);
+    return isNaN(value) ? undefined : value;
+  }
+
+  getSettingBolValue(name: string): boolean | undefined {
+    const setting = this.getSetting(name);
+    return setting instanceof Setting && setting.type === 'bol'
+      ? setting.value as boolean : undefined;
+  }
+
+  getSettingStrValueF(name: string): string {
+    return this.getSettingStrValue(name) as string;
+  }
+
+  getSettingNumValueF(name: string): number {
+    return this.getSettingNumValue(name) as number;
+  }
+
+  getSettingBolValueF(name: string): boolean {
+    return this.getSettingBolValue(name) as boolean;
   }
 
   async updateSetting(

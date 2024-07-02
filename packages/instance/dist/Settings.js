@@ -79,6 +79,35 @@ class Settings extends node_events_1.default {
         this.emit('setting get', setting);
         return setting;
     }
+    getSettingValue(name) {
+        var _a;
+        return (_a = this.getSetting(name)) === null || _a === void 0 ? void 0 : _a.value;
+    }
+    getSettingStrValue(name) {
+        const setting = this.getSetting(name);
+        return setting instanceof Setting_1.Setting ? String(setting.value) : undefined;
+    }
+    getSettingNumValue(name) {
+        const setting = this.getSetting(name);
+        if (!(setting instanceof Setting_1.Setting))
+            return undefined;
+        const value = Number(setting.value);
+        return isNaN(value) ? undefined : value;
+    }
+    getSettingBolValue(name) {
+        const setting = this.getSetting(name);
+        return setting instanceof Setting_1.Setting && setting.type === 'bol'
+            ? setting.value : undefined;
+    }
+    getSettingStrValueF(name) {
+        return this.getSettingStrValue(name);
+    }
+    getSettingNumValueF(name) {
+        return this.getSettingNumValue(name);
+    }
+    getSettingBolValueF(name) {
+        return this.getSettingBolValue(name);
+    }
     updateSetting(setting_1, settingValue_1, settingType_1, settingMin_1, settingMax_1) {
         return __awaiter(this, arguments, void 0, function* (setting, settingValue, settingType, settingMin, settingMax, overwrite = true) {
             let thisSetting;
