@@ -19,23 +19,33 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var _Instance_id;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = exports.Socket = exports.Setting = exports.Settings = void 0;
+const types_1 = require("@octopuscentral/types");
 const Setting_1 = require("./Setting");
 Object.defineProperty(exports, "Setting", { enumerable: true, get: function () { return Setting_1.Setting; } });
 const Socket_1 = require("./Socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 const Settings_1 = require("./Settings");
 Object.defineProperty(exports, "Settings", { enumerable: true, get: function () { return Settings_1.Settings; } });
+const node_process_1 = __importDefault(require("node:process"));
 class Instance {
     get id() { return __classPrivateFieldGet(this, _Instance_id, "f"); }
-    constructor(connection, id) {
+    constructor(connection, id, forceIdFromEnvVar = true) {
         this.table = 'Instances';
         _Instance_id.set(this, void 0);
         if (!connection)
             throw new Error('no database connection given');
         this._connection = connection;
+        if (forceIdFromEnvVar || id === undefined) {
+            id = Number(node_process_1.default.env[types_1.instanceIdEnvVarName]);
+            if (isNaN(id))
+                throw new Error('id and id env var value are not set');
+        }
         __classPrivateFieldSet(this, _Instance_id, id, "f");
         this.settings = new Settings_1.Settings(this);
         this.socket = new Socket_1.Socket(this);

@@ -22,6 +22,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 var _Docker_selfContainer;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Docker = void 0;
+const types_1 = require("@octopuscentral/types");
 const node_docker_api_1 = require("node-docker-api");
 const Instance_1 = require("./Instance");
 const os_1 = require("os");
@@ -98,6 +99,9 @@ class Docker {
                 AttachStderr: true,
                 OpenStdin: false,
                 StdinOnce: false,
+                Env: [
+                    `${types_1.instanceIdEnvVarName}=${instance.id}`
+                ],
                 Hostname: containerName,
                 ExposedPorts: {
                     [instance.socketPort]: {}

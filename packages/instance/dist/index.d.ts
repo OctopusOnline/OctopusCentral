@@ -10,7 +10,7 @@ export declare class Instance {
     readonly socket: Socket;
     readonly settings: Settings;
     get id(): number;
-    constructor(connection: Connection, id?: number);
+    constructor(connection: Connection, id?: number, forceIdFromEnvVar?: boolean);
     init(): Promise<void>;
     start(): Promise<void>;
     setSocketHostname(hostname: string): Promise<void>;
