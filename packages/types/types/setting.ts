@@ -9,4 +9,4 @@ export interface Setting {
   max?: number
 }
 
-export type SettingsArrayType = { [key: string]: SettingValueType };
+export type SettingsObjectType = { [key: string]: SettingValueType };
