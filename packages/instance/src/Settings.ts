@@ -145,7 +145,7 @@ export class Settings extends EventEmitter {
     let thisSetting: Setting;
     if (setting instanceof Setting) thisSetting = setting as Setting;
     else if (typeof setting as unknown === 'string' && settingValue !== undefined) {
-      const loadedSetting = await this.getSetting(setting);
+      const loadedSetting = this.getSetting(setting);
       thisSetting = new Setting(
         setting, settingValue, settingType,
         settingMin === undefined ? loadedSetting?.min : settingMin,
@@ -162,7 +162,7 @@ export class Settings extends EventEmitter {
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]
       );
-    else
+    else if (settingId === undefined)
       await this.instance._connection.execute(`
           INSERT INTO ${instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`,

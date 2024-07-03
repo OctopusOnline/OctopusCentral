@@ -134,7 +134,7 @@ class Settings extends node_events_1.default {
             if (setting instanceof Setting_1.Setting)
                 thisSetting = setting;
             else if (typeof setting === 'string' && settingValue !== undefined) {
-                const loadedSetting = yield this.getSetting(setting);
+                const loadedSetting = this.getSetting(setting);
                 thisSetting = new Setting_1.Setting(setting, settingValue, settingType, settingMin === undefined ? loadedSetting === null || loadedSetting === void 0 ? void 0 : loadedSetting.min : settingMin, settingMax === undefined ? loadedSetting === null || loadedSetting === void 0 ? void 0 : loadedSetting.max : settingMax);
             }
             else
@@ -146,7 +146,7 @@ class Settings extends node_events_1.default {
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]);
-            else
+            else if (settingId === undefined)
                 yield this.instance._connection.execute(`
           INSERT INTO ${types_1.instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]);
