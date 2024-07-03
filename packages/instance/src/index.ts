@@ -48,7 +48,7 @@ export class Instance {
         throw new Error(`env var ${instanceDatabaseEnvVarName} is not set`);
       this.#database = new Database(url);
       try {
-        this.#database.init();
+        await this.#database.init();
       } catch (error: any) {
         throw new Error(`could not connect to database at '${url}': ${error.message}`);
       }

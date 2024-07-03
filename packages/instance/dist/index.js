@@ -70,7 +70,7 @@ class Instance {
                     throw new Error(`env var ${types_1.instanceDatabaseEnvVarName} is not set`);
                 __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(url), "f");
                 try {
-                    __classPrivateFieldGet(this, _Instance_database, "f").init();
+                    yield __classPrivateFieldGet(this, _Instance_database, "f").init();
                 }
                 catch (error) {
                     throw new Error(`could not connect to database at '${url}': ${error.message}`);
