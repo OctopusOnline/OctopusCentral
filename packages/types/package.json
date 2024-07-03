@@ -4,8 +4,14 @@
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
-  "main": "types.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist"
   }
 }

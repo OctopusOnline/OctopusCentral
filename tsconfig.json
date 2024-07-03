@@ -2,6 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+      "@octopuscentral/types": ["packages/types/src"],
       "@octopuscentral/central": ["packages/central/src"],
       "@octopuscentral/controller": ["packages/controller/src"],
       "@octopuscentral/instance": ["packages/instance/src"]

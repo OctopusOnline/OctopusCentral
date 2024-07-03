@@ -1,4 +1,4 @@
-import { Setting as SettingInterface, SettingsObjectType, SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
+import { Setting as SettingInterface, SettingsObjectType, SettingValueType, SettingValueTypeType } from '../../types';
 import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting } from './Setting';
