@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/instance",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -20,7 +20,7 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@octopuscentral/types": "^1.4.2",
+    "@octopuscentral/types": "^1.4.5",
     "express": "^4.19.2",
     "mysql2": "^3.10.2",
     "socket.io": "^4.7.5"
