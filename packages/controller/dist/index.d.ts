@@ -7,7 +7,6 @@ import { Instance } from './Instance';
 export { Docker, Socket, Instance };
 export declare class Controller extends EventEmitter {
     #private;
-    readonly table: string;
     readonly serviceName: string;
     instancesFetchInterval: number;
     readonly database: Connection;

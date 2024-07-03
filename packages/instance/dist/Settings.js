@@ -13,19 +13,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Settings = void 0;
+const types_1 = require("@octopuscentral/types");
 const node_events_1 = __importDefault(require("node:events"));
 const Setting_1 = require("./Setting");
 class Settings extends node_events_1.default {
     constructor(instance) {
         super();
-        this.table = 'InstanceSettings';
         this.settings = [];
         this.instance = instance;
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.instance._connection.query(`
-        CREATE TABLE IF NOT EXISTS ${this.table} (
+        CREATE TABLE IF NOT EXISTS ${types_1.instanceSettingsTableName} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
           instance_id INT UNSIGNED NOT NULL,
           name        VARCHAR(255) NOT NULL,
@@ -33,7 +33,7 @@ class Settings extends node_events_1.default {
           type        CHAR(3)      NOT NULL,
           min         INT UNSIGNED     NULL,
           max         INT UNSIGNED     NULL,
-          FOREIGN KEY (instance_id) REFERENCES ${this.instance.table} (id),
+          FOREIGN KEY (instance_id) REFERENCES ${types_1.instancesTableName} (id),
           UNIQUE INDEX instance_setting (instance_id, name)
         )
       `);
@@ -56,7 +56,7 @@ class Settings extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             return (yield this.instance._connection.execute(`
         SELECT name, value, type, min, max
-        FROM ${this.table}
+        FROM ${types_1.instanceSettingsTableName}
         WHERE instance_id = ?`, [this.instance.id])).map(({ name, value, type, min, max }) => new Setting_1.Setting(name, value, type, min, max));
         });
     }
@@ -70,7 +70,7 @@ class Settings extends node_events_1.default {
             var _a;
             return (_a = (yield this.instance._connection.execute(`
         SELECT id
-        FROM ${this.table}
+        FROM ${types_1.instanceSettingsTableName}
         WHERE instance_id = ?
         AND name = ?`, [this.instance.id, name]))[0]) === null || _a === void 0 ? void 0 : _a.id;
         });
@@ -130,13 +130,13 @@ class Settings extends node_events_1.default {
             const settingId = yield this.getSettingId(thisSetting.name);
             if (settingId && overwrite)
                 yield this.instance._connection.execute(`
-          UPDATE ${this.table}
+          UPDATE ${types_1.instanceSettingsTableName}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]);
             else
                 yield this.instance._connection.execute(`
-          INSERT INTO ${this.table} (instance_id, name, value, type, min, max)
+          INSERT INTO ${types_1.instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]);
             const settingsIndex = this.settings.findIndex(_setting => _setting.name === thisSetting.name);
             if (settingsIndex === -1)
@@ -150,7 +150,7 @@ class Settings extends node_events_1.default {
     deleteSetting(setting) {
         return __awaiter(this, void 0, void 0, function* () {
             const settingName = setting instanceof Setting_1.Setting ? setting.name : setting;
-            yield this.instance._connection.execute(`DELETE FROM ${this.table} WHERE instance_id = ? AND name = ?`, [this.instance.id, settingName]);
+            yield this.instance._connection.execute(`DELETE FROM ${types_1.instanceSettingsTableName} WHERE instance_id = ? AND name = ?`, [this.instance.id, settingName]);
             this.settings = this.settings.filter(({ name }) => name !== settingName);
             this.emit('setting delete', settingName);
         });

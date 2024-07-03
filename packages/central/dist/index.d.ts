@@ -7,7 +7,6 @@ import { Instance } from './Instance';
 export { Controller, Instance, InstanceSettings };
 export declare class Central extends EventEmitter {
     #private;
-    readonly table: string;
     readonly _connection: Connection;
     controllersFetchInterval: number;
     get controllers(): Controller[];

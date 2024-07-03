@@ -5,7 +5,6 @@ import { Settings } from './Settings';
 export { Settings, Setting, Socket };
 export declare class Instance {
     #private;
-    readonly table: string;
     readonly _connection: Connection;
     readonly socket: Socket;
     readonly settings: Settings;

@@ -25,6 +25,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _Central_controllers, _Central_running;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Central = exports.InstanceSettings = exports.Instance = exports.Controller = void 0;
+const types_1 = require("@octopuscentral/types");
 const InstanceSettings_1 = require("./InstanceSettings");
 Object.defineProperty(exports, "InstanceSettings", { enumerable: true, get: function () { return InstanceSettings_1.InstanceSettings; } });
 const node_events_1 = __importDefault(require("node:events"));
@@ -38,7 +39,6 @@ class Central extends node_events_1.default {
     get running() { return __classPrivateFieldGet(this, _Central_running, "f"); }
     constructor(connection) {
         super();
-        this.table = 'Controllers';
         this.controllersFetchInterval = 10000;
         _Central_controllers.set(this, []);
         _Central_running.set(this, false);
@@ -47,7 +47,7 @@ class Central extends node_events_1.default {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this._connection.query(`
-      CREATE TABLE IF NOT EXISTS ${this.table} (
+      CREATE TABLE IF NOT EXISTS ${types_1.controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHost VARCHAR(255)     NULL
       )`);
@@ -71,7 +71,7 @@ class Central extends node_events_1.default {
     insertNewController(socketHost) {
         return __awaiter(this, void 0, void 0, function* () {
             return new Controller_1.Controller(Number((yield this._connection.query(`
-          INSERT INTO ${this.table} (socketHost)
+          INSERT INTO ${types_1.controllersTableName} (socketHost)
           VALUES (?)`, [socketHost])).insertId), socketHost);
         });
     }
@@ -79,7 +79,7 @@ class Central extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             if (!(yield this.loadController(controller.id)))
                 yield this._connection.execute(`
-          INSERT INTO ${this.table} (id, socketHost)
+          INSERT INTO ${types_1.controllersTableName} (id, socketHost)
           VALUES (?, ?)`, [controller.id, controller.socketHost]);
         });
     }
@@ -99,7 +99,7 @@ class Central extends node_events_1.default {
     }
     deleteController(controller) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._connection.execute(`DELETE FROM ${this.table} WHERE id = ?`, [controller.id]);
+            yield this._connection.execute(`DELETE FROM ${types_1.controllersTableName} WHERE id = ?`, [controller.id]);
         });
     }
     fetchSyncControllers() {
@@ -118,13 +118,13 @@ class Central extends node_events_1.default {
     }
     loadController(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this._connection.query(`SELECT id, socketHost FROM ${this.table} WHERE id = ?`, [id]))
+            return (yield this._connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName} WHERE id = ?`, [id]))
                 .map(({ id, socketHost }) => new Controller_1.Controller(id, socketHost || undefined))[0];
         });
     }
     loadControllers() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this._connection.query(`SELECT id, socketHost FROM ${this.table}`))
+            return (yield this._connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName}`))
                 .map(({ id, socketHost }) => new Controller_1.Controller(id, socketHost || undefined));
         });
     }

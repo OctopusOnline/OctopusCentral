@@ -25,6 +25,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _Controller_instances, _Controller_running;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = exports.Instance = exports.Socket = exports.Docker = void 0;
+const types_1 = require("@octopuscentral/types");
 const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
 const Socket_1 = require("./Socket");
@@ -38,7 +39,6 @@ class Controller extends node_events_1.default {
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
     constructor(serviceName, database, instanceDockerProps) {
         super();
-        this.table = 'Instances';
         this.instancesFetchInterval = 5000;
         _Controller_instances.set(this, []);
         _Controller_running.set(this, false);
@@ -92,7 +92,7 @@ class Controller extends node_events_1.default {
     }
     loadInstances() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this.database.query(`SELECT id, socketHostname FROM ${this.table}`))
+            return (yield this.database.query(`SELECT id, socketHostname FROM ${types_1.instancesTableName}`))
                 .map(({ id, socketHostname }) => new Instance_1.Instance(id, socketHostname));
         });
     }
@@ -112,7 +112,7 @@ class Controller extends node_events_1.default {
     }
     updateInstanceSocketHostname(instance_2, socketHostname_1) {
         return __awaiter(this, arguments, void 0, function* (instance, socketHostname, autoReconnect = false) {
-            yield this.database.execute(`UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
+            yield this.database.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
             instance.socketHostname = socketHostname;
             if (autoReconnect && instance.connected)
                 yield instance.connect(true);

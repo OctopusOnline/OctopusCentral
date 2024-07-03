@@ -1,3 +1,5 @@
+export const tableName: string = 'InstanceSettings';
+
 export type SettingValueType = string | number | boolean | null;
 export type SettingValueTypeType = 'str' | 'num' | 'bol' | 'nul';
 

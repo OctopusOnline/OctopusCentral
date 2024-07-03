@@ -3,7 +3,6 @@ import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting } from './Setting';
 export declare class Settings extends EventEmitter {
-    readonly table: string;
     private readonly instance;
     private settings;
     constructor(instance: Instance);

@@ -1,11 +1,16 @@
-import { Setting as SettingInterface, SettingsObjectType, SettingValueType, SettingValueTypeType } from '@octopuscentral/types';
+import {
+  instanceSettingsTableName,
+  instancesTableName,
+  Setting as SettingInterface,
+  SettingsObjectType,
+  SettingValueType,
+  SettingValueTypeType
+} from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { Instance } from '.';
 import { Setting } from './Setting';
 
 export class Settings extends EventEmitter {
-  readonly table: string = 'InstanceSettings';
-
   private readonly instance: Instance;
   private settings: Setting[] = [];
 
@@ -16,7 +21,7 @@ export class Settings extends EventEmitter {
 
   async init(): Promise<void> {
     await this.instance._connection.query(`
-        CREATE TABLE IF NOT EXISTS ${this.table} (
+        CREATE TABLE IF NOT EXISTS ${instanceSettingsTableName} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
           instance_id INT UNSIGNED NOT NULL,
           name        VARCHAR(255) NOT NULL,
@@ -24,7 +29,7 @@ export class Settings extends EventEmitter {
           type        CHAR(3)      NOT NULL,
           min         INT UNSIGNED     NULL,
           max         INT UNSIGNED     NULL,
-          FOREIGN KEY (instance_id) REFERENCES ${this.instance.table} (id),
+          FOREIGN KEY (instance_id) REFERENCES ${instancesTableName} (id),
           UNIQUE INDEX instance_setting (instance_id, name)
         )
       `);
@@ -52,7 +57,7 @@ export class Settings extends EventEmitter {
   private async loadSettings(): Promise<Setting[]> {
     return (await this.instance._connection.execute(`
         SELECT name, value, type, min, max
-        FROM ${this.table}
+        FROM ${instanceSettingsTableName}
         WHERE instance_id = ?`,
       [this.instance.id]
     ) as unknown as Setting[]).map(({ name, value, type, min, max }) =>
@@ -66,7 +71,7 @@ export class Settings extends EventEmitter {
   private async getSettingId(name: string): Promise<number | undefined> {
     return (await this.instance._connection.execute(`
         SELECT id
-        FROM ${this.table}
+        FROM ${instanceSettingsTableName}
         WHERE instance_id = ?
         AND name = ?`,
       [this.instance.id, name]
@@ -142,14 +147,14 @@ export class Settings extends EventEmitter {
 
     if (settingId && overwrite)
       await this.instance._connection.execute(`
-          UPDATE ${this.table}
+          UPDATE ${instanceSettingsTableName}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]
       );
     else
       await this.instance._connection.execute(`
-          INSERT INTO ${this.table} (instance_id, name, value, type, min, max)
+          INSERT INTO ${instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`,
         [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]
       );
@@ -168,7 +173,7 @@ export class Settings extends EventEmitter {
     const settingName = setting instanceof Setting ? setting.name : setting;
 
     await this.instance._connection.execute(
-      `DELETE FROM ${this.table} WHERE instance_id = ? AND name = ?`,
+      `DELETE FROM ${instanceSettingsTableName} WHERE instance_id = ? AND name = ?`,
       [this.instance.id, settingName]
     );
     this.settings = this.settings.filter(({ name }) => name !== settingName);

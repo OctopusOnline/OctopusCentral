@@ -1,4 +1,4 @@
-import { CentralInstanceFilter } from '@octopuscentral/types';
+import { controllersTableName, CentralInstanceFilter } from '@octopuscentral/types';
 import { InstanceSettings } from './InstanceSettings';
 import { Connection } from 'mysql2';
 import EventEmitter from 'node:events';
@@ -9,8 +9,6 @@ import { Instance } from './Instance';
 export { Controller, Instance, InstanceSettings };
 
 export class Central extends EventEmitter {
-  readonly table: string = 'Controllers';
-
   readonly _connection: Connection;
 
   controllersFetchInterval: number = 10000;
@@ -28,7 +26,7 @@ export class Central extends EventEmitter {
 
   async init(): Promise<void> {
     await this._connection.query(`
-      CREATE TABLE IF NOT EXISTS ${this.table} (
+      CREATE TABLE IF NOT EXISTS ${controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHost VARCHAR(255)     NULL
       )`);
@@ -51,7 +49,7 @@ export class Central extends EventEmitter {
   private async insertNewController(socketHost?: string): Promise<Controller> {
     return new Controller(
       Number((await this._connection.query(`
-          INSERT INTO ${this.table} (socketHost)
+          INSERT INTO ${controllersTableName} (socketHost)
           VALUES (?)`,
         [socketHost]) as unknown as {insertId:any}).insertId),
       socketHost);
@@ -60,7 +58,7 @@ export class Central extends EventEmitter {
   private async insertController(controller: Controller): Promise<void> {
     if (!await this.loadController(controller.id))
       await this._connection.execute(`
-          INSERT INTO ${this.table} (id, socketHost)
+          INSERT INTO ${controllersTableName} (id, socketHost)
           VALUES (?, ?)`,
         [controller.id, controller.socketHost]);
   }
@@ -80,7 +78,7 @@ export class Central extends EventEmitter {
   }
 
   private async deleteController(controller: Controller): Promise<void> {
-    await this._connection.execute(`DELETE FROM ${this.table} WHERE id = ?`, [controller.id])
+    await this._connection.execute(`DELETE FROM ${controllersTableName} WHERE id = ?`, [controller.id])
   }
 
   async fetchSyncControllers(): Promise<Controller[]> {
@@ -100,12 +98,12 @@ export class Central extends EventEmitter {
   }
 
   private async loadController(id: number): Promise<Controller | undefined> {
-    return (await this._connection.query(`SELECT id, socketHost FROM ${this.table} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
+    return (await this._connection.query(`SELECT id, socketHost FROM ${controllersTableName} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined))[0];
   }
 
   private async loadControllers(): Promise<Controller[]> {
-    return (await this._connection.query(`SELECT id, socketHost FROM ${this.table}`) as unknown as {id: number, socketHost: string|null}[])
+    return (await this._connection.query(`SELECT id, socketHost FROM ${controllersTableName}`) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined));
   }
 

@@ -1,4 +1,4 @@
-import { DockerInstanceProps, Setting } from '@octopuscentral/types';
+import { instancesTableName, DockerInstanceProps, Setting } from '@octopuscentral/types';
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
 import { Socket } from './Socket';
@@ -9,8 +9,6 @@ import { Instance } from './Instance';
 export { Docker, Socket, Instance };
 
 export class Controller extends EventEmitter {
-  readonly table: string = 'Instances';
-
   readonly serviceName: string;
   instancesFetchInterval: number = 5000;
 
@@ -86,7 +84,7 @@ export class Controller extends EventEmitter {
   }
 
   private async loadInstances(): Promise<Instance[]> {
-    return (await this.database.query(`SELECT id, socketHostname FROM ${this.table}`) as unknown as {id: number, socketHostname: string}[])
+    return (await this.database.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
       .map(({ id, socketHostname }) => new Instance(id, socketHostname));
   }
 
@@ -108,7 +106,7 @@ export class Controller extends EventEmitter {
 
   async updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect: boolean = false): Promise<void> {
     await this.database.execute(
-      `UPDATE ${this.table} SET socketHostname = ? WHERE id = ?`,
+      `UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`,
       [socketHostname, instance.id]);
     instance.socketHostname = socketHostname;
 
