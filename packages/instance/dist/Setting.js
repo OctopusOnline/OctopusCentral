@@ -5,7 +5,7 @@ class Setting {
     constructor(name, value, type, min, max) {
         if (type !== undefined)
             this.type = type;
-        else if (value === null)
+        else if ([undefined, null].includes(value))
             this.type = 'nul';
         else if (typeof value === 'string')
             this.type = 'str';

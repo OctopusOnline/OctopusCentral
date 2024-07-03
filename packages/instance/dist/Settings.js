@@ -42,6 +42,7 @@ class Settings extends node_events_1.default {
     }
     initDefaultSettings() {
         return __awaiter(this, arguments, void 0, function* (settings = {}) {
+            yield this.fetchSettings();
             if (!Array.isArray(settings) && typeof settings === 'object')
                 settings = Object.keys(settings).map(key => ({
                     name: key,
@@ -85,19 +86,26 @@ class Settings extends node_events_1.default {
     }
     getSettingStrValue(name) {
         const setting = this.getSetting(name);
-        return setting instanceof Setting_1.Setting ? String(setting.value) : undefined;
+        return setting instanceof Setting_1.Setting
+            ? (setting.type === 'nul' ? null : String(setting.value))
+            : undefined;
     }
     getSettingNumValue(name) {
         const setting = this.getSetting(name);
         if (!(setting instanceof Setting_1.Setting))
             return undefined;
+        if (setting.type === 'nul')
+            return null;
         const value = Number(setting.value);
         return isNaN(value) ? undefined : value;
     }
     getSettingBolValue(name) {
         const setting = this.getSetting(name);
-        return setting instanceof Setting_1.Setting && setting.type === 'bol'
-            ? setting.value : undefined;
+        return setting instanceof Setting_1.Setting
+            ? (setting.type === 'nul' ? null
+                : (setting.type === 'bol' ? setting.value
+                    : undefined))
+            : undefined;
     }
     getSettingStrValueF(name) {
         return this.getSettingStrValue(name);

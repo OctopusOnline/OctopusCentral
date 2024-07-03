@@ -14,9 +14,9 @@ export declare class Settings extends EventEmitter {
     private getSettingId;
     getSetting(name: string): Setting | undefined;
     getSettingValue(name: string): SettingValueType | undefined;
-    getSettingStrValue(name: string): string | undefined;
-    getSettingNumValue(name: string): number | undefined;
-    getSettingBolValue(name: string): boolean | undefined;
+    getSettingStrValue(name: string): string | null | undefined;
+    getSettingNumValue(name: string): number | null | undefined;
+    getSettingBolValue(name: string): boolean | null | undefined;
     getSettingStrValueF(name: string): string;
     getSettingNumValueF(name: string): number;
     getSettingBolValueF(name: string): boolean;

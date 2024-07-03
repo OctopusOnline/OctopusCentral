@@ -83,22 +83,28 @@ export class Settings extends EventEmitter {
     return this.getSetting(name)?.value;
   }
 
-  getSettingStrValue(name: string): string | undefined {
+  getSettingStrValue(name: string): string | null | undefined {
     const setting = this.getSetting(name);
-    return setting instanceof Setting ? String(setting.value) : undefined;
+    return setting instanceof Setting
+      ? (setting.type === 'nul' ? null : String(setting.value))
+      : undefined;
   }
 
-  getSettingNumValue(name: string): number | undefined {
+  getSettingNumValue(name: string): number | null | undefined {
     const setting = this.getSetting(name);
     if (!(setting instanceof Setting)) return undefined;
+    if (setting.type === 'nul') return null;
     const value: number = Number(setting.value);
     return isNaN(value) ? undefined : value;
   }
 
-  getSettingBolValue(name: string): boolean | undefined {
+  getSettingBolValue(name: string): boolean | null | undefined {
     const setting = this.getSetting(name);
-    return setting instanceof Setting && setting.type === 'bol'
-      ? setting.value as boolean : undefined;
+    return setting instanceof Setting
+      ? (setting.type === 'nul' ? null
+        : (setting.type === 'bol' ? setting.value as boolean
+          : undefined))
+      : undefined;
   }
 
   getSettingStrValueF(name: string): string {

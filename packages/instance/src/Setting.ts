@@ -7,12 +7,12 @@ export class Setting implements SettingInterface {
   readonly min?: number;
   readonly max?: number;
 
-  constructor(name: string, value: SettingValueType, type?: SettingValueTypeType, min?: number, max?: number) {
+  constructor(name: string, value: SettingValueType | undefined, type?: SettingValueTypeType, min?: number, max?: number) {
     if (type !== undefined) this.type = type;
-    else if        (value as unknown === null)      this.type = 'nul';
-    else if (typeof value as unknown === 'string')  this.type = 'str';
-    else if (typeof value as unknown === 'number')  this.type = 'num';
-    else if (typeof value as unknown === 'boolean') this.type = 'bol';
+    else if ([undefined,null].includes(value as any)) this.type = 'nul';
+    else if (typeof value as unknown === 'string'   ) this.type = 'str';
+    else if (typeof value as unknown === 'number'   ) this.type = 'num';
+    else if (typeof value as unknown === 'boolean'  ) this.type = 'bol';
     else throw new Error(`unknown type '${type}' for setting '${name}' with value '${value}'`);
 
     switch (this.type) {

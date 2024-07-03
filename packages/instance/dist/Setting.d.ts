@@ -5,6 +5,6 @@ export declare class Setting implements SettingInterface {
     readonly type: SettingValueTypeType;
     readonly min?: number;
     readonly max?: number;
-    constructor(name: string, value: SettingValueType, type?: SettingValueTypeType, min?: number, max?: number);
+    constructor(name: string, value: SettingValueType | undefined, type?: SettingValueTypeType, min?: number, max?: number);
     get valueString(): string;
 }
