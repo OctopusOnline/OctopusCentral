@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/controller",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -20,7 +20,7 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@octopuscentral/instance": "^1.4.8",
+    "@octopuscentral/instance": "^1.4.9",
     "@octopuscentral/types": "^1.4.7",
     "express": "^4.19.2",
     "mariadb": "^3.3.1",
