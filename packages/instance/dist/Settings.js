@@ -65,6 +65,18 @@ class Settings extends node_events_1.default {
             return this.settings = yield this.loadSettings();
         });
     }
+    getAvgSettingNumValue(name) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            yield this.fetchSettings();
+            if (!this.getSetting(name))
+                return undefined;
+            return (_a = (yield this.instance._connection.execute(`
+      SELECT AVG(CAST(? AS DECIMAL(20, 5))) AS value
+      FROM ${types_1.instanceSettingsTableName}
+    `, [name]))[0]) === null || _a === void 0 ? void 0 : _a.value;
+        });
+    }
     getSettingId(name) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;

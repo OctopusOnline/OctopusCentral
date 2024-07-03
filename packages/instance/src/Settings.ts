@@ -68,6 +68,16 @@ export class Settings extends EventEmitter {
     return this.settings = await this.loadSettings();
   }
 
+  async getAvgSettingNumValue(name: string): Promise<number | undefined> {
+    await this.fetchSettings();
+    if (!this.getSetting(name))
+      return undefined;
+    return (await this.instance._connection.execute(`
+      SELECT AVG(CAST(? AS DECIMAL(20, 5))) AS value
+      FROM ${instanceSettingsTableName}
+    `, [name]) as unknown as { value?: number }[])[0]?.value
+  }
+
   private async getSettingId(name: string): Promise<number | undefined> {
     return (await this.instance._connection.execute(`
         SELECT id

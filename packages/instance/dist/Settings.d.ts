@@ -10,6 +10,7 @@ export declare class Settings extends EventEmitter {
     initDefaultSettings(settings?: SettingInterface[] | SettingsObjectType): Promise<void>;
     private loadSettings;
     fetchSettings(): Promise<Setting[]>;
+    getAvgSettingNumValue(name: string): Promise<number | undefined>;
     private getSettingId;
     getSetting(name: string): Setting | undefined;
     getSettingValue(name: string): SettingValueType | undefined;
