@@ -48,7 +48,7 @@ export class Controller extends EventEmitter {
   }
 
   async createInstance(): Promise<Instance> {
-    const virtualInstance = new VirtualInstance(this.database.connection);
+    const virtualInstance = new VirtualInstance(this.database.url);
     await virtualInstance.init();
     await this.fetchSyncInstances();
     return this.getInstance(virtualInstance.id)!;
@@ -57,7 +57,7 @@ export class Controller extends EventEmitter {
   async updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void> {
     if (settings.length === 0) return;
 
-    const virtualInstance = new VirtualInstance(this.database.connection, instance.id);
+    const virtualInstance = new VirtualInstance(this.database.url, instance.id);
     for (const setting of settings) {
       const virtualSetting = new VirtualSetting(
         setting.name,

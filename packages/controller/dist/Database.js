@@ -32,7 +32,7 @@ class Database {
     }
     get connection() {
         if (__classPrivateFieldGet(this, _Database_connection, "f") === undefined)
-            throw new Error('database is not connected  ( maybe run start() first? )');
+            throw new Error('database is not connected  ( maybe run init() or start() first? )');
         return __classPrivateFieldGet(this, _Database_connection, "f");
     }
     constructor(url, connection) {

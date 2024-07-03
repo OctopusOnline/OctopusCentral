@@ -63,7 +63,7 @@ class Controller extends node_events_1.default {
     }
     createInstance() {
         return __awaiter(this, void 0, void 0, function* () {
-            const virtualInstance = new instance_1.Instance(this.database.connection);
+            const virtualInstance = new instance_1.Instance(this.database.url);
             yield virtualInstance.init();
             yield this.fetchSyncInstances();
             return this.getInstance(virtualInstance.id);
@@ -73,7 +73,7 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             if (settings.length === 0)
                 return;
-            const virtualInstance = new instance_1.Instance(this.database.connection, instance.id);
+            const virtualInstance = new instance_1.Instance(this.database.url, instance.id);
             for (const setting of settings) {
                 const virtualSetting = new instance_1.Setting(setting.name, setting.value, setting.type, setting.min, setting.max);
                 yield virtualInstance.settings.updateSetting(virtualSetting);
