@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/controller",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -20,8 +20,8 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
+    "@octopuscentral/instance": "^1.4.4",
     "@octopuscentral/types": "^1.4.2",
-    "@octopuscentral/instance": "^1.4.3",
     "express": "^4.19.2",
     "mysql2": "^3.10.2",
     "node-docker-api": "^1.1.22",
