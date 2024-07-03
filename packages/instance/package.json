@@ -22,7 +22,7 @@
   "dependencies": {
     "@octopuscentral/types": "^1.4.5",
     "express": "^4.19.2",
-    "mysql2": "^3.10.2",
+    "mariadb": "^3.3.1",
     "socket.io": "^4.7.5"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"

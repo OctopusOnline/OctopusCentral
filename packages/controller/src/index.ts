@@ -1,9 +1,9 @@
 import { instancesTableName, DockerInstanceProps, Setting } from '@octopuscentral/types';
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
+import { Database } from './Database';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
-import { Connection } from 'mysql2';
 import { Instance } from './Instance';
 
 export { Docker, Socket, Instance };
@@ -12,7 +12,7 @@ export class Controller extends EventEmitter {
   readonly serviceName: string;
   instancesFetchInterval: number = 5000;
 
-  readonly database: Connection;
+  readonly database: Database;
   readonly docker: Docker;
   readonly socket: Socket;
 
@@ -22,10 +22,10 @@ export class Controller extends EventEmitter {
   get instances(): Instance[] { return this.#instances }
   get running(): boolean { return this.#running }
 
-  constructor(serviceName: string, database: Connection, instanceDockerProps: DockerInstanceProps) {
+  constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps) {
     super();
     this.serviceName = serviceName;
-    this.database = database;
+    this.database = new Database(databaseUrl);
 
     this.docker = new Docker(this, instanceDockerProps);
     this.socket = new Socket(this);
@@ -48,7 +48,7 @@ export class Controller extends EventEmitter {
   }
 
   async createInstance(): Promise<Instance> {
-    const virtualInstance = new VirtualInstance(this.database);
+    const virtualInstance = new VirtualInstance(this.database.connection);
     await virtualInstance.init();
     await this.fetchSyncInstances();
     return this.getInstance(virtualInstance.id)!;
@@ -57,7 +57,7 @@ export class Controller extends EventEmitter {
   async updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void> {
     if (settings.length === 0) return;
 
-    const virtualInstance = new VirtualInstance(this.database, instance.id);
+    const virtualInstance = new VirtualInstance(this.database.connection, instance.id);
     for (const setting of settings) {
       const virtualSetting = new VirtualSetting(
         setting.name,
@@ -84,7 +84,7 @@ export class Controller extends EventEmitter {
   }
 
   private async loadInstances(): Promise<Instance[]> {
-    return (await this.database.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
+    return (await this.database.connection.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
       .map(({ id, socketHostname }) => new Instance(id, socketHostname));
   }
 
@@ -105,7 +105,7 @@ export class Controller extends EventEmitter {
   }
 
   async updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect: boolean = false): Promise<void> {
-    await this.database.execute(
+    await this.database.connection.execute(
       `UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`,
       [socketHostname, instance.id]);
     instance.socketHostname = socketHostname;
@@ -119,10 +119,15 @@ export class Controller extends EventEmitter {
       if (!instance.connected) await instance.connect();
   }
 
+  async init(): Promise<void> {
+    await this.database.init();
+    await this.docker.init();
+  }
+
   async start(): Promise<void> {
     this.#running = true;
 
-    await this.docker.init();
+    await this.init();
     await this.socket.start();
 
     await this.runInterval();

@@ -1,20 +1,20 @@
 import { DockerInstanceProps, Setting } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
+import { Database } from './Database';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
-import { Connection } from 'mysql2';
 import { Instance } from './Instance';
 export { Docker, Socket, Instance };
 export declare class Controller extends EventEmitter {
     #private;
     readonly serviceName: string;
     instancesFetchInterval: number;
-    readonly database: Connection;
+    readonly database: Database;
     readonly docker: Docker;
     readonly socket: Socket;
     get instances(): Instance[];
     get running(): boolean;
-    constructor(serviceName: string, database: Connection, instanceDockerProps: DockerInstanceProps);
+    constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps);
     addInstance(instance: Instance, overwrite?: boolean): void;
     private addAndSetupInstance;
     createInstance(): Promise<Instance>;
@@ -25,6 +25,7 @@ export declare class Controller extends EventEmitter {
     fetchSyncInstances(): Promise<Instance[]>;
     updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect?: boolean): Promise<void>;
     connectInstances(): Promise<void>;
+    init(): Promise<void>;
     start(): Promise<void>;
     private runInterval;
 }

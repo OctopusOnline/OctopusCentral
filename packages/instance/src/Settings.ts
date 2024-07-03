@@ -20,7 +20,7 @@ export class Settings extends EventEmitter {
   }
 
   async init(): Promise<void> {
-    await this.instance._connection.query(`
+    await this.instance.database.query(`
         CREATE TABLE IF NOT EXISTS ${instanceSettingsTableName} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
           instance_id INT UNSIGNED NOT NULL,
@@ -55,7 +55,7 @@ export class Settings extends EventEmitter {
   }
 
   private async loadSettings(): Promise<Setting[]> {
-    return (await this.instance._connection.execute(`
+    return (await this.instance.database.execute(`
         SELECT name, value, type, min, max
         FROM ${instanceSettingsTableName}
         WHERE instance_id = ?`,
@@ -72,14 +72,14 @@ export class Settings extends EventEmitter {
     await this.fetchSettings();
     if (!this.getSetting(name))
       return undefined;
-    return (await this.instance._connection.execute(`
+    return (await this.instance.database.execute(`
       SELECT AVG(CAST(? AS DECIMAL(20, 5))) AS value
       FROM ${instanceSettingsTableName}
     `, [name]) as unknown as { value?: number }[])[0]?.value
   }
 
   private async getSettingId(name: string): Promise<number | undefined> {
-    return (await this.instance._connection.execute(`
+    return (await this.instance.database.execute(`
         SELECT id
         FROM ${instanceSettingsTableName}
         WHERE instance_id = ?
@@ -156,14 +156,14 @@ export class Settings extends EventEmitter {
     const settingId = await this.getSettingId(thisSetting.name);
 
     if (settingId && overwrite)
-      await this.instance._connection.execute(`
+      await this.instance.database.execute(`
           UPDATE ${instanceSettingsTableName}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]
       );
     else if (settingId === undefined)
-      await this.instance._connection.execute(`
+      await this.instance.database.execute(`
           INSERT INTO ${instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`,
         [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]
@@ -182,7 +182,7 @@ export class Settings extends EventEmitter {
   ): Promise<void> {
     const settingName = setting instanceof Setting ? setting.name : setting;
 
-    await this.instance._connection.execute(
+    await this.instance.database.execute(
       `DELETE FROM ${instanceSettingsTableName} WHERE instance_id = ? AND name = ?`,
       [this.instance.id, settingName]
     );

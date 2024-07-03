@@ -1,6 +1,6 @@
 import { CentralInstanceFilter } from '@octopuscentral/types';
 import { InstanceSettings } from './InstanceSettings';
-import { Connection } from 'mysql2';
+import { Connection } from 'mariadb';
 import EventEmitter from 'node:events';
 import { Controller } from './Controller';
 import { Instance } from './Instance';

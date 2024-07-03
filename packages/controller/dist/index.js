@@ -28,6 +28,7 @@ exports.Controller = exports.Instance = exports.Socket = exports.Docker = void 0
 const types_1 = require("@octopuscentral/types");
 const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
+const Database_1 = require("./Database");
 const Socket_1 = require("./Socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 const Docker_1 = require("./Docker");
@@ -37,13 +38,13 @@ Object.defineProperty(exports, "Instance", { enumerable: true, get: function () 
 class Controller extends node_events_1.default {
     get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
-    constructor(serviceName, database, instanceDockerProps) {
+    constructor(serviceName, databaseUrl, instanceDockerProps) {
         super();
         this.instancesFetchInterval = 5000;
         _Controller_instances.set(this, []);
         _Controller_running.set(this, false);
         this.serviceName = serviceName;
-        this.database = database;
+        this.database = new Database_1.Database(databaseUrl);
         this.docker = new Docker_1.Docker(this, instanceDockerProps);
         this.socket = new Socket_1.Socket(this);
     }
@@ -62,7 +63,7 @@ class Controller extends node_events_1.default {
     }
     createInstance() {
         return __awaiter(this, void 0, void 0, function* () {
-            const virtualInstance = new instance_1.Instance(this.database);
+            const virtualInstance = new instance_1.Instance(this.database.connection);
             yield virtualInstance.init();
             yield this.fetchSyncInstances();
             return this.getInstance(virtualInstance.id);
@@ -72,7 +73,7 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             if (settings.length === 0)
                 return;
-            const virtualInstance = new instance_1.Instance(this.database, instance.id);
+            const virtualInstance = new instance_1.Instance(this.database.connection, instance.id);
             for (const setting of settings) {
                 const virtualSetting = new instance_1.Setting(setting.name, setting.value, setting.type, setting.min, setting.max);
                 yield virtualInstance.settings.updateSetting(virtualSetting);
@@ -92,7 +93,7 @@ class Controller extends node_events_1.default {
     }
     loadInstances() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this.database.query(`SELECT id, socketHostname FROM ${types_1.instancesTableName}`))
+            return (yield this.database.connection.query(`SELECT id, socketHostname FROM ${types_1.instancesTableName}`))
                 .map(({ id, socketHostname }) => new Instance_1.Instance(id, socketHostname));
         });
     }
@@ -112,7 +113,7 @@ class Controller extends node_events_1.default {
     }
     updateInstanceSocketHostname(instance_2, socketHostname_1) {
         return __awaiter(this, arguments, void 0, function* (instance, socketHostname, autoReconnect = false) {
-            yield this.database.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
+            yield this.database.connection.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [socketHostname, instance.id]);
             instance.socketHostname = socketHostname;
             if (autoReconnect && instance.connected)
                 yield instance.connect(true);
@@ -125,10 +126,16 @@ class Controller extends node_events_1.default {
                     yield instance.connect();
         });
     }
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.database.init();
+            yield this.docker.init();
+        });
+    }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Controller_running, true, "f");
-            yield this.docker.init();
+            yield this.init();
             yield this.socket.start();
             yield this.runInterval();
         });

@@ -1,4 +1,7 @@
-export const instanceIdEnvVarName: string = 'OCTOPUS_INSTANCE_ID';
+const envVarPrefix: string = 'OCTOPUS_INSTANCE';
+
+export const instanceIdEnvVarName: string = envVarPrefix + '_ID';
+export const instanceDatabaseEnvVarName: string = envVarPrefix + '_DATABASE_URL';
 
 export interface DockerClientProps {
   socketPath: string;

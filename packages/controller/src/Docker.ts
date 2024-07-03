@@ -1,4 +1,4 @@
-import { DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
 import { instanceIdEnvVarName } from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
 import { Container } from 'node-docker-api/lib/container';
@@ -101,7 +101,8 @@ export class Docker {
       OpenStdin: false,
       StdinOnce: false,
       Env: [
-        `${instanceIdEnvVarName}=${instance.id}`
+        `${instanceIdEnvVarName}=${instance.id}`,
+        `${instanceDatabaseEnvVarName}=${this.controller.database.url}`
       ],
       Hostname: containerName,
       ExposedPorts: {

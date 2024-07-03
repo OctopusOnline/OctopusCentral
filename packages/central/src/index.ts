@@ -1,6 +1,6 @@
 import { controllersTableName, CentralInstanceFilter } from '@octopuscentral/types';
 import { InstanceSettings } from './InstanceSettings';
-import { Connection } from 'mysql2';
+import { Connection } from 'mariadb';
 import EventEmitter from 'node:events';
 import { promisify } from 'node:util';
 import { Controller } from './Controller';
