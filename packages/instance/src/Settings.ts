@@ -32,6 +32,7 @@ export class Settings extends EventEmitter {
   }
 
   async initDefaultSettings(settings: SettingInterface[] | SettingsObjectType = {}): Promise<void> {
+    await this.fetchSettings();
     if (!Array.isArray(settings) && typeof settings === 'object')
       settings = Object.keys(settings).map(key => ({
         name: key,
