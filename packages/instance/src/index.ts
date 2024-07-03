@@ -1,5 +1,5 @@
 import { instancesTableName, instanceIdEnvVarName, instanceDatabaseEnvVarName } from '@octopuscentral/types';
-import mariadb, { Connection } from 'mariadb';
+import { Database } from './Database';
 import { Setting } from './Setting';
 import { Socket } from './Socket';
 import { Settings } from './Settings';
@@ -9,7 +9,7 @@ export { Settings, Setting, Socket };
 
 export class Instance {
   #id?: number;
-  #database?: Connection;
+  #database?: Database;
 
   readonly socket: Socket;
   readonly settings: Settings;
@@ -19,13 +19,13 @@ export class Instance {
     return this.#id!;
   }
 
-  get database(): Connection {
+  get database(): Database {
     if (this.#id === undefined) throw new Error('instance.database is not set\nmaybe run init() first?');
     return this.#database!;
   }
 
-  constructor(database?: Connection, id?: number) {
-    this.#database = database;
+  constructor(databaseUrl?: string, id?: number) {
+    if (databaseUrl) this.#database = new Database(databaseUrl);
     this.#id = id;
 
     this.settings = new Settings(this);
@@ -34,34 +34,35 @@ export class Instance {
 
   async init(): Promise<void> {
     if (this.#id === undefined) {
-      const idValue: string | undefined = process.env[instanceIdEnvVarName] as any;
-      if (idValue === undefined)
+      const id: string | undefined = process.env[instanceIdEnvVarName] as any;
+      if (id === undefined)
         throw new Error(`env var ${instanceIdEnvVarName} is not set`);
-      this.#id = Number(idValue);
+      this.#id = Number(id);
       if (isNaN(this.#id as number) || this.#id <= 0)
-        throw new Error(`invalid ${instanceIdEnvVarName} value: '${idValue}'`);
+        throw new Error(`invalid ${instanceIdEnvVarName} value: '${id}'`);
     }
 
     if (this.#database === undefined) {
-      const databaseValue: string | undefined = process.env[instanceDatabaseEnvVarName] as any;
-      if (databaseValue === undefined)
+      const url: string | undefined = process.env[instanceDatabaseEnvVarName] as any;
+      if (url === undefined)
         throw new Error(`env var ${instanceDatabaseEnvVarName} is not set`);
+      this.#database = new Database(url);
       try {
-        this.#database = await mariadb.createConnection(databaseValue)
+        this.#database.init();
       } catch (error: any) {
-        throw new Error(`could not connect to database at '${databaseValue}': ${error.message}`);
+        throw new Error(`could not connect to database at '${url}': ${error.message}`);
       }
     }
 
-    await this.database.query(`
+    await this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${instancesTableName} (
         id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHostname VARCHAR(255)     NULL
       )`);
 
     if (this.#id === undefined)
-      this.#id = Number((await this.database.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
-    else await this.database.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
+      this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
+    else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
 
     await this.settings.init();
   }
@@ -71,6 +72,6 @@ export class Instance {
   }
 
   async setSocketHostname(hostname: string): Promise<void> {
-    await this.database.execute(`UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
+    await this.database.connection.execute(`UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
   }
 }

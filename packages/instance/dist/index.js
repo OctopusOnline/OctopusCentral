@@ -26,7 +26,7 @@ var _Instance_id, _Instance_database;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = exports.Socket = exports.Setting = exports.Settings = void 0;
 const types_1 = require("@octopuscentral/types");
-const mariadb_1 = __importDefault(require("mariadb"));
+const Database_1 = require("./Database");
 const Setting_1 = require("./Setting");
 Object.defineProperty(exports, "Setting", { enumerable: true, get: function () { return Setting_1.Setting; } });
 const Socket_1 = require("./Socket");
@@ -45,10 +45,11 @@ class Instance {
             throw new Error('instance.database is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_database, "f");
     }
-    constructor(database, id) {
+    constructor(databaseUrl, id) {
         _Instance_id.set(this, void 0);
         _Instance_database.set(this, void 0);
-        __classPrivateFieldSet(this, _Instance_database, database, "f");
+        if (databaseUrl)
+            __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(databaseUrl), "f");
         __classPrivateFieldSet(this, _Instance_id, id, "f");
         this.settings = new Settings_1.Settings(this);
         this.socket = new Socket_1.Socket(this);
@@ -56,33 +57,34 @@ class Instance {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined) {
-                const idValue = node_process_1.default.env[types_1.instanceIdEnvVarName];
-                if (idValue === undefined)
+                const id = node_process_1.default.env[types_1.instanceIdEnvVarName];
+                if (id === undefined)
                     throw new Error(`env var ${types_1.instanceIdEnvVarName} is not set`);
-                __classPrivateFieldSet(this, _Instance_id, Number(idValue), "f");
+                __classPrivateFieldSet(this, _Instance_id, Number(id), "f");
                 if (isNaN(__classPrivateFieldGet(this, _Instance_id, "f")) || __classPrivateFieldGet(this, _Instance_id, "f") <= 0)
-                    throw new Error(`invalid ${types_1.instanceIdEnvVarName} value: '${idValue}'`);
+                    throw new Error(`invalid ${types_1.instanceIdEnvVarName} value: '${id}'`);
             }
             if (__classPrivateFieldGet(this, _Instance_database, "f") === undefined) {
-                const databaseValue = node_process_1.default.env[types_1.instanceDatabaseEnvVarName];
-                if (databaseValue === undefined)
+                const url = node_process_1.default.env[types_1.instanceDatabaseEnvVarName];
+                if (url === undefined)
                     throw new Error(`env var ${types_1.instanceDatabaseEnvVarName} is not set`);
+                __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(url), "f");
                 try {
-                    __classPrivateFieldSet(this, _Instance_database, yield mariadb_1.default.createConnection(databaseValue), "f");
+                    __classPrivateFieldGet(this, _Instance_database, "f").init();
                 }
                 catch (error) {
-                    throw new Error(`could not connect to database at '${databaseValue}': ${error.message}`);
+                    throw new Error(`could not connect to database at '${url}': ${error.message}`);
                 }
             }
-            yield this.database.query(`
+            yield this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${types_1.instancesTableName} (
         id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHostname VARCHAR(255)     NULL
       )`);
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
-                __classPrivateFieldSet(this, _Instance_id, Number((yield this.database.query(`INSERT INTO ${types_1.instancesTableName} (id) VALUES (NULL)`)).insertId), "f");
+                __classPrivateFieldSet(this, _Instance_id, Number((yield this.database.connection.query(`INSERT INTO ${types_1.instancesTableName} (id) VALUES (NULL)`)).insertId), "f");
             else
-                yield this.database.execute(`INSERT IGNORE INTO ${types_1.instancesTableName} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
+                yield this.database.connection.execute(`INSERT IGNORE INTO ${types_1.instancesTableName} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
             yield this.settings.init();
         });
     }
@@ -93,7 +95,7 @@ class Instance {
     }
     setSocketHostname(hostname) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.database.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, __classPrivateFieldGet(this, _Instance_id, "f")]);
+            yield this.database.connection.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, __classPrivateFieldGet(this, _Instance_id, "f")]);
         });
     }
 }

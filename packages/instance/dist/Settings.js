@@ -24,7 +24,7 @@ class Settings extends node_events_1.default {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.instance.database.query(`
+            yield this.instance.database.connection.query(`
         CREATE TABLE IF NOT EXISTS ${types_1.instanceSettingsTableName} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
           instance_id INT UNSIGNED NOT NULL,
@@ -54,7 +54,7 @@ class Settings extends node_events_1.default {
     }
     loadSettings() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this.instance.database.execute(`
+            return (yield this.instance.database.connection.execute(`
         SELECT name, value, type, min, max
         FROM ${types_1.instanceSettingsTableName}
         WHERE instance_id = ?`, [this.instance.id])).map(({ name, value, type, min, max }) => new Setting_1.Setting(name, value, type, min, max));
@@ -71,7 +71,7 @@ class Settings extends node_events_1.default {
             yield this.fetchSettings();
             if (!this.getSetting(name))
                 return undefined;
-            return (_a = (yield this.instance.database.execute(`
+            return (_a = (yield this.instance.database.connection.execute(`
       SELECT AVG(CAST(? AS DECIMAL(20, 5))) AS value
       FROM ${types_1.instanceSettingsTableName}
     `, [name]))[0]) === null || _a === void 0 ? void 0 : _a.value;
@@ -80,7 +80,7 @@ class Settings extends node_events_1.default {
     getSettingId(name) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            return (_a = (yield this.instance.database.execute(`
+            return (_a = (yield this.instance.database.connection.execute(`
         SELECT id
         FROM ${types_1.instanceSettingsTableName}
         WHERE instance_id = ?
@@ -141,13 +141,13 @@ class Settings extends node_events_1.default {
                 throw new Error('invalid params');
             const settingId = yield this.getSettingId(thisSetting.name);
             if (settingId && overwrite)
-                yield this.instance.database.execute(`
+                yield this.instance.database.connection.execute(`
           UPDATE ${types_1.instanceSettingsTableName}
           SET instance_id = ?, name = ?, value = ?, type = ?, min = ?, max = ?
           WHERE id = ?
         `, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max, settingId]);
             else if (settingId === undefined)
-                yield this.instance.database.execute(`
+                yield this.instance.database.connection.execute(`
           INSERT INTO ${types_1.instanceSettingsTableName} (instance_id, name, value, type, min, max)
           VALUES (?, ?, ?, ?, ?, ?)`, [this.instance.id, thisSetting.name, thisSetting.valueString, thisSetting.type, thisSetting.min, thisSetting.max]);
             const settingsIndex = this.settings.findIndex(_setting => _setting.name === thisSetting.name);
@@ -162,7 +162,7 @@ class Settings extends node_events_1.default {
     deleteSetting(setting) {
         return __awaiter(this, void 0, void 0, function* () {
             const settingName = setting instanceof Setting_1.Setting ? setting.name : setting;
-            yield this.instance.database.execute(`DELETE FROM ${types_1.instanceSettingsTableName} WHERE instance_id = ? AND name = ?`, [this.instance.id, settingName]);
+            yield this.instance.database.connection.execute(`DELETE FROM ${types_1.instanceSettingsTableName} WHERE instance_id = ? AND name = ?`, [this.instance.id, settingName]);
             this.settings = this.settings.filter(({ name }) => name !== settingName);
             this.emit('setting delete', settingName);
         });

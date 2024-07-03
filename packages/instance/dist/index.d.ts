@@ -1,4 +1,4 @@
-import { Connection } from 'mariadb';
+import { Database } from './Database';
 import { Setting } from './Setting';
 import { Socket } from './Socket';
 import { Settings } from './Settings';
@@ -8,8 +8,8 @@ export declare class Instance {
     readonly socket: Socket;
     readonly settings: Settings;
     get id(): number;
-    get database(): Connection;
-    constructor(database?: Connection, id?: number);
+    get database(): Database;
+    constructor(databaseUrl?: string, id?: number);
     init(): Promise<void>;
     start(): Promise<void>;
     setSocketHostname(hostname: string): Promise<void>;

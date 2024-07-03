@@ -9,7 +9,7 @@ export class Database {
   }
 
   get connection(): Connection {
-    if (this.#connection === undefined) throw new Error('database is not connected  ( maybe run init() or start() first? )');
+    if (this.#connection === undefined) throw new Error('database is not connected  ( maybe run init() first? )');
     return this.#connection!;
   }
 
