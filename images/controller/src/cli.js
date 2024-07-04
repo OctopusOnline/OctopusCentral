@@ -23,10 +23,6 @@ cli.on('warning', (code, data) =>
     }
   })(code)));
 
-cli.on('error', error =>
-  console.error('[!]', error.message));
-
-cli.on('stop', () =>
-  process.exit());
+cli.on('stop', () => process.exit());
 
 cli.start();

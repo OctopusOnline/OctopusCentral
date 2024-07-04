@@ -14,10 +14,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLIClient = void 0;
 const types_1 = require("@octopuscentral/types");
-const node_events_1 = __importDefault(require("node:events"));
 const promises_1 = __importDefault(require("node:readline/promises"));
-const node_process_1 = __importDefault(require("node:process"));
 const axios_1 = __importDefault(require("axios"));
+const node_events_1 = __importDefault(require("node:events"));
+const node_process_1 = __importDefault(require("node:process"));
 const path_1 = __importDefault(require("path"));
 class CLIClient extends node_events_1.default {
     constructor(input = node_process_1.default.stdin, output = node_process_1.default.stdout) {
@@ -50,7 +50,6 @@ class CLIClient extends node_events_1.default {
                     }
                     catch (error) {
                         response = error.response;
-                        this.emit('error', error);
                     }
                     if (response) {
                         if (response.status === 404)

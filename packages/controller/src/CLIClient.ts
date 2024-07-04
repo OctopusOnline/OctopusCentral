@@ -1,8 +1,8 @@
 import { cliServerPort, cliWarningCode } from '@octopuscentral/types';
-import EventEmitter from 'node:events';
 import readline, { Interface as ReadlineInterface } from 'node:readline/promises';
-import process from 'node:process';
 import axios, { AxiosResponse } from 'axios';
+import EventEmitter from 'node:events';
+import process from 'node:process';
 import path from 'path';
 
 export class CLIClient extends EventEmitter {
@@ -41,10 +41,7 @@ export class CLIClient extends EventEmitter {
         const requestPath: string = path.normalize(input.split(' ').join('/'));
         let response: AxiosResponse;
         try { response = await axios.get(`http://0.0.0.0:${cliServerPort}/${requestPath}`) }
-        catch (error: any) {
-          response = error.response;
-          this.emit('error', error);
-        }
+        catch (error: any) { response = error.response }
         if (response) {
           if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
           else if (response.status === 200) {
