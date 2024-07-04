@@ -21,4 +21,8 @@ export class Database {
   async init(): Promise<void> {
     if (!this.#connection) this.#connection = await mariadb.createConnection(this.#url);
   }
+
+  async disconnect(): Promise<void> {
+    await this.connection.end();
+  }
 }

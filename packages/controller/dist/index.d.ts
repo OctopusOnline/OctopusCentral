@@ -29,4 +29,5 @@ export declare class Controller extends EventEmitter {
     init(): Promise<void>;
     start(): Promise<void>;
     private runInterval;
+    destroy(): Promise<void>;
 }

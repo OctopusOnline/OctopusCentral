@@ -142,4 +142,12 @@ export class Controller extends EventEmitter {
       if (this.#running) this.runInterval().then();
     }, this.instancesFetchInterval);
   }
+
+  async destroy(): Promise<void> {
+    this.#running = false;
+    await Promise.all([
+      this.socket.stop(),
+      this.database.disconnect()
+    ]);
+  }
 }

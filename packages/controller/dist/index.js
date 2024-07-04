@@ -152,6 +152,15 @@ class Controller extends node_events_1.default {
             }, this.instancesFetchInterval);
         });
     }
+    destroy() {
+        return __awaiter(this, void 0, void 0, function* () {
+            __classPrivateFieldSet(this, _Controller_running, false, "f");
+            yield Promise.all([
+                this.socket.stop(),
+                this.database.disconnect()
+            ]);
+        });
+    }
 }
 exports.Controller = Controller;
 _Controller_instances = new WeakMap(), _Controller_running = new WeakMap();

@@ -5,4 +5,5 @@ export declare class Database {
     get connection(): Connection;
     constructor(url: string, connection?: Connection);
     init(): Promise<void>;
+    disconnect(): Promise<void>;
 }

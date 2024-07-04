@@ -47,6 +47,11 @@ class Database {
                 __classPrivateFieldSet(this, _Database_connection, yield mariadb_1.default.createConnection(__classPrivateFieldGet(this, _Database_url, "f")), "f");
         });
     }
+    disconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.connection.end();
+        });
+    }
 }
 exports.Database = Database;
 _Database_url = new WeakMap(), _Database_connection = new WeakMap();
