@@ -5,6 +5,7 @@ import { Controller } from './index';
 import { Instance } from './Instance';
 export interface DockerContainer extends Container {
     State?: {
+        Running?: boolean;
         Paused?: boolean;
     };
 }
@@ -25,9 +26,10 @@ export declare class Docker {
     private getContainerNetwork;
     private fetchSelfContainer;
     private startInstanceContainer;
+    instanceRunning(instance: Instance): Promise<boolean>;
+    instancePaused(instance: Instance): Promise<boolean | undefined>;
     startInstance(instance: Instance): Promise<boolean>;
     stopInstance(instance: Instance): Promise<boolean>;
     pauseInstance(instance: Instance): Promise<boolean>;
     unpauseInstance(instance: Instance): Promise<boolean>;
-    instancePaused(instance: Instance): Promise<boolean | undefined>;
 }

@@ -9,6 +9,7 @@ import { hostname } from 'os';
 
 export interface DockerContainer extends Container {
   State?: {
+    Running?: boolean;
     Paused?: boolean;
   }
 }
@@ -124,7 +125,17 @@ export class Docker {
 
     await this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
 
+    // TODO: check container Errors (look in debug mode)
     return container;
+  }
+
+  async instanceRunning(instance: Instance): Promise<boolean> {
+    const container = await this.getContainer(instance);
+    return !!container && (!container.State?.Running || !!container.State.Paused);
+  }
+
+  async instancePaused(instance: Instance): Promise<boolean | undefined> {
+    return (await this.getContainer(instance))?.State!.Paused;
   }
 
   async startInstance(instance: Instance): Promise<boolean> {
@@ -160,9 +171,5 @@ export class Docker {
       return true;
     }
     return false;
-  }
-
-  async instancePaused(instance: Instance): Promise<boolean | undefined> {
-    return (await this.getContainer(instance))?.State!.Paused;
   }
 }

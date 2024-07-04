@@ -27,7 +27,57 @@ class CLIServer {
         this.express.use(express_1.default.json());
         this.express.get('/', (_, res) => res.send('Octopus Central CLI Server'));
         this.express.get('/serviceName', (_, res) => res.json({ type: 'value', data: this.controller.serviceName }));
-        this.express.get(['/instance/ls', '/instances'], (_, res) => res.json({ type: 'list', data: this.controller.instances.map(instance => instance.id) }));
+        this.express.get(['/instance/ls', '/instances'], (_, res) => __awaiter(this, void 0, void 0, function* () {
+            const instances = [];
+            for (const instance of this.controller.instances)
+                instances.push({
+                    'instance id': instance.id,
+                    'running': (yield this.controller.docker.instanceRunning(instance)) ? 'yes' : 'no'
+                });
+            res.json({ type: 'table', data: instances });
+        }));
+        this.express.use('/instance/:id/*', (req, res, next) => {
+            req.instance = this.controller.getInstance(Number(req.params.id));
+            if (!req.instance)
+                res.json({
+                    type: 'value',
+                    data: `instance ${req.params.id} does not exist`
+                });
+            else
+                next();
+        });
+        this.express.get('/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
+            let result;
+            try {
+                result = yield this.controller.docker.startInstance(req.instance);
+            }
+            catch (error) {
+                result = error;
+            }
+            res.json({
+                type: 'value',
+                data: result instanceof Error
+                    ? result.message : (result
+                    ? `instance ${req.instance.id} started`
+                    : `instance ${req.instance.id} could not be started`)
+            });
+        }));
+        this.express.get('/instance/:id/stop', (req, res) => __awaiter(this, void 0, void 0, function* () {
+            let result;
+            try {
+                result = yield this.controller.docker.stopInstance(req.instance);
+            }
+            catch (error) {
+                result = error;
+            }
+            res.json({
+                type: 'value',
+                data: result instanceof Error
+                    ? result.message : (result
+                    ? `instance ${req.instance.id} stopped`
+                    : `instance ${req.instance.id} could not be stopped`)
+            });
+        }));
         // TODO: add CLI command processing
         this.express.use((_, res) => res.status(404).send());
     }

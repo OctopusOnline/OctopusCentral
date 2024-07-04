@@ -1,10 +1,28 @@
 export const serverPort: number = 7000;
 
-export type responseDataType = 'value' | 'list' | 'table';
+type responseDataType = 'value' | 'list' | 'table';
+export type responseValueDataType = null | number | string;
+export type responseListDataType = responseValueDataType[];
+export type responseTableDataType = { [key: string]: responseValueDataType }[];
 
-export interface ResponseData {
+interface ResponseData {
   type: responseDataType,
   data: any
+}
+
+export interface ResponseValueData extends ResponseData {
+  type: 'value',
+  data: responseValueDataType
+}
+
+export interface ResponseListData extends ResponseData {
+  type: 'list',
+  data: responseListDataType
+}
+
+export interface ResponseTableData extends ResponseData {
+  type: 'table',
+  data: responseTableDataType
 }
 
 export const warningCode = {

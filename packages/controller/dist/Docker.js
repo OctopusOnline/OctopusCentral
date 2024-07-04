@@ -122,7 +122,21 @@ class Docker {
             yield container.rename({ name: containerName });
             yield container.start();
             yield this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
+            // TODO: check container Errors (look in debug mode)
             return container;
+        });
+    }
+    instanceRunning(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const container = yield this.getContainer(instance);
+            return !!container && (!((_a = container.State) === null || _a === void 0 ? void 0 : _a.Running) || !!container.State.Paused);
+        });
+    }
+    instancePaused(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            return (_a = (yield this.getContainer(instance))) === null || _a === void 0 ? void 0 : _a.State.Paused;
         });
     }
     startInstance(instance) {
@@ -162,12 +176,6 @@ class Docker {
                 return true;
             }
             return false;
-        });
-    }
-    instancePaused(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            return (_a = (yield this.getContainer(instance))) === null || _a === void 0 ? void 0 : _a.State.Paused;
         });
     }
 }
