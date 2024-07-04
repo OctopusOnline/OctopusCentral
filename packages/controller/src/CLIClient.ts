@@ -34,7 +34,7 @@ export class CLIClient extends EventEmitter {
     this.emit('input', input);
 
     switch (input) {
-      case '': return;
+      case '': break;
       case 'exit': return this.stop();
 
       default:
