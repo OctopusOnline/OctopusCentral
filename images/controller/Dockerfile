@@ -7,4 +7,5 @@ RUN npm ci --no-update-notifier
 
 COPY src/ ./
 
-ENTRYPOINT ["node", "index.js"]
+ENTRYPOINT ["node", "cli.js"]
+CMD ["node", "index.js"]
