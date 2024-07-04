@@ -45,13 +45,9 @@ export class CLIClient extends EventEmitter {
         if (response) {
           if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
           else if (response.status === 200) {
-            if (response.data) {
-              let responseData;
-              try { responseData = JSON.parse(response.data) }
-              catch (_) { this.emit('warning', cliWarningCode.response_parse_error) }
-              if (responseData)
-                this.emit('response', responseData.type, responseData.data);
-            } else this.emit('warning', cliWarningCode.empty_response);
+            if (response.data?.type)
+              this.emit('response', response.data.type, response.data.data);
+            else this.emit('warning', cliWarningCode.empty_response);
           } else this.emit('warning', cliWarningCode.unknown_response_code, response.status);
         }
     }

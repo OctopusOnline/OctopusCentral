@@ -10,6 +10,5 @@ export interface ResponseData {
 export const warningCode = {
   invalid_command: 1,
   empty_response: 2,
-  unknown_response_code: 3,
-  response_parse_error: 4
+  unknown_response_code: 3
 };

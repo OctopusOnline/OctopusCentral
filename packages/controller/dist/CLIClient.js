@@ -37,6 +37,7 @@ class CLIClient extends node_events_1.default {
     }
     inputLoop() {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
             this.emit('input', input);
             switch (input) {
@@ -55,17 +56,8 @@ class CLIClient extends node_events_1.default {
                         if (response.status === 404)
                             this.emit('warning', types_1.cliWarningCode.invalid_command);
                         else if (response.status === 200) {
-                            if (response.data) {
-                                let responseData;
-                                try {
-                                    responseData = JSON.parse(response.data);
-                                }
-                                catch (_) {
-                                    this.emit('warning', types_1.cliWarningCode.response_parse_error);
-                                }
-                                if (responseData)
-                                    this.emit('response', responseData.type, responseData.data);
-                            }
+                            if ((_a = response.data) === null || _a === void 0 ? void 0 : _a.type)
+                                this.emit('response', response.data.type, response.data.data);
                             else
                                 this.emit('warning', types_1.cliWarningCode.empty_response);
                         }
