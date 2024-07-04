@@ -2,7 +2,7 @@ import { cliServerPort, cliWarningCode } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import readline, { Interface as ReadlineInterface } from 'node:readline/promises';
 import process from 'node:process';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import path from 'path';
 
 export class CLIClient extends EventEmitter {
@@ -39,18 +39,24 @@ export class CLIClient extends EventEmitter {
 
       default:
         const requestPath: string = path.normalize(input.split(' ').join('/'));
-        const response = await axios.get(`http://0.0.0.0:${cliServerPort}/${requestPath}`);
-        if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
-        else if (response.status === 200) {
-          if (response.data) {
-            let responseData;
-            try { responseData = JSON.parse(response.data) }
-            catch (_) { this.emit('warning', cliWarningCode.response_parse_error) }
-            if (responseData) this.emit('response', responseData.type, responseData.data);
-          }
-          else this.emit('warning', cliWarningCode.empty_response);
+        let response: AxiosResponse;
+        try { response = await axios.get(`http://0.0.0.0:${cliServerPort}/${requestPath}`) }
+        catch (error: any) {
+          response = error.response;
+          this.emit('error', error);
         }
-        else this.emit('warning', cliWarningCode.unknown_response_code, response.status);
+        if (response) {
+          if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
+          else if (response.status === 200) {
+            if (response.data) {
+              let responseData;
+              try { responseData = JSON.parse(response.data) }
+              catch (_) { this.emit('warning', cliWarningCode.response_parse_error) }
+              if (responseData)
+                this.emit('response', responseData.type, responseData.data);
+            } else this.emit('warning', cliWarningCode.empty_response);
+          } else this.emit('warning', cliWarningCode.unknown_response_code, response.status);
+        }
     }
 
     await this.inputLoop();

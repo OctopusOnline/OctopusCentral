@@ -44,26 +44,35 @@ class CLIClient extends node_events_1.default {
                     return this.stop();
                 default:
                     const requestPath = path_1.default.normalize(input.split(' ').join('/'));
-                    const response = yield axios_1.default.get(`http://0.0.0.0:${types_1.cliServerPort}/${requestPath}`);
-                    if (response.status === 404)
-                        this.emit('warning', types_1.cliWarningCode.invalid_command);
-                    else if (response.status === 200) {
-                        if (response.data) {
-                            let responseData;
-                            try {
-                                responseData = JSON.parse(response.data);
+                    let response;
+                    try {
+                        response = yield axios_1.default.get(`http://0.0.0.0:${types_1.cliServerPort}/${requestPath}`);
+                    }
+                    catch (error) {
+                        response = error.response;
+                        this.emit('error', error);
+                    }
+                    if (response) {
+                        if (response.status === 404)
+                            this.emit('warning', types_1.cliWarningCode.invalid_command);
+                        else if (response.status === 200) {
+                            if (response.data) {
+                                let responseData;
+                                try {
+                                    responseData = JSON.parse(response.data);
+                                }
+                                catch (_) {
+                                    this.emit('warning', types_1.cliWarningCode.response_parse_error);
+                                }
+                                if (responseData)
+                                    this.emit('response', responseData.type, responseData.data);
                             }
-                            catch (_) {
-                                this.emit('warning', types_1.cliWarningCode.response_parse_error);
-                            }
-                            if (responseData)
-                                this.emit('response', responseData.type, responseData.data);
+                            else
+                                this.emit('warning', types_1.cliWarningCode.empty_response);
                         }
                         else
-                            this.emit('warning', types_1.cliWarningCode.empty_response);
+                            this.emit('warning', types_1.cliWarningCode.unknown_response_code, response.status);
                     }
-                    else
-                        this.emit('warning', types_1.cliWarningCode.unknown_response_code, response.status);
             }
             yield this.inputLoop();
         });

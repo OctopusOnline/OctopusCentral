@@ -5,7 +5,13 @@ console.log('===============================\n OctopusCentral Controller CLI \n=
 
 const cli = new CLIClient();
 
-cli.on('stop', () => process.exit());
+cli.on('resposne', (type, data) => {
+  switch (type) {
+    case 'value': return console.log(data);
+    case 'list': return console.log(data.join(', '));
+    case 'table': return console.table(data);
+  }
+});
 
 cli.on('warning', (code, data) =>
   console.warn('[!]', (code => {
@@ -15,15 +21,12 @@ cli.on('warning', (code, data) =>
       case cliWarningCode.unknown_response_code: return `unknown response code: ${data}`;
       case cliWarningCode.response_parse_error:  return 'response parse error';
     }
-  })(code))
-);
+  })(code)));
 
-cli.on('resposne', (type, data) => {
-  switch (type) {
-    case 'value': return console.log(data);
-    case 'list': return console.log(data.join(', '));
-    case 'table': return console.table(data);
-  }
-});
+cli.on('error', error =>
+  console.error('[!]', error.message));
+
+cli.on('stop', () =>
+  process.exit());
 
 cli.start();
