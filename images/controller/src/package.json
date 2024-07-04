@@ -1,6 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "@octopuscentral/controller": "^1.4.11"
+    "@octopuscentral/controller": "^1.4.15"
   }
 }
