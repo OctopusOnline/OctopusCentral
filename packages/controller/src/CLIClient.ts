@@ -1,4 +1,4 @@
-import { cliServerPort } from '@octopuscentral/types';
+import { cliServerPort, cliWarningCode } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import readline, { Interface as ReadlineInterface } from 'node:readline/promises';
 import process from 'node:process';
@@ -29,7 +29,6 @@ export class CLIClient extends EventEmitter {
     this.inputLoop().then();
   }
 
-  // TODO: add console coloring
   private async inputLoop(): Promise<void> {
     const input: string = (await this.rl.question(this.consoleInputPrefix)).trim();
     this.emit('input', input);
@@ -41,13 +40,17 @@ export class CLIClient extends EventEmitter {
       default:
         const requestPath: string = path.normalize(input.split(' ').join('/'));
         const response = await axios.get(`http://0.0.0.0:${cliServerPort}/${requestPath}`);
-        if (response.status === 404) console.warn('[!] invalid command');
+        if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
         else if (response.status === 200) {
-          if (response.data) console.log(typeof response.data, '|', response.data);
-          else console.warn('[!] empty response');
-          // TODO: parse and format response data (use response type in json, e.g. to tell to display a table or list)
+          if (response.data) {
+            let responseData;
+            try { responseData = JSON.parse(response.data) }
+            catch (_) { this.emit('warning', cliWarningCode.response_parse_error) }
+            if (responseData) this.emit('response', responseData.type, responseData.data);
+          }
+          else this.emit('warning', cliWarningCode.empty_response);
         }
-        else console.warn('[!] unknown response code:', response.status);
+        else this.emit('warning', cliWarningCode.unknown_response_code, response.status);
     }
 
     await this.inputLoop();

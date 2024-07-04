@@ -35,7 +35,6 @@ class CLIClient extends node_events_1.default {
         this.emit('start');
         this.inputLoop().then();
     }
-    // TODO: add console coloring
     inputLoop() {
         return __awaiter(this, void 0, void 0, function* () {
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
@@ -47,16 +46,24 @@ class CLIClient extends node_events_1.default {
                     const requestPath = path_1.default.normalize(input.split(' ').join('/'));
                     const response = yield axios_1.default.get(`http://0.0.0.0:${types_1.cliServerPort}/${requestPath}`);
                     if (response.status === 404)
-                        console.warn('[!] invalid command');
+                        this.emit('warning', types_1.cliWarningCode.invalid_command);
                     else if (response.status === 200) {
-                        if (response.data)
-                            console.log(typeof response.data, '|', response.data);
+                        if (response.data) {
+                            let responseData;
+                            try {
+                                responseData = JSON.parse(response.data);
+                            }
+                            catch (_) {
+                                this.emit('warning', types_1.cliWarningCode.response_parse_error);
+                            }
+                            if (responseData)
+                                this.emit('response', responseData.type, responseData.data);
+                        }
                         else
-                            console.warn('[!] empty response');
-                        // TODO: parse and format response data (use response type in json, e.g. to tell to display a table or list)
+                            this.emit('warning', types_1.cliWarningCode.empty_response);
                     }
                     else
-                        console.warn('[!] unknown response code:', response.status);
+                        this.emit('warning', types_1.cliWarningCode.unknown_response_code, response.status);
             }
             yield this.inputLoop();
         });
