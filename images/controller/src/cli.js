@@ -22,6 +22,7 @@ cli.on('warning', (code, data) =>
     }
   })(code)));
 
+cli.on('clear', () => console.clear());
 cli.on('stop', () => process.exit());
 
 cli.start();
