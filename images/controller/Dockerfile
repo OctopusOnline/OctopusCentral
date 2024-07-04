@@ -7,6 +7,6 @@ RUN npm ci --no-update-notifier
 
 COPY src/ ./
 
-RUN echo "cd /home/node && node cli.js" >> /root/.bashrc
+RUN echo "cd /home/node && node cli.js && exit" >> /root/.bashrc
 
 ENTRYPOINT ["node", "index.js"]
