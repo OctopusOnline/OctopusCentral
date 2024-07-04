@@ -8,7 +8,7 @@ const cli = new CLIClient();
 cli.on('response', (type, data) => {
   switch (type) {
     case 'value': return console.log(data);
-    case 'list': return console.log(data.join(', '));
+    case 'list': return console.log(`count: (${data.length})${data.map(value=>`\n- ${value}`)}`);
     case 'table': return console.table(data);
   }
 });
