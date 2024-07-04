@@ -14,31 +14,35 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLIClient = void 0;
 const types_1 = require("@octopuscentral/types");
+const node_events_1 = __importDefault(require("node:events"));
 const promises_1 = __importDefault(require("node:readline/promises"));
 const node_process_1 = __importDefault(require("node:process"));
 const axios_1 = __importDefault(require("axios"));
 const path_1 = __importDefault(require("path"));
-class CLIClient {
+class CLIClient extends node_events_1.default {
     constructor(input = node_process_1.default.stdin, output = node_process_1.default.stdout) {
-        this.consoleInputPrefix = '>';
+        super();
+        this.consoleInputPrefix = '> ';
         this.running = false;
         this.rl = promises_1.default.createInterface(input, output);
+        this.rl.on('close', () => this.stop());
     }
     start() {
         if (this.running)
             return;
-        this.running = true;
+        else
+            this.running = true;
+        this.emit('start');
         this.inputLoop().then();
     }
     // TODO: add console coloring
     inputLoop() {
         return __awaiter(this, void 0, void 0, function* () {
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
+            this.emit('input', input);
             switch (input) {
                 case 'exit':
-                    this.rl.close();
-                    node_process_1.default.exit();
-                    return;
+                    return this.stop();
                 default:
                     const requestPath = path_1.default.normalize(input.split(' ').join('/'));
                     const response = yield axios_1.default.get(`http://0.0.0.0:${types_1.cliServerPort}/${requestPath}`);
@@ -56,6 +60,10 @@ class CLIClient {
             }
             yield this.inputLoop();
         });
+    }
+    stop() {
+        this.rl.close();
+        this.emit('stop');
     }
 }
 exports.CLIClient = CLIClient;
