@@ -5,7 +5,7 @@ console.log('===============================\n OctopusCentral Controller CLI \n=
 
 const cli = new CLIClient();
 
-cli.on('resposne', (type, data) => {
+cli.on('response', (type, data) => {
   switch (type) {
     case 'value': return console.log(data);
     case 'list': return console.log(data.join(', '));
@@ -19,7 +19,6 @@ cli.on('warning', (code, data) =>
       case cliWarningCode.invalid_command:       return 'invalid command';
       case cliWarningCode.empty_response:        return 'empty response';
       case cliWarningCode.unknown_response_code: return `unknown response code: ${data}`;
-      case cliWarningCode.response_parse_error:  return 'response parse error';
     }
   })(code)));
 

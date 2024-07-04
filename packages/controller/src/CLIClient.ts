@@ -34,8 +34,8 @@ export class CLIClient extends EventEmitter {
     this.emit('input', input);
 
     switch (input) {
-      case 'exit':
-        return this.stop();
+      case '': return;
+      case 'exit': return this.stop();
 
       default:
         const requestPath: string = path.normalize(input.split(' ').join('/'));

@@ -41,8 +41,8 @@ class CLIClient extends node_events_1.default {
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
             this.emit('input', input);
             switch (input) {
-                case 'exit':
-                    return this.stop();
+                case '': return;
+                case 'exit': return this.stop();
                 default:
                     const requestPath = path_1.default.normalize(input.split(' ').join('/'));
                     let response;
