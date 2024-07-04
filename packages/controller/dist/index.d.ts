@@ -4,7 +4,8 @@ import { Database } from './Database';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Instance } from './Instance';
-export { Docker, Socket, Instance };
+import { CLIClient } from './CLIClient';
+export { Docker, Socket, Instance, CLIClient };
 export declare class Controller extends EventEmitter {
     #private;
     readonly serviceName: string;

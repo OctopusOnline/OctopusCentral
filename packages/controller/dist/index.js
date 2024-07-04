@@ -24,7 +24,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 var _Controller_instances, _Controller_running;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Controller = exports.Instance = exports.Socket = exports.Docker = void 0;
+exports.Controller = exports.CLIClient = exports.Instance = exports.Socket = exports.Docker = void 0;
 const types_1 = require("@octopuscentral/types");
 const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
@@ -35,6 +35,8 @@ const Docker_1 = require("./Docker");
 Object.defineProperty(exports, "Docker", { enumerable: true, get: function () { return Docker_1.Docker; } });
 const Instance_1 = require("./Instance");
 Object.defineProperty(exports, "Instance", { enumerable: true, get: function () { return Instance_1.Instance; } });
+const CLIClient_1 = require("./CLIClient");
+Object.defineProperty(exports, "CLIClient", { enumerable: true, get: function () { return CLIClient_1.CLIClient; } });
 class Controller extends node_events_1.default {
     get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
