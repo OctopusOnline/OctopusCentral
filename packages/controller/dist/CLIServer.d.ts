@@ -6,5 +6,5 @@ export declare class CLIServer {
     constructor(controller: Controller);
     private setup;
     start(): Promise<void>;
-    stop(): void;
+    stop(): Promise<void>;
 }

@@ -41,7 +41,7 @@ class Database {
         __classPrivateFieldSet(this, _Database_url, url, "f");
         __classPrivateFieldSet(this, _Database_connection, connection, "f");
     }
-    init() {
+    connect() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!__classPrivateFieldGet(this, _Database_connection, "f"))
                 __classPrivateFieldSet(this, _Database_connection, yield mariadb_1.default.createConnection(__classPrivateFieldGet(this, _Database_url, "f")), "f");

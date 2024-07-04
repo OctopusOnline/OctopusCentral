@@ -40,7 +40,7 @@ export class CLIServer {
       this.server?.listen(cliServerPort, () => resolve()));
   }
 
-  stop(): void {
+  async stop(): Promise<void> {
     this.server?.close();
   }
 }

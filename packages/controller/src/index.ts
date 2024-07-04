@@ -1,6 +1,7 @@
 import { instancesTableName, DockerInstanceProps, Setting } from '@octopuscentral/types';
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
+import { CLIServer } from './CLIServer';
 import { Database } from './Database';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
@@ -16,6 +17,7 @@ export class Controller extends EventEmitter {
   readonly database: Database;
   readonly docker: Docker;
   readonly socket: Socket;
+  readonly cli: CLIServer;
 
   #instances: Instance[] = [];
   #running: boolean = false;
@@ -30,6 +32,7 @@ export class Controller extends EventEmitter {
 
     this.docker = new Docker(this, instanceDockerProps);
     this.socket = new Socket(this);
+    this.cli = new CLIServer(this);
   }
 
   addInstance(instance: Instance, overwrite: boolean = false) {
@@ -121,7 +124,7 @@ export class Controller extends EventEmitter {
   }
 
   async init(): Promise<void> {
-    await this.database.init();
+    await this.database.connect();
     await this.docker.init();
   }
 
@@ -129,7 +132,10 @@ export class Controller extends EventEmitter {
     this.#running = true;
 
     await this.init();
-    await this.socket.start();
+    await Promise.all([
+      this.socket.start(),
+      this.cli.start()
+    ]);
 
     await this.runInterval();
   }
@@ -144,10 +150,11 @@ export class Controller extends EventEmitter {
   }
 
   async destroy(): Promise<void> {
-    this.#running = false;
     await Promise.all([
+      this.cli.stop(),
       this.socket.stop(),
       this.database.disconnect()
     ]);
+    this.#running = false;
   }
 }

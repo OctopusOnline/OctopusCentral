@@ -4,6 +4,6 @@ export declare class Database {
     get url(): string;
     get connection(): Connection;
     constructor(url: string, connection?: Connection);
-    init(): Promise<void>;
+    connect(): Promise<void>;
     disconnect(): Promise<void>;
 }

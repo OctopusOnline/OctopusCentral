@@ -1,5 +1,6 @@
 import { DockerInstanceProps, Setting } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
+import { CLIServer } from './CLIServer';
 import { Database } from './Database';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
@@ -13,6 +14,7 @@ export declare class Controller extends EventEmitter {
     readonly database: Database;
     readonly docker: Docker;
     readonly socket: Socket;
+    readonly cli: CLIServer;
     get instances(): Instance[];
     get running(): boolean;
     constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps);

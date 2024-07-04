@@ -28,6 +28,7 @@ exports.Controller = exports.CLIClient = exports.Instance = exports.Socket = exp
 const types_1 = require("@octopuscentral/types");
 const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
+const CLIServer_1 = require("./CLIServer");
 const Database_1 = require("./Database");
 const Socket_1 = require("./Socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
@@ -49,6 +50,7 @@ class Controller extends node_events_1.default {
         this.database = new Database_1.Database(databaseUrl);
         this.docker = new Docker_1.Docker(this, instanceDockerProps);
         this.socket = new Socket_1.Socket(this);
+        this.cli = new CLIServer_1.CLIServer(this);
     }
     addInstance(instance, overwrite = false) {
         if (!this.getInstance(instance.id))
@@ -130,7 +132,7 @@ class Controller extends node_events_1.default {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.database.init();
+            yield this.database.connect();
             yield this.docker.init();
         });
     }
@@ -138,7 +140,10 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Controller_running, true, "f");
             yield this.init();
-            yield this.socket.start();
+            yield Promise.all([
+                this.socket.start(),
+                this.cli.start()
+            ]);
             yield this.runInterval();
         });
     }
@@ -154,11 +159,12 @@ class Controller extends node_events_1.default {
     }
     destroy() {
         return __awaiter(this, void 0, void 0, function* () {
-            __classPrivateFieldSet(this, _Controller_running, false, "f");
             yield Promise.all([
+                this.cli.stop(),
                 this.socket.stop(),
                 this.database.disconnect()
             ]);
+            __classPrivateFieldSet(this, _Controller_running, false, "f");
         });
     }
 }
