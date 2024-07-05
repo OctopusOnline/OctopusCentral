@@ -29,7 +29,7 @@ class CLIServer {
         this.express.get('/serviceName', (_, res) => res.json({ type: 'value', data: this.controller.serviceName }));
         this.express.get(['/instance/ls', '/instances'], (_, res) => __awaiter(this, void 0, void 0, function* () {
             const data = {
-                head: ['instance id', 'running'],
+                head: ['id', 'running'],
                 rows: []
             };
             for (const instance of this.controller.instances)
