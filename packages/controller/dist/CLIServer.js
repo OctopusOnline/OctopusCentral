@@ -28,13 +28,16 @@ class CLIServer {
         this.express.get('/', (_, res) => res.send('Octopus Central CLI Server'));
         this.express.get('/serviceName', (_, res) => res.json({ type: 'value', data: this.controller.serviceName }));
         this.express.get(['/instance/ls', '/instances'], (_, res) => __awaiter(this, void 0, void 0, function* () {
-            const instances = [];
+            const data = {
+                head: ['instance id', 'running'],
+                rows: []
+            };
             for (const instance of this.controller.instances)
-                instances.push({
-                    'instance id': instance.id,
-                    'running': (yield this.controller.docker.instanceRunning(instance)) ? 'yes' : 'no'
-                });
-            res.json({ type: 'table', data: instances });
+                data.rows.push([
+                    instance.id,
+                    (yield this.controller.docker.instanceRunning(instance)) ? 'yes' : 'no'
+                ]);
+            res.json({ type: 'table', data });
         }));
         this.express.use('/instance/:id/*', (req, res, next) => {
             req.instance = this.controller.getInstance(Number(req.params.id));

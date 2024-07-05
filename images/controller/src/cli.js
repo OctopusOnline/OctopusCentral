@@ -1,5 +1,6 @@
 import { CLIClient } from "@octopuscentral/controller";
 import { cliWarningCode } from "@octopuscentral/types";
+import Table from 'cli-table3';
 
 console.log('===============================\n OctopusCentral Controller CLI \n===============================');
 
@@ -7,9 +8,17 @@ const cli = new CLIClient();
 
 cli.on('response', (type, data) => {
   switch (type) {
-    case 'value': return console.log(data);
-    case 'list': return console.log(`count: (${data.length})${data.map(value=>`\n- ${value}`)}`);
-    case 'table': return console.table(data);
+    case 'value':
+      console.log(data);
+      break;
+    case 'list':
+      console.log(`count: (${data.length})${data.map(value=>`\n- ${value}`)}`);
+      break;
+    case 'table':
+      const table = new Table({ head: data.head });
+      for (const row of data.rows) table.push(row);
+      console.log(table.toString());
+      break;
   }
 });
 

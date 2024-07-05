@@ -3,7 +3,10 @@ export const serverPort: number = 7000;
 type responseDataType = 'value' | 'list' | 'table';
 export type responseValueDataType = null | number | string;
 export type responseListDataType = responseValueDataType[];
-export type responseTableDataType = { [key: string]: responseValueDataType }[];
+export type responseTableDataType = {
+  head: string[],
+  rows: responseValueDataType[][]
+};
 
 interface ResponseData {
   type: responseDataType,

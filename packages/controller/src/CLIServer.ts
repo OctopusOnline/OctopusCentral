@@ -1,4 +1,5 @@
 import { cliServerPort, cliResponseTableDataType, CliResponseValueData, CLIResponseTableData } from '@octopuscentral/types';
+import { ResponseTableData, responseTableDataType, responseValueDataType } from '@octopuscentral/types/dist/types/cli';
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
@@ -31,13 +32,16 @@ export class CLIServer {
       res.json({ type: 'value', data: this.controller.serviceName } as CliResponseValueData));
 
     this.express.get(['/instance/ls', '/instances'], async (_: Request, res: Response) => {
-      const instances: cliResponseTableDataType = [];
+      const data: responseTableDataType = {
+        head: ['id', 'running'],
+        rows: [] as responseValueDataType[][]
+      };
       for (const instance of this.controller.instances)
-        instances.push({
-          'instance id': instance.id,
-          'running': await this.controller.docker.instanceRunning(instance) ? 'yes' : 'no'
-        });
-      res.json({ type: 'table', data: instances } as CLIResponseTableData);
+        data.rows.push([
+          instance.id,
+          await this.controller.docker.instanceRunning(instance) ? 'yes' : 'no'
+        ]);
+      res.json({ type: 'table', data });
     });
 
     this.express.use('/instance/:id/*', (req: RequestWithInstance, res: Response, next: any) => {

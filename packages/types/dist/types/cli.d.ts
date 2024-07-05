@@ -3,8 +3,9 @@ type responseDataType = 'value' | 'list' | 'table';
 export type responseValueDataType = null | number | string;
 export type responseListDataType = responseValueDataType[];
 export type responseTableDataType = {
-    [key: string]: responseValueDataType;
-}[];
+    head: string[];
+    rows: responseValueDataType[][];
+};
 interface ResponseData {
     type: responseDataType;
     data: any;
