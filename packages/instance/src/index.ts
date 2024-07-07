@@ -20,7 +20,7 @@ export class Instance {
   }
 
   get database(): Database {
-    if (this.#id === undefined) throw new Error('instance.database is not set\nmaybe run init() first?');
+    if (this.#database === undefined) throw new Error('instance.database is not set\nmaybe run init() first?');
     return this.#database!;
   }
 
@@ -57,11 +57,12 @@ export class Instance {
       if (url === undefined)
         throw new Error(`env var ${instanceDatabaseEnvVarName} is not set`);
       this.#database = new Database(url);
-      try {
-        await this.#database.connect();
-      } catch (error: any) {
-        throw new Error(`could not connect to database at '${url}': ${error.message}`);
-      }
+    }
+
+    try {
+      await this.#database!.connect();
+    } catch (error: any) {
+      throw new Error(`could not connect to database at '${this.#database!.url}': ${error.message}`);
     }
 
     await this.database.connection.query(`

@@ -41,7 +41,7 @@ class Instance {
         return __classPrivateFieldGet(this, _Instance_id, "f");
     }
     get database() {
-        if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
+        if (__classPrivateFieldGet(this, _Instance_database, "f") === undefined)
             throw new Error('instance.database is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_database, "f");
     }
@@ -79,12 +79,12 @@ class Instance {
                 if (url === undefined)
                     throw new Error(`env var ${types_1.instanceDatabaseEnvVarName} is not set`);
                 __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(url), "f");
-                try {
-                    yield __classPrivateFieldGet(this, _Instance_database, "f").connect();
-                }
-                catch (error) {
-                    throw new Error(`could not connect to database at '${url}': ${error.message}`);
-                }
+            }
+            try {
+                yield __classPrivateFieldGet(this, _Instance_database, "f").connect();
+            }
+            catch (error) {
+                throw new Error(`could not connect to database at '${__classPrivateFieldGet(this, _Instance_database, "f").url}': ${error.message}`);
             }
             yield this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${types_1.instancesTableName} (
