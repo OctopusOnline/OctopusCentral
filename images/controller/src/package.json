@@ -1,7 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "@octopuscentral/controller": "^1.4.25",
+    "@octopuscentral/controller": "^1.4.26",
     "cli-table3": "^0.6.5"
   }
 }
