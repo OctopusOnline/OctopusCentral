@@ -42,6 +42,16 @@ export class Instance {
         throw new Error(`invalid ${instanceIdEnvVarName} value: '${id}'`);
     }
 
+    await this.initDatabase();
+
+    if (this.#id === undefined)
+      this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
+    else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
+
+    await this.settings.init();
+  }
+
+  async initDatabase(): Promise<void> {
     if (this.#database === undefined) {
       const url: string | undefined = process.env[instanceDatabaseEnvVarName] as any;
       if (url === undefined)
@@ -54,16 +64,6 @@ export class Instance {
       }
     }
 
-    await this.initDatabase();
-
-    if (this.#id === undefined)
-      this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
-    else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
-
-    await this.settings.init();
-  }
-
-  async initDatabase(): Promise<void> {
     await this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${instancesTableName} (
         id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
