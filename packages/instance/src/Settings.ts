@@ -19,7 +19,7 @@ export class Settings extends EventEmitter {
     this.instance = instance;
   }
 
-  async init(): Promise<void> {
+  async initDatabase(): Promise<void> {
     await this.instance.database.connection.query(`
         CREATE TABLE IF NOT EXISTS ${instanceSettingsTableName} (
           id          INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -33,6 +33,10 @@ export class Settings extends EventEmitter {
           UNIQUE INDEX instance_setting (instance_id, name)
         )
       `);
+  }
+
+  async init(): Promise<void> {
+    await this.initDatabase();
     await this.fetchSettings();
   }
 

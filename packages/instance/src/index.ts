@@ -54,17 +54,22 @@ export class Instance {
       }
     }
 
-    await this.database.connection.query(`
-      CREATE TABLE IF NOT EXISTS ${instancesTableName} (
-        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-        socketHostname VARCHAR(255)     NULL
-      )`);
+    await this.initDatabase();
 
     if (this.#id === undefined)
       this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
     else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
 
     await this.settings.init();
+  }
+
+  async initDatabase(): Promise<void> {
+    await this.database.connection.query(`
+      CREATE TABLE IF NOT EXISTS ${instancesTableName} (
+        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+        socketHostname VARCHAR(255)     NULL
+      )`);
+    await this.settings.initDatabase();
   }
 
   async start(): Promise<void> {

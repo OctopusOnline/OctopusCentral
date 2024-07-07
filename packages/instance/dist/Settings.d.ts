@@ -6,6 +6,7 @@ export declare class Settings extends EventEmitter {
     private readonly instance;
     private settings;
     constructor(instance: Instance);
+    initDatabase(): Promise<void>;
     init(): Promise<void>;
     initDefaultSettings(settings?: SettingInterface[] | SettingsObjectType): Promise<void>;
     private loadSettings;

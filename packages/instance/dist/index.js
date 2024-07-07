@@ -76,16 +76,22 @@ class Instance {
                     throw new Error(`could not connect to database at '${url}': ${error.message}`);
                 }
             }
-            yield this.database.connection.query(`
-      CREATE TABLE IF NOT EXISTS ${types_1.instancesTableName} (
-        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
-        socketHostname VARCHAR(255)     NULL
-      )`);
+            yield this.initDatabase();
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
                 __classPrivateFieldSet(this, _Instance_id, Number((yield this.database.connection.query(`INSERT INTO ${types_1.instancesTableName} (id) VALUES (NULL)`)).insertId), "f");
             else
                 yield this.database.connection.execute(`INSERT IGNORE INTO ${types_1.instancesTableName} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
             yield this.settings.init();
+        });
+    }
+    initDatabase() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.database.connection.query(`
+      CREATE TABLE IF NOT EXISTS ${types_1.instancesTableName} (
+        id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
+        socketHostname VARCHAR(255)     NULL
+      )`);
+            yield this.settings.initDatabase();
         });
     }
     start() {

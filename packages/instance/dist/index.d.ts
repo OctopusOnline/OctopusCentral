@@ -11,6 +11,7 @@ export declare class Instance {
     get database(): Database;
     constructor(databaseUrl?: string, id?: number);
     init(): Promise<void>;
+    initDatabase(): Promise<void>;
     start(): Promise<void>;
     setSocketHostname(hostname: string): Promise<void>;
 }

@@ -22,7 +22,7 @@ class Settings extends node_events_1.default {
         this.settings = [];
         this.instance = instance;
     }
-    init() {
+    initDatabase() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.instance.database.connection.query(`
         CREATE TABLE IF NOT EXISTS ${types_1.instanceSettingsTableName} (
@@ -37,6 +37,11 @@ class Settings extends node_events_1.default {
           UNIQUE INDEX instance_setting (instance_id, name)
         )
       `);
+        });
+    }
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.initDatabase();
             yield this.fetchSettings();
         });
     }
