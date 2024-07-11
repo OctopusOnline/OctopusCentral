@@ -23,7 +23,7 @@ class Setting {
                 this.value = Number(value);
                 break;
             case 'bol':
-                this.value = value === 'true';
+                this.value = String(value) === 'true';
                 break;
             case 'nul':
                 this.value = null;

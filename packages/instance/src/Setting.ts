@@ -16,10 +16,10 @@ export class Setting implements SettingInterface {
     else throw new Error(`unknown type '${type}' for setting '${name}' with value '${value}'`);
 
     switch (this.type) {
-      case 'str': this.value = String(value);    break;
-      case 'num': this.value = Number(value);    break;
-      case 'bol': this.value = value === 'true'; break;
-      case 'nul': this.value = null;             break;
+      case 'str': this.value = String(value);            break;
+      case 'num': this.value = Number(value);            break;
+      case 'bol': this.value = String(value) === 'true'; break;
+      case 'nul': this.value = null;                     break;
     }
 
     this.name = name;
