@@ -126,18 +126,6 @@ export class Settings extends EventEmitter {
       : undefined;
   }
 
-  getSettingStrValueF(name: string): string {
-    return this.getSettingStrValue(name) as string;
-  }
-
-  getSettingNumValueF(name: string): number {
-    return this.getSettingNumValue(name) as number;
-  }
-
-  getSettingBolValueF(name: string): boolean {
-    return this.getSettingBolValue(name) as boolean;
-  }
-
   async updateSetting(
     setting: Setting | string,
     settingValue?: SettingValueType,
