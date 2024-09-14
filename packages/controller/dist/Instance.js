@@ -43,7 +43,7 @@ class Instance extends node_events_1.default {
             if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
                 return false;
             if (this.connected && reconnect)
-                yield this.disconnect();
+                this.disconnect();
             const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
                 reconnection: true,
                 reconnectionAttempts: Infinity

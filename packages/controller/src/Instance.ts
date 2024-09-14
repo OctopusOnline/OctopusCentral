@@ -25,7 +25,7 @@ export class Instance extends EventEmitter {
     if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
       return false;
     if (this.connected && reconnect)
-      await this.disconnect();
+      this.disconnect();
 
     const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
       reconnection: true,
