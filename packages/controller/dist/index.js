@@ -133,7 +133,7 @@ class Controller extends node_events_1.default {
     init() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.database.connect();
-            yield (new instance_1.Instance(this.database.url)).initDatabase();
+            //await (new VirtualInstance(this.database.url)).initDatabase();
             yield this.docker.init();
         });
     }

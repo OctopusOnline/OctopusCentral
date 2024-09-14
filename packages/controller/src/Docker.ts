@@ -1,11 +1,29 @@
-import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix } from '@octopuscentral/types';
 import { instanceIdEnvVarName } from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
+import { Image } from 'node-docker-api/lib/image';
+import { Volume } from 'node-docker-api/lib/volume';
 import { Container } from 'node-docker-api/lib/container';
 import { Network } from 'node-docker-api/lib/network';
 import { Controller } from './index';
 import { Instance } from './Instance';
 import { hostname } from 'os';
+
+export interface DockerImage extends Image {
+  data: {
+    Config: {
+      Labels: { [key: string]: string }
+    }
+  }
+}
+
+export interface DockerVolume extends Volume {
+  data: {
+    Labels: { [key: string]: string },
+    Mountpoint: string,
+    Name: string
+  }
+}
 
 export interface DockerContainer extends Container {
   State?: {
@@ -55,6 +73,15 @@ export class Docker {
     return this.controller.serviceName + '_instance-' + (instance instanceof Instance ? instance.id : instance);
   }
 
+  private getVolumeName(instance: Instance | number, name: string): string {
+    return this.getContainerName(instance) + '-' + name;
+  }
+
+  private async getImageLabel(label: string): Promise<string | undefined> {
+    const status = (await this.client.image.get(this.instanceProps.image).status()) as DockerImage;
+    return status.data.Config.Labels[label];
+  }
+
   private async getContainer(instance: Instance | string, onlyRunning: boolean = false): Promise<DockerContainer | undefined> {
     const name: string = instance instanceof Instance ? this.getContainerName(instance) : instance
     return (await this.client.container.list({ all: !onlyRunning })).find(container =>
@@ -90,6 +117,9 @@ export class Docker {
 
     const containerName: string = this.getContainerName(instance);
 
+    const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
+    const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
+
     let endpointConfig = {};
     for (const networkKey in networks)
       endpointConfig = {
@@ -107,16 +137,19 @@ export class Docker {
       AttachStderr: true,
       OpenStdin: false,
       StdinOnce: false,
+      Labels: {
+        [`${labelPrefix}.${controllerLabelPrefix}.service-name`]: this.controller.serviceName
+      },
       Env: [
         `${instanceIdEnvVarName}=${instance.id}`,
         `${instanceDatabaseEnvVarName}=${this.controller.database.url}`
       ],
+      HostConfig: {
+        Binds: binds
+      },
       Hostname: containerName,
       ExposedPorts: {
         [instance.socketPort]: {}
-      },
-      HostConfig: {
-        NetworkMode: 'bridge'
       },
       NetworkingConfig: {
         EndpointsConfig: endpointConfig
@@ -129,6 +162,40 @@ export class Docker {
 
     // TODO: check container Errors (look in debug mode)
     return container;
+  }
+
+  private parseVolumesString(volumesString: string): { [key: string]: string } {
+    return volumesString.split(';').reduce((volumes, volume) => {
+      const [name, mountPath] = volume.split(':');
+      volumes[name] = mountPath;
+      return volumes;
+    }, {} as { [key: string]: string });
+  }
+
+  private async createInstanceVolumes(instance: Instance): Promise<{ [key: string]: string }> {
+    const volumesString = await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`);
+    if (!volumesString) return {};
+
+    const imageVolumes = this.parseVolumesString(volumesString);
+    if (Object.keys(imageVolumes).length > 0) {
+
+      const volumes = ((await this.client.volume.list()) as DockerVolume[])
+        .filter(volume => volume.data.Labels[`${labelPrefix}.${volumeLabelPrefix}.service-name`] === this.controller.serviceName);
+
+      for (const name in imageVolumes) {
+        const volumeName = this.getVolumeName(instance, name);
+
+        if (!volumes.some(volume => volume.data.Name === volumeName))
+          await this.client.volume.create({
+            Name: volumeName,
+            Labels: {
+              [`${labelPrefix}.${volumeLabelPrefix}.service-name`]: this.controller.serviceName
+            }
+          });
+      }
+    }
+
+    return imageVolumes;
   }
 
   async instanceRunning(instance: Instance): Promise<boolean> {

@@ -55,6 +55,15 @@ class Docker {
     getContainerName(instance) {
         return this.controller.serviceName + '_instance-' + (instance instanceof Instance_1.Instance ? instance.id : instance);
     }
+    getVolumeName(instance, name) {
+        return this.getContainerName(instance) + '-' + name;
+    }
+    getImageLabel(label) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const status = (yield this.client.image.get(this.instanceProps.image).status());
+            return status.data.Config.Labels[label];
+        });
+    }
     getContainer(instance_1) {
         return __awaiter(this, arguments, void 0, function* (instance, onlyRunning = false) {
             const name = instance instanceof Instance_1.Instance ? this.getContainerName(instance) : instance;
@@ -90,6 +99,8 @@ class Docker {
                 yield this.stopInstance(instance);
             }
             const containerName = this.getContainerName(instance);
+            const volumes = yield this.createInstanceVolumes(instance);
+            const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
             let endpointConfig = {};
             for (const networkKey in networks)
                 endpointConfig = Object.assign(Object.assign({}, endpointConfig), { [networks[networkKey].NetworkID]: {
@@ -103,16 +114,19 @@ class Docker {
                 AttachStderr: true,
                 OpenStdin: false,
                 StdinOnce: false,
+                Labels: {
+                    [`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.service-name`]: this.controller.serviceName
+                },
                 Env: [
                     `${types_2.instanceIdEnvVarName}=${instance.id}`,
                     `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`
                 ],
+                HostConfig: {
+                    Binds: binds
+                },
                 Hostname: containerName,
                 ExposedPorts: {
                     [instance.socketPort]: {}
-                },
-                HostConfig: {
-                    NetworkMode: 'bridge'
                 },
                 NetworkingConfig: {
                     EndpointsConfig: endpointConfig
@@ -123,6 +137,36 @@ class Docker {
             yield this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
             // TODO: check container Errors (look in debug mode)
             return container;
+        });
+    }
+    parseVolumesString(volumesString) {
+        return volumesString.split(';').reduce((volumes, volume) => {
+            const [name, mountPath] = volume.split(':');
+            volumes[name] = mountPath;
+            return volumes;
+        }, {});
+    }
+    createInstanceVolumes(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const volumesString = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`);
+            if (!volumesString)
+                return {};
+            const imageVolumes = this.parseVolumesString(volumesString);
+            if (Object.keys(imageVolumes).length > 0) {
+                const volumes = (yield this.client.volume.list())
+                    .filter(volume => volume.data.Labels[`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`] === this.controller.serviceName);
+                for (const name in imageVolumes) {
+                    const volumeName = this.getVolumeName(instance, name);
+                    if (!volumes.some(volume => volume.data.Name === volumeName))
+                        yield this.client.volume.create({
+                            Name: volumeName,
+                            Labels: {
+                                [`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`]: this.controller.serviceName
+                            }
+                        });
+                }
+            }
+            return imageVolumes;
         });
     }
     instanceRunning(instance) {

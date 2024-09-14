@@ -1,5 +1,6 @@
 import {
-  tableName as instancesTableName
+  tableName as instancesTableName,
+  labelPrefix as instanceLabelPrefix
 } from './types/instance';
 
 import {
@@ -11,7 +12,8 @@ import {
 } from './types/setting';
 
 import {
-  tableName as controllersTableName
+  tableName as controllersTableName,
+  labelPrefix as controllerLabelPrefix
 } from './types/controller';
 
 import {
@@ -26,24 +28,34 @@ import {
 } from './types/cli';
 
 import {
+  labelPrefix as centralLabelPrefix,
   CentralInstanceFilter
 } from './types/central';
 
 import {
+  labelPrefix,
   instanceIdEnvVarName,
   instanceDatabaseEnvVarName,
   DockerClientProps,
   DockerInstanceProps
 } from './types/docker';
 
+import {
+  labelPrefix as volumeLabelPrefix
+} from './types/volume';
+
 export {
   instancesTableName,
+  instanceLabelPrefix,
   instanceSettingsTableName,
+  instanceIdEnvVarName,
+  instanceDatabaseEnvVarName,
   SettingValueType,
   SettingValueTypeType,
   Setting,
   SettingsObjectType,
   controllersTableName,
+  controllerLabelPrefix,
   cliServerPort,
   cliResponseValueDataType,
   cliResponseListDataType,
@@ -52,9 +64,10 @@ export {
   CLIResponseListData,
   CLIResponseTableData,
   cliWarningCode,
+  centralLabelPrefix,
   CentralInstanceFilter,
-  instanceIdEnvVarName,
-  instanceDatabaseEnvVarName,
+  labelPrefix,
   DockerClientProps,
-  DockerInstanceProps
+  DockerInstanceProps,
+  volumeLabelPrefix
 };
