@@ -63,15 +63,12 @@ export class Docker {
     );
   }
 
-  private async getContainerNetwork(container: DockerContainer): Promise<DockerNetwork | undefined> {
+  private async getContainerNetwork(container: DockerContainer): Promise<{ [key: string]: DockerNetwork } | undefined> {
     const networks: { [key: string]: DockerNetwork } | undefined
       = (container.data as { NetworkSettings: { Networks: object } })?.NetworkSettings?.Networks as { [key: string]: DockerNetwork };
     if (!networks) return;
 
-    const networkNames: string[] = Object.keys(networks);
-    let networkName: string = networkNames.find(networkName => networkName.endsWith('default')) || networkNames[0];
-
-    return networks[networkName];
+    return networks;
   }
 
   private async fetchSelfContainer(): Promise<void> {
@@ -84,7 +81,7 @@ export class Docker {
       throw new Error(`could not find controller container (${containerName})`);
   }
 
-  private async startInstanceContainer(instance: Instance, network: DockerNetwork, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<DockerContainer | undefined> {
+  private async startInstanceContainer(instance: Instance, networks: { [key: string]: DockerNetwork }, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<DockerContainer | undefined> {
     const runningContainer = await this.getContainer(instance);
     if (runningContainer) {
       if (!forceRestart) return;
@@ -92,6 +89,15 @@ export class Docker {
     }
 
     const containerName: string = this.getContainerName(instance);
+
+    let endpointConfig = {};
+    for (const networkKey in networks)
+      endpointConfig = {
+        ...endpointConfig,
+        [networks[networkKey].NetworkID]: {
+          Aliases: [containerName]
+        }
+      };
 
     const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
@@ -113,11 +119,7 @@ export class Docker {
         NetworkMode: 'bridge'
       },
       NetworkingConfig: {
-        EndpointsConfig: {
-          [network.NetworkID]: {
-            Aliases: [containerName]
-          }
-        }
+        EndpointsConfig: endpointConfig
       }
     });
     await container.rename({ name: containerName });
@@ -139,10 +141,10 @@ export class Docker {
   }
 
   async startInstance(instance: Instance): Promise<boolean> {
-    const network = await this.getContainerNetwork(this.#selfContainer!);
-    if (!network) return false;
+    const networks = await this.getContainerNetwork(this.#selfContainer!);
+    if (!networks) return false;
 
-    const container = await this.startInstanceContainer(instance, network, true, true);
+    const container = await this.startInstanceContainer(instance, networks, true, true);
     return !!container && instance.connected;
   }
 

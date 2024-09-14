@@ -68,9 +68,7 @@ class Docker {
             const networks = (_b = (_a = container.data) === null || _a === void 0 ? void 0 : _a.NetworkSettings) === null || _b === void 0 ? void 0 : _b.Networks;
             if (!networks)
                 return;
-            const networkNames = Object.keys(networks);
-            let networkName = networkNames.find(networkName => networkName.endsWith('default')) || networkNames[0];
-            return networks[networkName];
+            return networks;
         });
     }
     fetchSelfContainer() {
@@ -83,8 +81,8 @@ class Docker {
                 throw new Error(`could not find controller container (${containerName})`);
         });
     }
-    startInstanceContainer(instance_1, network_1) {
-        return __awaiter(this, arguments, void 0, function* (instance, network, forceRestart = true, autoReconnect = false) {
+    startInstanceContainer(instance_1, networks_1) {
+        return __awaiter(this, arguments, void 0, function* (instance, networks, forceRestart = true, autoReconnect = false) {
             const runningContainer = yield this.getContainer(instance);
             if (runningContainer) {
                 if (!forceRestart)
@@ -92,6 +90,11 @@ class Docker {
                 yield this.stopInstance(instance);
             }
             const containerName = this.getContainerName(instance);
+            let endpointConfig = {};
+            for (const networkKey in networks)
+                endpointConfig = Object.assign(Object.assign({}, endpointConfig), { [networks[networkKey].NetworkID]: {
+                        Aliases: [containerName]
+                    } });
             const container = yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
@@ -112,11 +115,7 @@ class Docker {
                     NetworkMode: 'bridge'
                 },
                 NetworkingConfig: {
-                    EndpointsConfig: {
-                        [network.NetworkID]: {
-                            Aliases: [containerName]
-                        }
-                    }
+                    EndpointsConfig: endpointConfig
                 }
             });
             yield container.rename({ name: containerName });
@@ -141,10 +140,10 @@ class Docker {
     }
     startInstance(instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            const network = yield this.getContainerNetwork(__classPrivateFieldGet(this, _Docker_selfContainer, "f"));
-            if (!network)
+            const networks = yield this.getContainerNetwork(__classPrivateFieldGet(this, _Docker_selfContainer, "f"));
+            if (!networks)
                 return false;
-            const container = yield this.startInstanceContainer(instance, network, true, true);
+            const container = yield this.startInstanceContainer(instance, networks, true, true);
             return !!container && instance.connected;
         });
     }
