@@ -110,7 +110,7 @@ export class Docker {
         [instance.socketPort]: {}
       },
       HostConfig: {
-        NetworkMode: network.NetworkID
+        NetworkMode: 'bridge'
       },
       NetworkingConfig: {
         EndpointsConfig: {
