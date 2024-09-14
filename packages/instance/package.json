@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/instance",
-  "version": "1.4.28",
+  "version": "1.4.32-alpha.0",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -20,7 +20,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@octopuscentral/types": "^1.4.22",
+    "@octopuscentral/types": "^1.4.32-alpha.0",
     "express": "^4.21.0",
     "mariadb": "^3.3.1",
     "socket.io": "^4.7.5"
