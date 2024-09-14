@@ -154,7 +154,7 @@ class Docker {
             const imageVolumes = this.parseVolumesString(volumesString);
             if (Object.keys(imageVolumes).length > 0) {
                 const volumes = (yield this.client.volume.list())
-                    .filter(volume => volume.data.Labels[`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`] === this.controller.serviceName);
+                    .filter(volume => { var _a; return ((_a = volume === null || volume === void 0 ? void 0 : volume.data) === null || _a === void 0 ? void 0 : _a.Labels) && volume.data.Labels[`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`] === this.controller.serviceName; });
                 for (const name in imageVolumes) {
                     const volumeName = this.getVolumeName(instance, name);
                     if (!volumes.some(volume => volume.data.Name === volumeName))
