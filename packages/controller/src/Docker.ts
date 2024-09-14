@@ -180,7 +180,7 @@ export class Docker {
     if (Object.keys(imageVolumes).length > 0) {
 
       const volumes = ((await this.client.volume.list()) as DockerVolume[])
-        .filter(volume => volume.data.Labels[`${labelPrefix}.${volumeLabelPrefix}.service-name`] === this.controller.serviceName);
+        .filter(volume => volume?.data?.Labels && volume.data.Labels[`${labelPrefix}.${volumeLabelPrefix}.service-name`] === this.controller.serviceName);
 
       for (const name in imageVolumes) {
         const volumeName = this.getVolumeName(instance, name);
