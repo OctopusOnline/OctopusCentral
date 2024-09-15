@@ -41,7 +41,6 @@ export class CLIClient extends EventEmitter {
     try { response = await axios.get(this.getServerUrl(requestPath)) }
     catch (error: any) { response = error.response }
     if (response) {
-      console.log('CLIClient', 'request', 'response', response);
       if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
       else if (response.status === 200) {
         if (response.data?.type)

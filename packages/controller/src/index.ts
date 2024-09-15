@@ -130,7 +130,11 @@ export class Controller extends EventEmitter {
     console.log('Controller', 'startInstance', 'start');
     const [bootResult, dockerResult] = await Promise.all([
       Promise.race([
-        new Promise(resolve => instance.socket!.once('boot status booted', success => {console.log('Controller', 'startInstance', '"boot status booted"');resolve(success)})),
+        new Promise(async resolve => {
+          if (await waitFor(() => instance.connected))
+            instance.socket!.once('boot status booted', success => {console.log('Controller', 'startInstance', '"boot status booted"');resolve(success)});
+          else resolve(false);
+        }),
         async() => {
           await sleep(1e4);
           console.log('Controller', 'startInstance', 'waitForInstanceNotRunning');

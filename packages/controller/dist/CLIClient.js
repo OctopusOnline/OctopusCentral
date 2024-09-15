@@ -52,7 +52,6 @@ class CLIClient extends node_events_1.default {
                 response = error.response;
             }
             if (response) {
-                console.log('CLIClient', 'request', 'response', response);
                 if (response.status === 404)
                     this.emit('warning', types_1.cliWarningCode.invalid_command);
                 else if (response.status === 200) {

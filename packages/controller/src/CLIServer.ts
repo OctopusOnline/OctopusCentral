@@ -3,7 +3,7 @@ import { responseTableDataType, responseValueDataType } from '@octopuscentral/ty
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
-import { sleep } from './helper';
+import { sleep, waitFor } from './helper';
 
 interface RequestWithInstance extends Request {
   instance: Instance;
@@ -70,14 +70,10 @@ export class CLIServer {
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, booted: false } };
       let result: boolean | Error;
 
-      console.log('CLIServer', 'start', 'waitingForStream');
-      for (let i = 0; i < 150 && this.eventBuffer.instance[req.instance.id].start.waitingForStream; i++)
-        await sleep(200);
-      console.log('CLIServer', 'start', 'stream is there! starting docker instance');
-
-      if (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
+      if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
+        console.log('CLIServer', 'start', 'stream is there! starting docker instance');
         try { result = await this.controller.startInstance(req.instance) }
         catch (error: any) { result = error }
       }
@@ -96,10 +92,8 @@ export class CLIServer {
 
     this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
       console.log('CLIServer', 'stream', 'check waitingForStream:', this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream);
-      for (let i = 0; i < 150 && !this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream; i++)
-        await sleep(200);
 
-      if (!this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream)
+      if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
       const bootStatusEvent = (message: string) => res.write(message);
@@ -111,8 +105,7 @@ export class CLIServer {
         req.instance.socket!.on('boot status', bootStatusEvent);
 
         console.log('CLIServer', 'stream', 'waitForStarted');
-        for (let i = 0; i < 150 && !this.eventBuffer.instance[req.instance.id].start.booted; i++)
-          await sleep(200);
+        await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted);
 
         console.log('CLIServer', 'stream', 'started');
         req.instance.socket?.off('boot status', bootStatusEvent);

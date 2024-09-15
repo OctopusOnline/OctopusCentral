@@ -15,9 +15,13 @@ function sleep(timeout) {
     return new Promise(resolve => setTimeout(() => resolve(), timeout));
 }
 function waitFor(breakFunction_1) {
-    return __awaiter(this, arguments, void 0, function* (breakFunction, interval = 200) {
-        while (!(yield breakFunction()))
+    return __awaiter(this, arguments, void 0, function* (breakFunction, maxIterations = 150, interval = 200) {
+        for (let i = 0; i < maxIterations; i++) {
+            if (yield breakFunction())
+                return true;
             yield sleep(interval);
+        }
+        return false;
     });
 }
 //# sourceMappingURL=helper.js.map

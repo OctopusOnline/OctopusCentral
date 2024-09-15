@@ -33,16 +33,17 @@ export class Instance extends EventEmitter {
     });
     this.#socket = socket;
 
-    const connectResult = await Promise.race<Error | void>([
-      new Promise(resolve => socket!.once('connect', () => {
+    const connectResult = await new Promise<Error | void>((resolve => {
+      console.log('instance connect. socket:', socket);
+      socket.once('connect', () => {
         this.emit('socket connected');
         resolve();
-      })),
-      new Promise(resolve => socket!.once('connect_error', error => {
+      });
+      socket.once('connect_error', error => {
         this.emit('socket connected', error);
         resolve(error);
-      }))
-    ]);
+      });
+    }))
 
     if (connectResult instanceof Error) {
       this.#socket = undefined;
