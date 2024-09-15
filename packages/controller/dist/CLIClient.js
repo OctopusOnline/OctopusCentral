@@ -70,7 +70,8 @@ class CLIClient extends node_events_1.default {
             yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                 const response = yield (0, axios_1.default)({
                     url: this.getServerUrl('stream/' + command),
-                    responseType: 'stream'
+                    responseType: 'stream',
+                    validateStatus: status => status < 500
                 });
                 response.data.pipe(node_process_1.default.stdout);
                 response.data.on('end', () => resolve());

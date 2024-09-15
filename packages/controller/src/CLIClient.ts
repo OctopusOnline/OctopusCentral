@@ -54,7 +54,8 @@ export class CLIClient extends EventEmitter {
     await new Promise<void>(async resolve => {
       const response = await axios({
         url: this.getServerUrl('stream/' + command),
-        responseType: 'stream'
+        responseType: 'stream',
+        validateStatus: status => status < 500
       });
       response.data.pipe(process.stdout);
       response.data.on('end', () => resolve());
