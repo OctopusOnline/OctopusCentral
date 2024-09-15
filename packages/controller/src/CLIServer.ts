@@ -3,7 +3,7 @@ import { responseTableDataType, responseValueDataType } from '@octopuscentral/ty
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
-import { sleep, waitFor } from './helper';
+import { waitFor } from './helper';
 
 interface RequestWithInstance extends Request {
   instance: Instance;

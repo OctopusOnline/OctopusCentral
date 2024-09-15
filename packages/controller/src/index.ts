@@ -131,7 +131,9 @@ export class Controller extends EventEmitter {
     await Promise.all([
       Promise.race([
         new Promise<void>(async resolve => {
+          console.log('wait for instance connected...');
           if (await waitFor(() => instance.connected, timeout / 200, 200)) {
+            console.log('instance connected! wait for "boot status booted"...');
             instance.socket!.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
               bootResult = success;
@@ -143,15 +145,17 @@ export class Controller extends EventEmitter {
             resolve();
           }
         }),
-        async() => {
+        (async() => {
           await sleep(timeout);
-          !await waitFor(async() => bootResult !== undefined || dockerResult === false || !await this.docker.instanceRunning(instance))
-        }
+          !await waitFor(async() => bootResult !== undefined || dockerResult === false || !await this.docker.instanceRunning(instance));
+          console.log(`instance not running after ${timeout/1e3}s`);
+        })()
       ]),
-      async() => {
+      (async() => {
         dockerResult = await this.docker.startInstance(instance);
         await instance.connect();
-      }
+        console.log('instance connect done');
+      })()
     ]);
 
     console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);

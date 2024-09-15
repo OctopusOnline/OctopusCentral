@@ -137,7 +137,9 @@ class Controller extends node_events_1.default {
             yield Promise.all([
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                        console.log('wait for instance connected...');
                         if (yield (0, helper_1.waitFor)(() => instance.connected, timeout / 200, 200)) {
+                            console.log('instance connected! wait for "boot status booted"...');
                             instance.socket.once('boot status booted', success => {
                                 console.log('Controller', 'startInstance', '"boot status booted"');
                                 bootResult = success;
@@ -149,15 +151,17 @@ class Controller extends node_events_1.default {
                             resolve();
                         }
                     })),
-                    () => __awaiter(this, void 0, void 0, function* () {
+                    (() => __awaiter(this, void 0, void 0, function* () {
                         yield (0, helper_1.sleep)(timeout);
                         !(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return bootResult !== undefined || dockerResult === false || !(yield this.docker.instanceRunning(instance)); })));
-                    })
+                        console.log(`instance not running after ${timeout / 1e3}s`);
+                    }))()
                 ]),
-                () => __awaiter(this, void 0, void 0, function* () {
+                (() => __awaiter(this, void 0, void 0, function* () {
                     dockerResult = yield this.docker.startInstance(instance);
                     yield instance.connect();
-                })
+                    console.log('instance connect done');
+                }))()
             ]);
             console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
             return bootResult;
