@@ -111,7 +111,7 @@ export class CLIServer {
         console.log('CLIServer', 'stream', 'started');
         req.instance.off('socket connected', connectEvent);
         req.instance.socket?.off('boot status', bootStatusEvent);
-        res.end('');
+        res.end(''); // TODO: this necessary?
       };
 
       req.instance.on('socket connected', connectEvent);
@@ -124,7 +124,7 @@ export class CLIServer {
       ])) {
         console.log('CLIServer', 'stream', 'end stream after Promise.rage');
         req.instance.off('socket connected', connectEvent);
-        res.end('');
+        res.end(''); // TODO: this necessary?
       }
     });
 

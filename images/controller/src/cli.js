@@ -19,6 +19,9 @@ cli.on('response', (type, data) => {
       for (const row of data.rows) table.push(row);
       console.log(table.toString());
       break;
+    case 'streamChunk':
+      console.log(data.toString());
+      break;
   }
 });
 

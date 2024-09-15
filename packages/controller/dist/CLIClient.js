@@ -17,8 +17,9 @@ const types_1 = require("@octopuscentral/types");
 const promises_1 = __importDefault(require("node:readline/promises"));
 const axios_1 = __importDefault(require("axios"));
 const node_events_1 = __importDefault(require("node:events"));
+const node_stream_1 = require("node:stream");
 const node_process_1 = __importDefault(require("node:process"));
-const path_1 = __importDefault(require("path"));
+const node_path_1 = __importDefault(require("node:path"));
 const helper_1 = require("./helper");
 class CLIClient extends node_events_1.default {
     getServerUrl(path) {
@@ -42,7 +43,7 @@ class CLIClient extends node_events_1.default {
     request(command) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            const requestPath = path_1.default.normalize(command.split(' ').join('/'));
+            const requestPath = node_path_1.default.normalize(command.split(' ').join('/'));
             let response;
             try {
                 response = yield axios_1.default.get(this.getServerUrl(requestPath));
@@ -66,19 +67,24 @@ class CLIClient extends node_events_1.default {
     }
     requestTextStream(command) {
         return __awaiter(this, void 0, void 0, function* () {
-            const requestPath = path_1.default.normalize(command.split(' ').join('/'));
+            const requestPath = node_path_1.default.normalize(command.split(' ').join('/'));
             yield (0, helper_1.sleep)(200);
             yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                console.log('CLIClient', 'requestTextStream', 'send', requestPath);
                 const response = yield (0, axios_1.default)({
                     url: this.getServerUrl('stream/' + requestPath),
                     responseType: 'stream',
                     validateStatus: status => status < 500
                 });
                 console.log('CLIClient', 'requestTextStream', 'pipe');
-                response.data.pipe(node_process_1.default.stdout);
-                response.data.on('end', () => { console.log('CLIClient', 'requestTextStream', 'onEnd'); resolve(); });
-                response.data.on('error', () => { console.log('CLIClient', 'requestTextStream', 'onError'); resolve(); });
+                const self = this;
+                response.data.pipe(new node_stream_1.Writable({
+                    write(chunk, encoding, callback) {
+                        self.emit('response', 'streamChunk', chunk, encoding);
+                        callback();
+                    }
+                }));
+                response.data.on('end', () => resolve());
+                response.data.on('error', () => resolve());
             }));
         });
     }

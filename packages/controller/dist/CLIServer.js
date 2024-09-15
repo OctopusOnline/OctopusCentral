@@ -92,7 +92,7 @@ class CLIServer {
                 console.log('CLIServer', 'stream', 'started');
                 req.instance.off('socket connected', connectEvent);
                 (_b = req.instance.socket) === null || _b === void 0 ? void 0 : _b.off('boot status', bootStatusEvent);
-                res.end('');
+                res.end(''); // TODO: this necessary?
             });
             req.instance.on('socket connected', connectEvent);
             this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
@@ -102,7 +102,7 @@ class CLIServer {
             ])) {
                 console.log('CLIServer', 'stream', 'end stream after Promise.rage');
                 req.instance.off('socket connected', connectEvent);
-                res.end('');
+                res.end(''); // TODO: this necessary?
             }
         }));
         this.express.get('/instance/:id/stop', (req, res) => __awaiter(this, void 0, void 0, function* () {

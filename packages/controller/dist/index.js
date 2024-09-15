@@ -163,7 +163,6 @@ class Controller extends node_events_1.default {
                     console.log('instance connect done');
                 }))()
             ]);
-            console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
             return bootResult;
         });
     }

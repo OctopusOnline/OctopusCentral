@@ -2,8 +2,9 @@ import { cliServerPort, cliWarningCode } from '@octopuscentral/types';
 import readline, { Interface as ReadlineInterface } from 'node:readline/promises';
 import axios, { AxiosResponse } from 'axios';
 import EventEmitter from 'node:events';
+import { Writable } from 'node:stream';
 import process from 'node:process';
-import path from 'path';
+import path from 'node:path';
 import { sleep } from './helper';
 
 export class CLIClient extends EventEmitter {
@@ -53,16 +54,21 @@ export class CLIClient extends EventEmitter {
     const requestPath: string = path.normalize(command.split(' ').join('/'));
     await sleep(200);
     await new Promise<void>(async resolve => {
-      console.log('CLIClient', 'requestTextStream', 'send', requestPath);
       const response = await axios({
         url: this.getServerUrl('stream/' + requestPath),
         responseType: 'stream',
         validateStatus: status => status < 500
       });
       console.log('CLIClient', 'requestTextStream', 'pipe');
-      response.data.pipe(process.stdout);
-      response.data.on('end', () => {console.log('CLIClient', 'requestTextStream', 'onEnd');resolve()});
-      response.data.on('error', () => {console.log('CLIClient', 'requestTextStream', 'onError');resolve()});
+      const self = this;
+      response.data.pipe(new Writable({
+        write(chunk, encoding, callback) {
+          self.emit('response', 'streamChunk', chunk, encoding);
+          callback();
+        }
+      }));
+      response.data.on('end', () => resolve());
+      response.data.on('error', () => resolve());
     });
   }
 

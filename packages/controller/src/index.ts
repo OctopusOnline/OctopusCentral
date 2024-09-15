@@ -158,8 +158,6 @@ export class Controller extends EventEmitter {
       })()
     ]);
 
-    console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
-
     return bootResult!;
   }
 
