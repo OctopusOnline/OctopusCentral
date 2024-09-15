@@ -138,7 +138,7 @@ class Controller extends node_events_1.default {
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
                         console.log('wait for instance connected...');
-                        if (yield (0, helper_1.waitFor)(() => instance.connected, timeout / 200, 200)) {
+                        if (yield (0, helper_1.waitFor)(() => instance.connected, timeout / 200)) {
                             console.log('instance connected! wait for "boot status booted"...');
                             instance.socket.once('boot status booted', success => {
                                 console.log('Controller', 'startInstance', '"boot status booted"');

@@ -19,6 +19,7 @@ export class CLIServer {
     instance: {
       start: {
         waitingForStream: boolean;
+        connected: boolean;
         booted: boolean;
       };
     }[];
@@ -67,7 +68,7 @@ export class CLIServer {
     });
 
     this.express.get('/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
-      this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, booted: false } };
+      this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
 
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
@@ -95,20 +96,36 @@ export class CLIServer {
         return res.destroy(new Error('no waitingForStream'));
 
       const bootStatusEvent = (message: string) => res.write(message);
-      req.instance.once('socket connected', async error => {
+      const connectEvent = async (error?: Error) => {
+        console.log("connect event:", error?.message);
+        if (error || !this.eventBuffer.instance[req.instance.id]?.start)
+          return;
+        this.eventBuffer.instance[req.instance.id].start.connected = true;
+
         console.log('CLIServer', 'stream', 'socket connected!', error);
-        if (error || !this.eventBuffer.instance[req.instance.id]?.start?.booted)
-          return res.destroy(error);
 
         req.instance.socket!.on('boot status', bootStatusEvent);
 
-        await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted);
+        await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300);
 
         console.log('CLIServer', 'stream', 'started');
+        req.instance.off('socket connected', connectEvent);
         req.instance.socket?.off('boot status', bootStatusEvent);
-      })
+        res.end('');
+      };
+
+      req.instance.on('socket connected', connectEvent);
 
       this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
+
+      if (await Promise.race([
+        waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.connected, 300).then(() => false),
+        waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300).then(() => true)
+      ])) {
+        console.log('CLIServer', 'stream', 'end stream after Promise.rage');
+        req.instance.off('socket connected', connectEvent);
+        res.end('');
+      }
     });
 
     this.express.get('/instance/:id/stop', async (req: RequestWithInstance, res: Response) => {

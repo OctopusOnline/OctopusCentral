@@ -132,7 +132,7 @@ export class Controller extends EventEmitter {
       Promise.race([
         new Promise<void>(async resolve => {
           console.log('wait for instance connected...');
-          if (await waitFor(() => instance.connected, timeout / 200, 200)) {
+          if (await waitFor(() => instance.connected, timeout / 200)) {
             console.log('instance connected! wait for "boot status booted"...');
             instance.socket!.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
