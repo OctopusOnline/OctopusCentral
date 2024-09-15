@@ -56,7 +56,6 @@ class Instance extends node_events_1.default {
                     resolve();
                 });
                 socket.once('connect_error', error => {
-                    console.log('socket connect error:', error.message);
                     this.emit('socket connected', error);
                     resolve(error);
                 });
