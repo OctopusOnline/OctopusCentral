@@ -77,6 +77,10 @@ export class Instance {
     await this.socket.start();
   }
 
+  sendBootStatus(messageOrBooted: string | boolean): void{
+    this.socket.sendBootStatus(messageOrBooted);
+  }
+
   async setSocketHostname(hostname: string): Promise<void> {
     await this.database.connection.execute(`UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
   }

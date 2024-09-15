@@ -30,6 +30,7 @@ const instance_1 = require("@octopuscentral/instance");
 const node_events_1 = __importDefault(require("node:events"));
 const CLIServer_1 = require("./CLIServer");
 const Database_1 = require("./Database");
+const helper_1 = require("./helper");
 const Socket_1 = require("./Socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 const Docker_1 = require("./Docker");
@@ -128,6 +129,29 @@ class Controller extends node_events_1.default {
             for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
                 if (!instance.connected)
                     yield instance.connect();
+        });
+    }
+    startInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let booted = false;
+            const [bootResult, dockerResult] = yield Promise.all([
+                Promise.race([
+                    new Promise(resolve => instance.socket.once('boot status booted', success => resolve(success))),
+                    () => __awaiter(this, void 0, void 0, function* () {
+                        yield (0, helper_1.sleep)(1e4);
+                        yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return booted || !(yield this.docker.instanceRunning(instance)); }));
+                        return false;
+                    })
+                ]),
+                this.docker.startInstance(instance)
+            ]);
+            booted = true;
+            return dockerResult && bootResult;
+        });
+    }
+    stopInstance(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.docker.stopInstance(instance);
         });
     }
     init() {

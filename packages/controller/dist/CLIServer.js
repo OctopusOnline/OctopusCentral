@@ -16,8 +16,12 @@ exports.CLIServer = void 0;
 const types_1 = require("@octopuscentral/types");
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
+const helper_1 = require("./helper");
 class CLIServer {
     constructor(controller) {
+        this.eventBuffer = {
+            instance: []
+        };
         this.controller = controller;
         this.express = (0, express_1.default)();
         this.server = http_1.default.createServer(this.express);
@@ -39,7 +43,7 @@ class CLIServer {
                 ]);
             res.json({ type: 'table', data });
         }));
-        this.express.use('/instance/:id/*', (req, res, next) => {
+        this.express.use(['/instance/:id/*', '/stream/instance/:id/*'], (req, res, next) => {
             req.instance = this.controller.getInstance(Number(req.params.id));
             if (!req.instance)
                 res.json({
@@ -50,13 +54,17 @@ class CLIServer {
                 next();
         });
         this.express.get('/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
+            this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, started: false } };
+            while (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
+                yield (0, helper_1.sleep)(100);
             let result;
             try {
-                result = yield this.controller.docker.startInstance(req.instance);
+                result = yield this.controller.startInstance(req.instance);
             }
             catch (error) {
                 result = error;
             }
+            this.eventBuffer.instance[req.instance.id].start.started = true;
             res.json({
                 type: 'value',
                 data: result instanceof Error
@@ -65,10 +73,21 @@ class CLIServer {
                     : `instance ${req.instance.id} could not be started`)
             });
         }));
+        this.express.get('/stream/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
+            if ((_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.waitingForStream) {
+                this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
+                const bootStatusEvent = (message) => res.write(message);
+                req.instance.socket.on('boot status', bootStatusEvent);
+                while (!this.eventBuffer.instance[req.instance.id].start.started)
+                    yield (0, helper_1.sleep)(100);
+                req.instance.socket.off('boot status', bootStatusEvent);
+            }
+        }));
         this.express.get('/instance/:id/stop', (req, res) => __awaiter(this, void 0, void 0, function* () {
             let result;
             try {
-                result = yield this.controller.docker.stopInstance(req.instance);
+                result = yield this.controller.stopInstance(req.instance);
             }
             catch (error) {
                 result = error;
@@ -81,7 +100,6 @@ class CLIServer {
                     : `instance ${req.instance.id} could not be stopped`)
             });
         }));
-        // TODO: add CLI command processing
         this.express.use((_, res) => res.status(404).send());
     }
     start() {

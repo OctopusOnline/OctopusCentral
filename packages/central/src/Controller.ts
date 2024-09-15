@@ -25,7 +25,7 @@ export class Controller extends EventEmitter {
     if (!this.socketHost)
       return false;
     if (this.connected && reconnect)
-      await this.disconnect();
+      this.disconnect();
 
     const socket = io(this.socketHost, {
       reconnection: true,

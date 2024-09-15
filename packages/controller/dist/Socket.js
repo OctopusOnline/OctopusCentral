@@ -93,12 +93,20 @@ class Socket {
                             socket.emit('response controller', 200, sessionId, false);
                         break;
                     case 'docker start instance':
+                        const bootStatusEvent = (message) => socket.emit('response controller boot status', sessionId, message);
                         instance = this.controller.getInstance(args.id);
-                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.startInstance(instance) : undefined));
+                        if (instance) {
+                            instance.socket.on('boot status', bootStatusEvent);
+                            const startResult = yield this.controller.startInstance(instance);
+                            instance.socket.off('boot status', bootStatusEvent);
+                            socket.emit('response controller', 200, sessionId, startResult);
+                        }
+                        else
+                            socket.emit('response controller', 200, sessionId, undefined);
                         break;
                     case 'docker stop instance':
                         instance = this.controller.getInstance(args.id);
-                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.docker.stopInstance(instance) : undefined));
+                        socket.emit('response controller', 200, sessionId, (instance ? yield this.controller.stopInstance(instance) : undefined));
                         break;
                     case 'docker pause instance':
                         instance = this.controller.getInstance(args.id);

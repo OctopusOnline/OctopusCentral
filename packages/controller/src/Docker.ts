@@ -213,7 +213,7 @@ export class Docker {
     if (!networks) return false;
 
     const container = await this.startInstanceContainer(instance, networks, true, true);
-    return !!container && instance.connected;
+    return !!container;
   }
 
   async stopInstance(instance: Instance): Promise<boolean> {

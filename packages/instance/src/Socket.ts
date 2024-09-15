@@ -39,13 +39,21 @@ export class Socket {
       this.server.close(() => resolve(this)));
   }
 
+  sendBootStatus(messageOrBooted: string | boolean): void {
+    this.io.emit(
+      typeof messageOrBooted === 'boolean'
+        ? 'boot status booted'
+        : 'boot status',
+      messageOrBooted);
+  }
+
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
       socket.on('request', async (sessionId: string, command: string, args: any) => {
         switch (command) {
           case 'setting get':
             socket.emit('response', 200 as any, sessionId as any,
-              await this.instance.settings.getSetting(args.name) as any);
+              this.instance.settings.getSetting(args.name) as any);
             break;
 
           case 'setting update':

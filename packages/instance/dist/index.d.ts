@@ -13,5 +13,6 @@ export declare class Instance {
     init(): Promise<void>;
     initDatabase(): Promise<void>;
     start(): Promise<void>;
+    sendBootStatus(messageOrBooted: string | boolean): void;
     setSocketHostname(hostname: string): Promise<void>;
 }

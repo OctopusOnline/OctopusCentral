@@ -3,6 +3,7 @@ import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopus
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
 import { Database } from './Database';
+import { sleep, waitFor } from './helper';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Instance } from './Instance';
@@ -121,6 +122,29 @@ export class Controller extends EventEmitter {
   async connectInstances(): Promise<void> {
     for (const instance of this.#instances)
       if (!instance.connected) await instance.connect();
+  }
+
+  async startInstance(instance: Instance): Promise<boolean> {
+    let booted: boolean = false;
+
+    const [bootResult, dockerResult] = await Promise.all([
+      Promise.race([
+        new Promise(resolve => instance.socket!.once('boot status booted', success => resolve(success))),
+        async() => {
+          await sleep(1e4);
+          await waitFor(async() => booted || !await this.docker.instanceRunning(instance));
+          return false;
+        }
+      ]),
+      this.docker.startInstance(instance)
+    ]) as [boolean, boolean];
+    booted = true;
+
+    return dockerResult && bootResult;
+  }
+
+  async stopInstance(instance: Instance): Promise<boolean> {
+    return await this.docker.stopInstance(instance);
   }
 
   async init(): Promise<void> {

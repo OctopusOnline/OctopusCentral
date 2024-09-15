@@ -3,6 +3,7 @@ import { ResponseTableData, responseTableDataType, responseValueDataType } from 
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
+import { sleep } from './helper';
 
 interface RequestWithInstance extends Request {
   instance: Instance;
@@ -13,6 +14,17 @@ export class CLIServer {
 
   private readonly server: HttpServer;
   private readonly express: any;
+
+  private readonly eventBuffer: {
+    instance: {
+      start: {
+        waitingForStream: boolean;
+        started: boolean;
+      };
+    }[];
+  } = {
+    instance: []
+  };
 
   constructor(controller: Controller) {
     this.controller = controller;
@@ -44,7 +56,7 @@ export class CLIServer {
       res.json({ type: 'table', data });
     });
 
-    this.express.use('/instance/:id/*', (req: RequestWithInstance, res: Response, next: any) => {
+    this.express.use(['/instance/:id/*', '/stream/instance/:id/*'], (req: RequestWithInstance, res: Response, next: any) => {
       req.instance = this.controller.getInstance(Number(req.params.id))!;
       if (!req.instance)
         res.json({
@@ -55,9 +67,15 @@ export class CLIServer {
     });
 
     this.express.get('/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+      this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, started: false } };
+      while (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
+        await sleep(100);
+
       let result: boolean | Error;
-      try { result = await this.controller.docker.startInstance(req.instance) }
+      try { result = await this.controller.startInstance(req.instance) }
       catch (error: any) { result = error }
+
+      this.eventBuffer.instance[req.instance.id].start.started = true;
       res.json({
         type: 'value',
         data: result instanceof Error
@@ -67,9 +85,22 @@ export class CLIServer {
       } as CliResponseValueData);
     });
 
+    this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+      if (this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream) {
+        this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
+
+        const bootStatusEvent = (message: string) => res.write(message);
+        req.instance.socket!.on('boot status', bootStatusEvent);
+
+        while (!this.eventBuffer.instance[req.instance.id].start.started)
+          await sleep(100);
+        req.instance.socket!.off('boot status', bootStatusEvent);
+      }
+    });
+
     this.express.get('/instance/:id/stop', async (req: RequestWithInstance, res: Response) => {
       let result: boolean | Error;
-      try { result = await this.controller.docker.stopInstance(req.instance) }
+      try { result = await this.controller.stopInstance(req.instance) }
       catch (error: any) { result = error }
       res.json({
         type: 'value',
@@ -79,8 +110,6 @@ export class CLIServer {
             : `instance ${ req.instance.id } could not be stopped`)
       } as CliResponseValueData);
     });
-
-    // TODO: add CLI command processing
 
     this.express.use((_: Request, res: Response) =>
       res.status(404).send());

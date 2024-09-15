@@ -189,7 +189,7 @@ class Docker {
             if (!networks)
                 return false;
             const container = yield this.startInstanceContainer(instance, networks, true, true);
-            return !!container && instance.connected;
+            return !!container;
         });
     }
     stopInstance(instance) {

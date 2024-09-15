@@ -58,12 +58,17 @@ class Socket {
             yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }
+    sendBootStatus(messageOrBooted) {
+        this.io.emit(typeof messageOrBooted === 'boolean'
+            ? 'boot status booted'
+            : 'boot status', messageOrBooted);
+    }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('request', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
                 switch (command) {
                     case 'setting get':
-                        socket.emit('response', 200, sessionId, yield this.instance.settings.getSetting(args.name));
+                        socket.emit('response', 200, sessionId, this.instance.settings.getSetting(args.name));
                         break;
                     case 'setting update':
                         socket.emit('response', 200, sessionId, yield this.instance.settings.updateSetting(args.name, args.value, args.type, args.min, args.max));

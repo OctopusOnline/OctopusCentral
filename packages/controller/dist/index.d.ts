@@ -28,6 +28,8 @@ export declare class Controller extends EventEmitter {
     fetchSyncInstances(): Promise<Instance[]>;
     updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect?: boolean): Promise<void>;
     connectInstances(): Promise<void>;
+    startInstance(instance: Instance): Promise<boolean>;
+    stopInstance(instance: Instance): Promise<boolean>;
     init(): Promise<void>;
     start(): Promise<void>;
     private runInterval;

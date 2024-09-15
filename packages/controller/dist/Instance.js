@@ -49,16 +49,16 @@ class Instance extends node_events_1.default {
                 reconnectionAttempts: Infinity
             });
             __classPrivateFieldSet(this, _Instance_socket, socket, "f");
-            const connectResult = yield new Promise((resolve => {
-                socket.once('connect', () => {
+            const connectResult = yield Promise.race([
+                new Promise(resolve => socket.once('connect', () => {
                     this.emit('socket connected');
                     resolve();
-                });
-                socket.once('connect_error', error => {
+                })),
+                new Promise(resolve => socket.once('connect_error', error => {
                     this.emit('socket connected', error);
                     resolve(error);
-                });
-            }));
+                }))
+            ]);
             if (connectResult instanceof Error) {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
                 return connectResult;

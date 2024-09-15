@@ -19,7 +19,11 @@ const axios_1 = __importDefault(require("axios"));
 const node_events_1 = __importDefault(require("node:events"));
 const node_process_1 = __importDefault(require("node:process"));
 const path_1 = __importDefault(require("path"));
+const helper_1 = require("./helper");
 class CLIClient extends node_events_1.default {
+    getServerUrl(path) {
+        return `http://0.0.0.0:${types_1.cliServerPort}/${path}`;
+    }
     constructor(input = node_process_1.default.stdin, output = node_process_1.default.stdout) {
         super();
         this.consoleInputPrefix = '> ';
@@ -35,9 +39,47 @@ class CLIClient extends node_events_1.default {
         this.emit('start');
         this.inputLoop().then();
     }
-    inputLoop() {
+    request(command) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
+            const requestPath = path_1.default.normalize(command.split(' ').join('/'));
+            let response;
+            try {
+                response = yield axios_1.default.get(this.getServerUrl(requestPath));
+            }
+            catch (error) {
+                response = error.response;
+            }
+            if (response) {
+                if (response.status === 404)
+                    this.emit('warning', types_1.cliWarningCode.invalid_command);
+                else if (response.status === 200) {
+                    if ((_a = response.data) === null || _a === void 0 ? void 0 : _a.type)
+                        this.emit('response', response.data.type, response.data.data);
+                    else
+                        this.emit('warning', types_1.cliWarningCode.empty_response);
+                }
+                else
+                    this.emit('warning', types_1.cliWarningCode.unknown_response_code, response.status);
+            }
+        });
+    }
+    requestTextStream(command) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield (0, helper_1.sleep)(200);
+            yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                const response = yield (0, axios_1.default)({
+                    url: this.getServerUrl('stream/' + command),
+                    responseType: 'stream'
+                });
+                response.data.pipe(node_process_1.default.stdout);
+                response.data.on('end', () => resolve());
+                response.data.on('error', () => resolve());
+            }));
+        });
+    }
+    inputLoop() {
+        return __awaiter(this, void 0, void 0, function* () {
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
             this.emit('input', input);
             switch (input) {
@@ -49,26 +91,10 @@ class CLIClient extends node_events_1.default {
                 case 'exit':
                     return this.stop();
                 default:
-                    const requestPath = path_1.default.normalize(input.split(' ').join('/'));
-                    let response;
-                    try {
-                        response = yield axios_1.default.get(`http://0.0.0.0:${types_1.cliServerPort}/${requestPath}`);
-                    }
-                    catch (error) {
-                        response = error.response;
-                    }
-                    if (response) {
-                        if (response.status === 404)
-                            this.emit('warning', types_1.cliWarningCode.invalid_command);
-                        else if (response.status === 200) {
-                            if ((_a = response.data) === null || _a === void 0 ? void 0 : _a.type)
-                                this.emit('response', response.data.type, response.data.data);
-                            else
-                                this.emit('warning', types_1.cliWarningCode.empty_response);
-                        }
-                        else
-                            this.emit('warning', types_1.cliWarningCode.unknown_response_code, response.status);
-                    }
+                    yield Promise.all([
+                        this.request(input),
+                        this.requestTextStream(input)
+                    ]);
             }
             yield this.inputLoop();
         });
