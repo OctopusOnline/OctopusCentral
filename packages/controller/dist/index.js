@@ -146,7 +146,14 @@ class Controller extends node_events_1.default {
                         return false;
                     })
                 ]),
-                this.docker.startInstance(instance)
+                new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                    console.log('Controller', 'startInstance', 'start docker instance');
+                    yield this.docker.startInstance(instance);
+                    console.log('Controller', 'startInstance', 'connect to instance socket');
+                    yield instance.connect(true);
+                    console.log('Controller', 'startInstance', 'instance socket connected:', instance.connected);
+                    resolve(instance.connected);
+                }))
             ]);
             booted = true;
             console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);

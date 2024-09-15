@@ -139,7 +139,14 @@ export class Controller extends EventEmitter {
           return false;
         }
       ]),
-      this.docker.startInstance(instance)
+      new Promise(async resolve => {
+        console.log('Controller', 'startInstance', 'start docker instance');
+        await this.docker.startInstance(instance);
+        console.log('Controller', 'startInstance', 'connect to instance socket');
+        await instance.connect(true);
+        console.log('Controller', 'startInstance', 'instance socket connected:', instance.connected);
+        resolve(instance.connected);
+      })
     ]) as [boolean, boolean];
     booted = true;
     console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);

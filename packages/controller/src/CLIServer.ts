@@ -1,5 +1,5 @@
-import { cliServerPort, cliResponseTableDataType, CliResponseValueData, CLIResponseTableData } from '@octopuscentral/types';
-import { ResponseTableData, responseTableDataType, responseValueDataType } from '@octopuscentral/types/dist/types/cli';
+import { cliServerPort,  CliResponseValueData } from '@octopuscentral/types';
+import { responseTableDataType, responseValueDataType } from '@octopuscentral/types/dist/types/cli';
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
@@ -19,7 +19,7 @@ export class CLIServer {
     instance: {
       start: {
         waitingForStream: boolean;
-        started: boolean;
+        booted: boolean;
       };
     }[];
   } = {
@@ -67,19 +67,24 @@ export class CLIServer {
     });
 
     this.express.get('/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+      this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, booted: false } };
+      let result: boolean | Error;
+
       console.log('CLIServer', 'start', 'waitingForStream');
-      this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, started: false } };
-      while (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
-        await sleep(100);
+      for (let i = 0; i < 150 && this.eventBuffer.instance[req.instance.id].start.waitingForStream; i++)
+        await sleep(200);
       console.log('CLIServer', 'start', 'stream is there! starting docker instance');
 
-      let result: boolean | Error;
-      try { result = await this.controller.startInstance(req.instance) }
-      catch (error: any) { result = error }
+      if (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
+        result = new Error('boot stream timeout');
+      else {
+        try { result = await this.controller.startInstance(req.instance) }
+        catch (error: any) { result = error }
+      }
 
       console.log('CLIServer', 'start', 'docker instance start result:', result);
 
-      this.eventBuffer.instance[req.instance.id].start.started = true;
+      this.eventBuffer.instance[req.instance.id].start.booted = true;
       res.json({
         type: 'value',
         data: result instanceof Error
@@ -91,18 +96,30 @@ export class CLIServer {
 
     this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
       console.log('CLIServer', 'stream', 'check waitingForStream:', this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream);
-      if (this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream) {
-        this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
+      for (let i = 0; i < 150 && !this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream; i++)
+        await sleep(200);
 
-        const bootStatusEvent = (message: string) => res.write(message);
+      if (!this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream)
+        return res.destroy(new Error('no waitingForStream'));
+
+      const bootStatusEvent = (message: string) => res.write(message);
+      req.instance.once('socket connected', async error => {
+        console.log('CLIServer', 'stream', 'socket connected!', error);
+        if (error || !this.eventBuffer.instance[req.instance.id]?.start?.booted)
+          return res.destroy(error);
+
         req.instance.socket!.on('boot status', bootStatusEvent);
 
         console.log('CLIServer', 'stream', 'waitForStarted');
-        while (!this.eventBuffer.instance[req.instance.id].start.started)
-          await sleep(100);
+        for (let i = 0; i < 150 && !this.eventBuffer.instance[req.instance.id].start.booted; i++)
+          await sleep(200);
+
         console.log('CLIServer', 'stream', 'started');
-        req.instance.socket!.off('boot status', bootStatusEvent);
-      }
+        req.instance.socket?.off('boot status', bootStatusEvent);
+      })
+
+      console.log('CLIServer', 'stream', 'waiting for "socket connected"');
+      this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
     });
 
     this.express.get('/instance/:id/stop', async (req: RequestWithInstance, res: Response) => {
