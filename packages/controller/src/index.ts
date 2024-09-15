@@ -124,32 +124,39 @@ export class Controller extends EventEmitter {
       if (!instance.connected) await instance.connect();
   }
 
-  async startInstance(instance: Instance): Promise<boolean> {
-    let booted: boolean = false;
+  async startInstance(instance: Instance, timeout: number = 6e4): Promise<boolean> {
+    let bootResult: boolean | undefined = undefined,
+      dockerResult: boolean | undefined = undefined;
 
-    const [bootResult, dockerResult] = await Promise.all([
+    await Promise.all([
       Promise.race([
-        new Promise(async resolve => {
-          if (await waitFor(() => instance.connected))
-            instance.socket!.once('boot status booted', success => {console.log('Controller', 'startInstance', '"boot status booted"');resolve(success)});
-          else resolve(false);
+        new Promise<void>(async resolve => {
+          if (await waitFor(() => instance.connected, timeout / 200, 200)) {
+            instance.socket!.once('boot status booted', success => {
+              console.log('Controller', 'startInstance', '"boot status booted"');
+              bootResult = success;
+              resolve();
+            });
+          }
+          else {
+            bootResult = false;
+            resolve();
+          }
         }),
         async() => {
-          await sleep(1e4);
-          await waitFor(async() => booted || !await this.docker.instanceRunning(instance));
-          return false;
+          await sleep(timeout);
+          !await waitFor(async() => bootResult !== undefined || dockerResult === false || !await this.docker.instanceRunning(instance))
         }
       ]),
-      new Promise(async resolve => {
-        const dockerResult = await this.docker.startInstance(instance);
-        await instance.connect(true);
-        resolve(dockerResult);
-      })
-    ]) as [boolean, boolean];
-    booted = true;
+      async() => {
+        dockerResult = await this.docker.startInstance(instance);
+        await instance.connect();
+      }
+    ]);
+
     console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
 
-    return dockerResult && bootResult;
+    return bootResult!;
   }
 
   async stopInstance(instance: Instance): Promise<boolean> {

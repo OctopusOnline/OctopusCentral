@@ -131,32 +131,36 @@ class Controller extends node_events_1.default {
                     yield instance.connect();
         });
     }
-    startInstance(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let booted = false;
-            const [bootResult, dockerResult] = yield Promise.all([
+    startInstance(instance_2) {
+        return __awaiter(this, arguments, void 0, function* (instance, timeout = 6e4) {
+            let bootResult = undefined, dockerResult = undefined;
+            yield Promise.all([
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        if (yield (0, helper_1.waitFor)(() => instance.connected))
-                            instance.socket.once('boot status booted', success => { console.log('Controller', 'startInstance', '"boot status booted"'); resolve(success); });
-                        else
-                            resolve(false);
+                        if (yield (0, helper_1.waitFor)(() => instance.connected, timeout / 200, 200)) {
+                            instance.socket.once('boot status booted', success => {
+                                console.log('Controller', 'startInstance', '"boot status booted"');
+                                bootResult = success;
+                                resolve();
+                            });
+                        }
+                        else {
+                            bootResult = false;
+                            resolve();
+                        }
                     })),
                     () => __awaiter(this, void 0, void 0, function* () {
-                        yield (0, helper_1.sleep)(1e4);
-                        yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return booted || !(yield this.docker.instanceRunning(instance)); }));
-                        return false;
+                        yield (0, helper_1.sleep)(timeout);
+                        !(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return bootResult !== undefined || dockerResult === false || !(yield this.docker.instanceRunning(instance)); })));
                     })
                 ]),
-                new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                    const dockerResult = yield this.docker.startInstance(instance);
-                    yield instance.connect(true);
-                    resolve(dockerResult);
-                }))
+                () => __awaiter(this, void 0, void 0, function* () {
+                    dockerResult = yield this.docker.startInstance(instance);
+                    yield instance.connect();
+                })
             ]);
-            booted = true;
             console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
-            return dockerResult && bootResult;
+            return bootResult;
         });
     }
     stopInstance(instance) {

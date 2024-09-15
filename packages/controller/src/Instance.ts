@@ -40,7 +40,7 @@ export class Instance extends EventEmitter {
         resolve();
       });
       socket.once('connect_error', error => {
-        console.log('socket connect error:', error);
+        console.log('socket connect error:', error.message);
         this.emit('socket connected', error);
         resolve(error);
       });
