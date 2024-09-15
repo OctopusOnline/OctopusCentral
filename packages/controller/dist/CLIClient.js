@@ -44,7 +44,6 @@ class CLIClient extends node_events_1.default {
             var _a;
             const requestPath = path_1.default.normalize(command.split(' ').join('/'));
             let response;
-            console.log('CLIClient', 'request', 'send', requestPath);
             try {
                 response = yield axios_1.default.get(this.getServerUrl(requestPath));
             }

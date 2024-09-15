@@ -127,7 +127,6 @@ export class Controller extends EventEmitter {
   async startInstance(instance: Instance): Promise<boolean> {
     let booted: boolean = false;
 
-    console.log('Controller', 'startInstance', 'start');
     const [bootResult, dockerResult] = await Promise.all([
       Promise.race([
         new Promise(async resolve => {
@@ -137,19 +136,14 @@ export class Controller extends EventEmitter {
         }),
         async() => {
           await sleep(1e4);
-          console.log('Controller', 'startInstance', 'waitForInstanceNotRunning');
           await waitFor(async() => booted || !await this.docker.instanceRunning(instance));
-          console.log('Controller', 'startInstance', 'instance not running!');
           return false;
         }
       ]),
       new Promise(async resolve => {
-        console.log('Controller', 'startInstance', 'start docker instance');
-        await this.docker.startInstance(instance);
-        console.log('Controller', 'startInstance', 'connect to instance socket');
+        const dockerResult = await this.docker.startInstance(instance);
         await instance.connect(true);
-        console.log('Controller', 'startInstance', 'instance socket connected:', instance.connected);
-        resolve(instance.connected);
+        resolve(dockerResult);
       })
     ]) as [boolean, boolean];
     booted = true;

@@ -73,7 +73,6 @@ export class CLIServer {
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
-        console.log('CLIServer', 'start', 'stream is there! starting docker instance');
         try { result = await this.controller.startInstance(req.instance) }
         catch (error: any) { result = error }
       }
@@ -91,7 +90,6 @@ export class CLIServer {
     });
 
     this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
-      console.log('CLIServer', 'stream', 'check waitingForStream:', this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream);
 
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
@@ -104,14 +102,12 @@ export class CLIServer {
 
         req.instance.socket!.on('boot status', bootStatusEvent);
 
-        console.log('CLIServer', 'stream', 'waitForStarted');
         await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted);
 
         console.log('CLIServer', 'stream', 'started');
         req.instance.socket?.off('boot status', bootStatusEvent);
       })
 
-      console.log('CLIServer', 'stream', 'waiting for "socket connected"');
       this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
     });
 

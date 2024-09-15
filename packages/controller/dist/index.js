@@ -134,7 +134,6 @@ class Controller extends node_events_1.default {
     startInstance(instance) {
         return __awaiter(this, void 0, void 0, function* () {
             let booted = false;
-            console.log('Controller', 'startInstance', 'start');
             const [bootResult, dockerResult] = yield Promise.all([
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
@@ -145,19 +144,14 @@ class Controller extends node_events_1.default {
                     })),
                     () => __awaiter(this, void 0, void 0, function* () {
                         yield (0, helper_1.sleep)(1e4);
-                        console.log('Controller', 'startInstance', 'waitForInstanceNotRunning');
                         yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return booted || !(yield this.docker.instanceRunning(instance)); }));
-                        console.log('Controller', 'startInstance', 'instance not running!');
                         return false;
                     })
                 ]),
                 new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                    console.log('Controller', 'startInstance', 'start docker instance');
-                    yield this.docker.startInstance(instance);
-                    console.log('Controller', 'startInstance', 'connect to instance socket');
+                    const dockerResult = yield this.docker.startInstance(instance);
                     yield instance.connect(true);
-                    console.log('Controller', 'startInstance', 'instance socket connected:', instance.connected);
-                    resolve(instance.connected);
+                    resolve(dockerResult);
                 }))
             ]);
             booted = true;

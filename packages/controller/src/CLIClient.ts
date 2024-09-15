@@ -37,7 +37,6 @@ export class CLIClient extends EventEmitter {
   private async request(command: string): Promise<void> {
     const requestPath: string = path.normalize(command.split(' ').join('/'));
     let response: AxiosResponse;
-    console.log('CLIClient', 'request', 'send', requestPath);
     try { response = await axios.get(this.getServerUrl(requestPath)) }
     catch (error: any) { response = error.response }
     if (response) {
