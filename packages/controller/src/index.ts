@@ -127,18 +127,22 @@ export class Controller extends EventEmitter {
   async startInstance(instance: Instance): Promise<boolean> {
     let booted: boolean = false;
 
+    console.log('Controller', 'startInstance', 'start');
     const [bootResult, dockerResult] = await Promise.all([
       Promise.race([
-        new Promise(resolve => instance.socket!.once('boot status booted', success => resolve(success))),
+        new Promise(resolve => instance.socket!.once('boot status booted', success => {console.log('Controller', 'startInstance', '"boot status booted"');resolve(success)})),
         async() => {
           await sleep(1e4);
+          console.log('Controller', 'startInstance', 'waitForInstanceNotRunning');
           await waitFor(async() => booted || !await this.docker.instanceRunning(instance));
+          console.log('Controller', 'startInstance', 'instance not running!');
           return false;
         }
       ]),
       this.docker.startInstance(instance)
     ]) as [boolean, boolean];
     booted = true;
+    console.log('Controller', 'startInstance', 'dockerResult:', dockerResult, 'bootResult:', bootResult);
 
     return dockerResult && bootResult;
   }

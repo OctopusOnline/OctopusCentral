@@ -67,13 +67,17 @@ export class CLIServer {
     });
 
     this.express.get('/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+      console.log('CLIServer', 'start', 'waitingForStream');
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, started: false } };
       while (this.eventBuffer.instance[req.instance.id].start.waitingForStream)
         await sleep(100);
+      console.log('CLIServer', 'start', 'stream is there! starting docker instance');
 
       let result: boolean | Error;
       try { result = await this.controller.startInstance(req.instance) }
       catch (error: any) { result = error }
+
+      console.log('CLIServer', 'start', 'docker instance start result:', result);
 
       this.eventBuffer.instance[req.instance.id].start.started = true;
       res.json({
@@ -86,14 +90,17 @@ export class CLIServer {
     });
 
     this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+      console.log('CLIServer', 'stream', 'check waitingForStream:', this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream);
       if (this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream) {
         this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
 
         const bootStatusEvent = (message: string) => res.write(message);
         req.instance.socket!.on('boot status', bootStatusEvent);
 
+        console.log('CLIServer', 'stream', 'waitForStarted');
         while (!this.eventBuffer.instance[req.instance.id].start.started)
           await sleep(100);
+        console.log('CLIServer', 'stream', 'started');
         req.instance.socket!.off('boot status', bootStatusEvent);
       }
     });

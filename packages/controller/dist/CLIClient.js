@@ -44,6 +44,7 @@ class CLIClient extends node_events_1.default {
             var _a;
             const requestPath = path_1.default.normalize(command.split(' ').join('/'));
             let response;
+            console.log('CLIClient', 'request', 'send', requestPath);
             try {
                 response = yield axios_1.default.get(this.getServerUrl(requestPath));
             }
@@ -51,6 +52,7 @@ class CLIClient extends node_events_1.default {
                 response = error.response;
             }
             if (response) {
+                console.log('CLIClient', 'request', 'response', response);
                 if (response.status === 404)
                     this.emit('warning', types_1.cliWarningCode.invalid_command);
                 else if (response.status === 200) {
@@ -66,16 +68,19 @@ class CLIClient extends node_events_1.default {
     }
     requestTextStream(command) {
         return __awaiter(this, void 0, void 0, function* () {
+            const requestPath = path_1.default.normalize(command.split(' ').join('/'));
             yield (0, helper_1.sleep)(200);
             yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                console.log('CLIClient', 'requestTextStream', 'send', requestPath);
                 const response = yield (0, axios_1.default)({
-                    url: this.getServerUrl('stream/' + command),
+                    url: this.getServerUrl('stream/' + requestPath),
                     responseType: 'stream',
                     validateStatus: status => status < 500
                 });
+                console.log('CLIClient', 'requestTextStream', 'pipe');
                 response.data.pipe(node_process_1.default.stdout);
-                response.data.on('end', () => resolve());
-                response.data.on('error', () => resolve());
+                response.data.on('end', () => { console.log('CLIClient', 'requestTextStream', 'onEnd'); resolve(); });
+                response.data.on('error', () => { console.log('CLIClient', 'requestTextStream', 'onError'); resolve(); });
             }));
         });
     }

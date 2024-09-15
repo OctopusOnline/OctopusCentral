@@ -37,9 +37,11 @@ export class CLIClient extends EventEmitter {
   private async request(command: string): Promise<void> {
     const requestPath: string = path.normalize(command.split(' ').join('/'));
     let response: AxiosResponse;
+    console.log('CLIClient', 'request', 'send', requestPath);
     try { response = await axios.get(this.getServerUrl(requestPath)) }
     catch (error: any) { response = error.response }
     if (response) {
+      console.log('CLIClient', 'request', 'response', response);
       if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
       else if (response.status === 200) {
         if (response.data?.type)
@@ -50,16 +52,19 @@ export class CLIClient extends EventEmitter {
   }
 
   private async requestTextStream(command: string): Promise<void> {
+    const requestPath: string = path.normalize(command.split(' ').join('/'));
     await sleep(200);
     await new Promise<void>(async resolve => {
+      console.log('CLIClient', 'requestTextStream', 'send', requestPath);
       const response = await axios({
-        url: this.getServerUrl('stream/' + command),
+        url: this.getServerUrl('stream/' + requestPath),
         responseType: 'stream',
         validateStatus: status => status < 500
       });
+      console.log('CLIClient', 'requestTextStream', 'pipe');
       response.data.pipe(process.stdout);
-      response.data.on('end', () => resolve());
-      response.data.on('error', () => resolve());
+      response.data.on('end', () => {console.log('CLIClient', 'requestTextStream', 'onEnd');resolve()});
+      response.data.on('error', () => {console.log('CLIClient', 'requestTextStream', 'onError');resolve()});
     });
   }
 
