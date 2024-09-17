@@ -25,10 +25,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _Socket_port, _Socket_startPermission;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
+const helper_1 = require("./helper");
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
-const helper_1 = require("./helper");
 class Socket {
     get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
     get running() { return this.server.listening; }
@@ -62,11 +62,7 @@ class Socket {
     }
     awaitStartPermission() {
         return __awaiter(this, arguments, void 0, function* (timeout = 6e4) {
-            return __classPrivateFieldGet(this, _Socket_startPermission, "f") ||
-                (__classPrivateFieldSet(this, _Socket_startPermission, yield Promise.race([
-                    new Promise(resolve => this.io.on('start permission', () => { console.log('start permission received!!!'); resolve(true); })),
-                    (0, helper_1.sleep)(timeout).then(() => false)
-                ]), "f"));
+            return yield (0, helper_1.waitFor)(() => __classPrivateFieldGet(this, _Socket_startPermission, "f"), timeout / 200);
         });
     }
     sendBootStatus(messageOrBooted) {

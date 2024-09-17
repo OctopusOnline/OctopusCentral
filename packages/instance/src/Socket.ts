@@ -1,8 +1,8 @@
+import { sleep, waitFor } from './helper';
 import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
-import { sleep } from './helper';
 
 export class Socket {
   private readonly instance: Instance;
@@ -43,11 +43,7 @@ export class Socket {
   }
 
   async awaitStartPermission(timeout: number = 6e4): Promise<boolean> {
-    return this.#startPermission ||
-      (this.#startPermission = await Promise.race<boolean>([
-        new Promise(resolve => this.io.on('start permission', () => {console.log('start permission received!!!');resolve(true);})),
-        sleep(timeout).then(() => false)
-      ]));
+    return await waitFor(() => this.#startPermission, timeout / 200);
   }
 
   sendBootStatus(messageOrBooted: string | boolean): void {
