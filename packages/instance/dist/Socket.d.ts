@@ -11,6 +11,7 @@ export declare class Socket {
     constructor(instance: Instance, server?: HttpServer, port?: number);
     start(): Promise<void>;
     stop(): Promise<void>;
+    awaitStartPermission(timeout?: number): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean): void;
     private setupSocketHandlers;
 }

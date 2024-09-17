@@ -12,7 +12,7 @@ export declare class Instance {
     constructor(databaseUrl?: string, id?: number);
     init(): Promise<void>;
     initDatabase(): Promise<void>;
-    start(): Promise<void>;
+    start(): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean): void;
     setSocketHostname(hostname: string): Promise<void>;
 }

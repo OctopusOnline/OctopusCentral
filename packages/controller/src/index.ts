@@ -126,31 +126,51 @@ export class Controller extends EventEmitter {
 
   async startInstance(instance: Instance, timeout: number = 6e4): Promise<boolean> {
     let bootResult: boolean | undefined = undefined,
+       startResult: boolean | undefined = undefined,
       dockerResult: boolean | undefined = undefined;
 
     await Promise.all([
       Promise.race([
-        new Promise<void>(async resolve => {
-          console.log('wait for instance connected...');
-          if (await waitFor(() => instance.connected, timeout / 200)) {
+        (async() => {
+
+          console.log('sending start permission');
+
+          await Promise.all([
+            waitFor(() => {
+              instance.socket?.emit('start permission');
+              return startResult;
+            }, timeout / 200),
+
+            Promise.race([
+              await waitFor(() => {
+                if (instance.connected) {
+                  console.log('awaiting start permission received');
+                  instance.socket!.once('start permission received', () => {console.log('start permission received!!!');startResult = true;});
+                  return true;
+                }
+              }, timeout / 200),
+
+              sleep(timeout).then(() => {console.log('start permission timeout');startResult = false;}),
+            ])
+          ]);
+
+          if (startResult) {
             console.log('instance connected! wait for "boot status booted"...');
             instance.socket!.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
               bootResult = success;
-              resolve();
             });
           }
-          else {
-            bootResult = false;
-            resolve();
-          }
-        }),
+          else bootResult = false;
+        })(),
+
         (async() => {
           await sleep(timeout);
           !await waitFor(async() => bootResult !== undefined || dockerResult === false || !await this.docker.instanceRunning(instance));
           console.log(`instance not running after ${timeout/1e3}s`);
         })()
       ]),
+
       (async() => {
         dockerResult = await this.docker.startInstance(instance);
         await instance.connect();

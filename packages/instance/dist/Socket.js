@@ -22,12 +22,13 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Socket_port;
+var _Socket_port, _Socket_startPermission;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
+const helper_1 = require("./helper");
 class Socket {
     get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
     get running() { return this.server.listening; }
@@ -42,6 +43,7 @@ class Socket {
     }
     constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
         _Socket_port.set(this, void 0);
+        _Socket_startPermission.set(this, false);
         this.instance = instance;
         this.server = server;
         this.io = new socket_io_1.Server(this.server);
@@ -58,6 +60,15 @@ class Socket {
             yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }
+    awaitStartPermission() {
+        return __awaiter(this, arguments, void 0, function* (timeout = 1e4) {
+            return __classPrivateFieldGet(this, _Socket_startPermission, "f") ||
+                (__classPrivateFieldSet(this, _Socket_startPermission, yield Promise.race([
+                    new Promise(resolve => this.io.on('start permission', () => resolve(true))),
+                    (0, helper_1.sleep)(timeout).then(() => false)
+                ]), "f"));
+        });
+    }
     sendBootStatus(messageOrBooted) {
         this.io.emit(typeof messageOrBooted === 'boolean'
             ? 'boot status booted'
@@ -65,6 +76,10 @@ class Socket {
     }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
+            socket.on('start permission', () => {
+                __classPrivateFieldSet(this, _Socket_startPermission, true, "f");
+                this.io.emit('start permission received');
+            });
             socket.on('request', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
                 switch (command) {
                     case 'setting get':
@@ -85,5 +100,5 @@ class Socket {
     }
 }
 exports.Socket = Socket;
-_Socket_port = new WeakMap();
+_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap();
 //# sourceMappingURL=Socket.js.map

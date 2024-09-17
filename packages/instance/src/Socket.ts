@@ -2,6 +2,7 @@ import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
+import { sleep } from './helper';
 
 export class Socket {
   private readonly instance: Instance;
@@ -9,6 +10,8 @@ export class Socket {
   private readonly io: IOServer;
 
   #port: number;
+
+  #startPermission: boolean = false;
 
   get port(): number { return this.#port }
   get running(): boolean { return this.server.listening }
@@ -39,6 +42,14 @@ export class Socket {
       this.server.close(() => resolve(this)));
   }
 
+  async awaitStartPermission(timeout: number = 1e4): Promise<boolean> {
+    return this.#startPermission ||
+      (this.#startPermission = await Promise.race<boolean>([
+        new Promise(resolve => this.io.on('start permission', () => resolve(true))),
+        sleep(timeout).then(() => false)
+      ]));
+  }
+
   sendBootStatus(messageOrBooted: string | boolean): void {
     this.io.emit(
       typeof messageOrBooted === 'boolean'
@@ -49,6 +60,12 @@ export class Socket {
 
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
+
+      socket.on('start permission', () => {
+        this.#startPermission = true;
+        this.io.emit('start permission received');
+      });
+
       socket.on('request', async (sessionId: string, command: string, args: any) => {
         switch (command) {
           case 'setting get':

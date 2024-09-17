@@ -133,24 +133,38 @@ class Controller extends node_events_1.default {
     }
     startInstance(instance_2) {
         return __awaiter(this, arguments, void 0, function* (instance, timeout = 6e4) {
-            let bootResult = undefined, dockerResult = undefined;
+            let bootResult = undefined, startResult = undefined, dockerResult = undefined;
             yield Promise.all([
                 Promise.race([
-                    new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        console.log('wait for instance connected...');
-                        if (yield (0, helper_1.waitFor)(() => instance.connected, timeout / 200)) {
+                    (() => __awaiter(this, void 0, void 0, function* () {
+                        console.log('sending start permission');
+                        yield Promise.all([
+                            (0, helper_1.waitFor)(() => {
+                                var _a;
+                                (_a = instance.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
+                                return startResult;
+                            }, timeout / 200),
+                            Promise.race([
+                                yield (0, helper_1.waitFor)(() => {
+                                    if (instance.connected) {
+                                        console.log('awaiting start permission received');
+                                        instance.socket.once('start permission received', () => { console.log('start permission received!!!'); startResult = true; });
+                                        return true;
+                                    }
+                                }, timeout / 200),
+                                (0, helper_1.sleep)(timeout).then(() => { console.log('start permission timeout'); startResult = false; }),
+                            ])
+                        ]);
+                        if (startResult) {
                             console.log('instance connected! wait for "boot status booted"...');
                             instance.socket.once('boot status booted', success => {
                                 console.log('Controller', 'startInstance', '"boot status booted"');
                                 bootResult = success;
-                                resolve();
                             });
                         }
-                        else {
+                        else
                             bootResult = false;
-                            resolve();
-                        }
-                    })),
+                    }))(),
                     (() => __awaiter(this, void 0, void 0, function* () {
                         yield (0, helper_1.sleep)(timeout);
                         !(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return bootResult !== undefined || dockerResult === false || !(yield this.docker.instanceRunning(instance)); })));

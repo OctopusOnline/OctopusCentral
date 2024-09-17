@@ -73,8 +73,9 @@ export class Instance {
     await this.settings.initDatabase();
   }
 
-  async start(): Promise<void> {
+  async start(): Promise<boolean> {
     await this.socket.start();
+    return await this.socket.awaitStartPermission();
   }
 
   sendBootStatus(messageOrBooted: string | boolean): void{

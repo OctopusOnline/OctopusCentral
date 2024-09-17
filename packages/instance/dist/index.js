@@ -97,6 +97,7 @@ class Instance {
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.socket.start();
+            return yield this.socket.awaitStartPermission();
         });
     }
     sendBootStatus(messageOrBooted) {
