@@ -177,7 +177,8 @@ export class Docker {
     const volumesString = await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`);
     if (!volumesString) return {};
 
-    const imageVolumes = this.parseVolumesString(volumesString);
+    const namedVolumes: { [key: string]: string } = {};
+    const imageVolumes: { [key: string]: string } = this.parseVolumesString(volumesString);
     if (Object.keys(imageVolumes).length > 0) {
 
       const volumes = ((await this.client.volume.list()) as DockerVolume[])
@@ -185,6 +186,7 @@ export class Docker {
 
       for (const name in imageVolumes) {
         const volumeName = this.getVolumeName(instance, name);
+        namedVolumes[volumeName] = imageVolumes[name];
 
         if (!volumes.some(volume => volume.data.Name === volumeName))
           await this.client.volume.create({
@@ -196,7 +198,7 @@ export class Docker {
       }
     }
 
-    return imageVolumes;
+    return namedVolumes;
   }
 
   async instanceRunning(instance: Instance): Promise<boolean> {

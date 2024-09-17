@@ -152,12 +152,14 @@ class Docker {
             const volumesString = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`);
             if (!volumesString)
                 return {};
+            const namedVolumes = {};
             const imageVolumes = this.parseVolumesString(volumesString);
             if (Object.keys(imageVolumes).length > 0) {
                 const volumes = (yield this.client.volume.list())
                     .filter(volume => { var _a; return ((_a = volume === null || volume === void 0 ? void 0 : volume.data) === null || _a === void 0 ? void 0 : _a.Labels) && volume.data.Labels[`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`] === this.controller.serviceName; });
                 for (const name in imageVolumes) {
                     const volumeName = this.getVolumeName(instance, name);
+                    namedVolumes[volumeName] = imageVolumes[name];
                     if (!volumes.some(volume => volume.data.Name === volumeName))
                         yield this.client.volume.create({
                             Name: volumeName,
@@ -167,7 +169,7 @@ class Docker {
                         });
                 }
             }
-            return imageVolumes;
+            return namedVolumes;
         });
     }
     instanceRunning(instance) {
