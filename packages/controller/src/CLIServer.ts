@@ -77,8 +77,11 @@ export class CLIServer {
         try { result = await this.controller.startInstance(req.instance) }
         catch (error: any) { result = error }
       }
-
       this.eventBuffer.instance[req.instance.id].start.booted = true;
+
+      if (result !== true)
+        await this.controller.stopInstance(req.instance);
+
       res.json({
         type: 'value',
         data: result instanceof Error
