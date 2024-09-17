@@ -130,17 +130,17 @@ export class Controller extends EventEmitter {
 
     await Promise.all([
       Promise.race([
-        (async() => {
+        new Promise(async resolve => {
           if (await instance.sendStartPermission(timeout)) {
-
             console.log('instance connected! wait for "boot status booted"...');
+
             instance.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
-              bootResult = success;
+              resolve(bootResult = success);
             });
           }
-          else bootResult = false;
-        })(),
+          else resolve(bootResult = false);
+        }),
 
         (async() => {
           await sleep(timeout);

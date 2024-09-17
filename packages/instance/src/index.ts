@@ -1,9 +1,9 @@
-import { instancesTableName, instanceIdEnvVarName, instanceDatabaseEnvVarName } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instancesTableName } from '@octopuscentral/types';
+import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
-import { Socket } from './Socket';
 import { Settings } from './Settings';
-import process from 'node:process';
+import { Socket } from './Socket';
 
 export { Settings, Setting, Socket };
 
@@ -75,10 +75,7 @@ export class Instance {
 
   async start(): Promise<boolean> {
     await this.socket.start();
-    console.log('awaiting start permission');
-    const startPermission = await this.socket.awaitStartPermission();
-    console.log('got start permission result:', startPermission);
-    return startPermission;
+    return await this.socket.awaitStartPermission();
   }
 
   sendBootStatus(messageOrBooted: string | boolean): void{

@@ -26,14 +26,14 @@ var _Instance_id, _Instance_database;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = exports.Socket = exports.Setting = exports.Settings = void 0;
 const types_1 = require("@octopuscentral/types");
+const node_process_1 = __importDefault(require("node:process"));
 const Database_1 = require("./Database");
 const Setting_1 = require("./Setting");
 Object.defineProperty(exports, "Setting", { enumerable: true, get: function () { return Setting_1.Setting; } });
-const Socket_1 = require("./Socket");
-Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 const Settings_1 = require("./Settings");
 Object.defineProperty(exports, "Settings", { enumerable: true, get: function () { return Settings_1.Settings; } });
-const node_process_1 = __importDefault(require("node:process"));
+const Socket_1 = require("./Socket");
+Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
 class Instance {
     get id() {
         if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
@@ -97,10 +97,7 @@ class Instance {
     start() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.socket.start();
-            console.log('awaiting start permission');
-            const startPermission = yield this.socket.awaitStartPermission();
-            console.log('got start permission result:', startPermission);
-            return startPermission;
+            return yield this.socket.awaitStartPermission();
         });
     }
     sendBootStatus(messageOrBooted) {

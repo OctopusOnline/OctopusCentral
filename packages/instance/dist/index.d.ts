@@ -1,7 +1,7 @@
 import { Database } from './Database';
 import { Setting } from './Setting';
-import { Socket } from './Socket';
 import { Settings } from './Settings';
+import { Socket } from './Socket';
 export { Settings, Setting, Socket };
 export declare class Instance {
     #private;
