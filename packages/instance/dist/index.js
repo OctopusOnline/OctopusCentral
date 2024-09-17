@@ -95,9 +95,9 @@ class Instance {
         });
     }
     start() {
-        return __awaiter(this, void 0, void 0, function* () {
+        return __awaiter(this, arguments, void 0, function* (awaitStartPermission = true) {
             yield this.socket.start();
-            return yield this.socket.awaitStartPermission();
+            return !awaitStartPermission || (yield this.socket.awaitStartPermission());
         });
     }
     sendBootStatus(messageOrBooted) {
