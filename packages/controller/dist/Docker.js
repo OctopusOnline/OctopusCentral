@@ -131,8 +131,6 @@ class Docker {
             yield container.rename({ name: containerName });
             yield container.start();
             yield this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
-            // TODO: check container Errors (look in debug mode)
-            //       "instance x could not be started"
             return container;
         });
     }

@@ -78,8 +78,6 @@ export class CLIServer {
         catch (error: any) { result = error }
       }
 
-      console.log('CLIServer', 'start', 'docker instance start result:', result);
-
       this.eventBuffer.instance[req.instance.id].start.booted = true;
       res.json({
         type: 'value',
@@ -95,10 +93,7 @@ export class CLIServer {
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
-      const bootStatusEvent = (message: string) => {
-        console.log('CLIServer stream bootStatusEvent:', message);
-        res.write(message);
-      }
+      const bootStatusEvent = (message: string) => res.write(message);
       const connectEvent = async (error?: Error) => {
         if (!this.eventBuffer.instance[req.instance.id]?.start) {
           req.instance.off('socket connected', connectEvent);
@@ -109,15 +104,11 @@ export class CLIServer {
         req.instance.off('socket connected', connectEvent);
         req.instance.on('boot status', bootStatusEvent);
 
-        console.log('CLIServer stream: listening on "boot status" event');
-
         this.eventBuffer.instance[req.instance.id].start.connected = true;
         await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300);
 
-        console.log('CLIServer close stream cause instance has booted');
-
         req.instance.off('boot status', bootStatusEvent);
-        res.end(''); // TODO: this necessary?
+        res.end('');
       };
 
       req.instance.on('socket connected', connectEvent);
@@ -128,9 +119,8 @@ export class CLIServer {
         waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.connected, 300).then(() => false),
         waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300).then(() => true)
       ])) {
-        console.log('CLIServer', 'stream', 'end stream after Promise.rage');
         req.instance.off('socket connected', connectEvent);
-        res.end(''); // TODO: this necessary?
+        res.end('');
       }
     });
 

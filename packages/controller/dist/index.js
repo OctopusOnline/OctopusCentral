@@ -137,13 +137,8 @@ class Controller extends node_events_1.default {
             yield Promise.all([
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        if (yield instance.sendStartPermission(timeout)) {
-                            console.log('instance connected! wait for "boot status booted"...');
-                            instance.once('boot status booted', success => {
-                                console.log('Controller', 'startInstance', '"boot status booted"');
-                                resolve(bootResult = success);
-                            });
-                        }
+                        if (yield instance.sendStartPermission(timeout))
+                            instance.once('boot status booted', success => resolve(bootResult = success));
                         else
                             resolve(bootResult = false);
                     })),
@@ -162,7 +157,6 @@ class Controller extends node_events_1.default {
                     yield instance.connect();
                 }))()
             ]);
-            console.log('Controller index.js: startInstance() done! bootResult:', bootResult, 'dockerResult:', dockerResult);
             return bootResult;
         });
     }

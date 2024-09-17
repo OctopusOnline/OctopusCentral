@@ -59,7 +59,6 @@ export class CLIClient extends EventEmitter {
         responseType: 'stream',
         validateStatus: status => status < 500
       });
-      console.log('CLIClient', 'requestTextStream', 'pipe');
       const self = this;
       response.data.pipe(new Writable({
         write(chunk, encoding, callback) {

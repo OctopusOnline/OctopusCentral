@@ -75,7 +75,6 @@ class CLIClient extends node_events_1.default {
                     responseType: 'stream',
                     validateStatus: status => status < 500
                 });
-                console.log('CLIClient', 'requestTextStream', 'pipe');
                 const self = this;
                 response.data.pipe(new node_stream_1.Writable({
                     write(chunk, encoding, callback) {
