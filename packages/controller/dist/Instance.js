@@ -71,25 +71,30 @@ class Instance extends node_events_1.default {
     }
     sendStartPermission() {
         return __awaiter(this, arguments, void 0, function* (timeout = 6e4) {
-            let result = undefined;
+            let startPermissionReceived = undefined;
             const self = this;
             yield Promise.all([
                 (0, helper_1.waitFor)(() => {
                     var _a;
+                    if (startPermissionReceived)
+                        return true;
                     (_a = self.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
-                    return result;
+                    return false;
                 }, timeout / 200),
                 Promise.race([
-                    yield (0, helper_1.waitFor)(() => {
-                        if (this.connected) {
-                            self.socket.once('start permission received', () => result = true);
-                            return true;
-                        }
+                    (0, helper_1.waitFor)(() => {
+                        if (!this.connected)
+                            return false;
+                        self.socket.once('start permission received', () => startPermissionReceived = true);
+                        return true;
                     }, timeout / 200),
-                    (0, helper_1.sleep)(timeout).then(() => result = false)
+                    (0, helper_1.sleep)(timeout).then(() => {
+                        if (startPermissionReceived === undefined)
+                            startPermissionReceived = false;
+                    })
                 ])
             ]);
-            return result;
+            return startPermissionReceived;
         });
     }
     disconnect() {
