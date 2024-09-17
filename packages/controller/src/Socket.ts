@@ -2,6 +2,7 @@ import { Controller } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
+import { sleep } from './helper';
 import { Instance } from './Instance';
 
 export class Socket {
@@ -87,16 +88,39 @@ export class Socket {
             break;
 
           case 'docker start instance':
-            const bootStatusEvent = (message: string) =>
-              socket.emit('response controller boot status', sessionId, message);
-
-            instance = this.controller.getInstance(args.id)!;
+            instance = this.controller.getInstance(args.id);
             if (instance) {
-              instance.socket!.on('boot status', bootStatusEvent);
-              const startResult: boolean = await this.controller.startInstance(instance);
-              instance.socket!.off('boot status', bootStatusEvent);
+              let result: boolean | Error;
 
-              socket.emit('response controller', 200 as any, sessionId as any, startResult as any);
+              const bootStatusEvent = (message: string) =>
+                socket.emit('response controller instance boot status', sessionId, message);
+
+              const connectEvent = async (error?: Error) => {
+                if (error) return;
+
+                instance!.off('socket connected', connectEvent);
+                instance!.on('boot status', bootStatusEvent);
+
+                socket.emit('response controller', 200 as any, sessionId as any, result as any);
+              }
+
+              instance.on('socket connected', connectEvent);
+
+              try {
+                result = await Promise.race([
+                  this.controller.startInstance(instance!),
+                  sleep(6e3).then(() => new Error('boot timeout'))
+                ]) as boolean | Error;
+              }
+              catch (error: any) { result = error }
+
+              instance.off('boot status', bootStatusEvent);
+
+              if (result !== true) {
+                instance.off('socket connected', connectEvent);
+                await this.controller.stopInstance(instance);
+                socket.emit('response controller', 200 as any, sessionId as any, result as any);
+              }
             }
             else socket.emit('response controller', 200 as any, sessionId as any, undefined);
             break;

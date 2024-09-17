@@ -28,6 +28,7 @@ exports.Socket = void 0;
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
+const helper_1 = require("./helper");
 class Socket {
     get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
     set port(port) {
@@ -93,13 +94,33 @@ class Socket {
                             socket.emit('response controller', 200, sessionId, false);
                         break;
                     case 'docker start instance':
-                        const bootStatusEvent = (message) => socket.emit('response controller boot status', sessionId, message);
                         instance = this.controller.getInstance(args.id);
                         if (instance) {
-                            instance.socket.on('boot status', bootStatusEvent);
-                            const startResult = yield this.controller.startInstance(instance);
-                            instance.socket.off('boot status', bootStatusEvent);
-                            socket.emit('response controller', 200, sessionId, startResult);
+                            let result;
+                            const bootStatusEvent = (message) => socket.emit('response controller instance boot status', sessionId, message);
+                            const connectEvent = (error) => __awaiter(this, void 0, void 0, function* () {
+                                if (error)
+                                    return;
+                                instance.off('socket connected', connectEvent);
+                                instance.on('boot status', bootStatusEvent);
+                                socket.emit('response controller', 200, sessionId, result);
+                            });
+                            instance.on('socket connected', connectEvent);
+                            try {
+                                result = (yield Promise.race([
+                                    this.controller.startInstance(instance),
+                                    (0, helper_1.sleep)(6e3).then(() => new Error('boot timeout'))
+                                ]));
+                            }
+                            catch (error) {
+                                result = error;
+                            }
+                            instance.off('boot status', bootStatusEvent);
+                            if (result !== true) {
+                                instance.off('socket connected', connectEvent);
+                                yield this.controller.stopInstance(instance);
+                                socket.emit('response controller', 200, sessionId, result);
+                            }
                         }
                         else
                             socket.emit('response controller', 200, sessionId, undefined);
