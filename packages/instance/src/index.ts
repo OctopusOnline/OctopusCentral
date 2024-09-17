@@ -74,8 +74,12 @@ export class Instance {
   }
 
   async start(): Promise<boolean> {
+    console.log('starting socket');
     await this.socket.start();
-    return await this.socket.awaitStartPermission();
+    console.log('awaiting start permission');
+    const startPermission = await this.socket.awaitStartPermission();
+    console.log('got start permission result:', startPermission);
+    return startPermission;
   }
 
   sendBootStatus(messageOrBooted: string | boolean): void{

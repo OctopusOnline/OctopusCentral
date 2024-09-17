@@ -96,8 +96,12 @@ class Instance {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('starting socket');
             yield this.socket.start();
-            return yield this.socket.awaitStartPermission();
+            console.log('awaiting start permission');
+            const startPermission = yield this.socket.awaitStartPermission();
+            console.log('got start permission result:', startPermission);
+            return startPermission;
         });
     }
     sendBootStatus(messageOrBooted) {

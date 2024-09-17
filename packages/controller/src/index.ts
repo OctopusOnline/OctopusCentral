@@ -124,9 +124,34 @@ export class Controller extends EventEmitter {
       if (!instance.connected) await instance.connect();
   }
 
+  async #sendStartPermission(instance: Instance, timeout: number = 6e4): Promise<boolean> {
+    let result: boolean | undefined = undefined;
+
+    await Promise.all([
+      waitFor(() => {
+        instance.socket?.emit('start permission');
+        console.log(instance.socket ? 'emit "start permission" successful' : 'emit "start permission" failed: no socket');
+        return result;
+      }, timeout / 200),
+
+      Promise.race([
+        await waitFor(() => {
+          if (instance.connected) {
+            console.log('awaiting start permission received');
+            instance.socket!.once('start permission received', () => {console.log('start permission received!!!');result = true;});
+            return true;
+          }
+        }, timeout / 200),
+
+        sleep(timeout).then(() => {console.log('start permission timeout');result = false;}),
+      ])
+    ]);
+
+    return result!;
+  }
+
   async startInstance(instance: Instance, timeout: number = 6e4): Promise<boolean> {
     let bootResult: boolean | undefined = undefined,
-       startResult: boolean | undefined = undefined,
       dockerResult: boolean | undefined = undefined;
 
     await Promise.all([
@@ -134,27 +159,8 @@ export class Controller extends EventEmitter {
         (async() => {
 
           console.log('sending start permission');
+          if (await this.#sendStartPermission(instance, timeout)) {
 
-          await Promise.all([
-            waitFor(() => {
-              instance.socket?.emit('start permission');
-              return startResult;
-            }, timeout / 200),
-
-            Promise.race([
-              await waitFor(() => {
-                if (instance.connected) {
-                  console.log('awaiting start permission received');
-                  instance.socket!.once('start permission received', () => {console.log('start permission received!!!');startResult = true;});
-                  return true;
-                }
-              }, timeout / 200),
-
-              sleep(timeout).then(() => {console.log('start permission timeout');startResult = false;}),
-            ])
-          ]);
-
-          if (startResult) {
             console.log('instance connected! wait for "boot status booted"...');
             instance.socket!.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
