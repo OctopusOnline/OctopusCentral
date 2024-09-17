@@ -92,12 +92,8 @@ class Docker {
     }
     startInstanceContainer(instance_1, networks_1) {
         return __awaiter(this, arguments, void 0, function* (instance, networks, forceRestart = true, autoReconnect = false) {
-            const runningContainer = yield this.getContainer(instance);
-            if (runningContainer) {
-                if (!forceRestart)
-                    return;
+            if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
-            }
             const containerName = this.getContainerName(instance);
             const volumes = yield this.createInstanceVolumes(instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);

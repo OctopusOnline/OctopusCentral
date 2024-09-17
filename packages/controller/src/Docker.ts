@@ -109,11 +109,8 @@ export class Docker {
   }
 
   private async startInstanceContainer(instance: Instance, networks: { [key: string]: DockerNetwork }, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<DockerContainer | undefined> {
-    const runningContainer = await this.getContainer(instance);
-    if (runningContainer) {
-      if (!forceRestart) return;
+    if (forceRestart && await this.getContainer(instance))
       await this.stopInstance(instance);
-    }
 
     const containerName: string = this.getContainerName(instance);
 

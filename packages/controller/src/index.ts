@@ -124,30 +124,6 @@ export class Controller extends EventEmitter {
       if (!instance.connected) await instance.connect();
   }
 
-  async #sendStartPermission(instance: Instance, timeout: number = 6e4): Promise<boolean> {
-    let result: boolean | undefined = undefined;
-
-    await Promise.all([
-      waitFor(() => {
-        instance.socket?.emit('start permission');
-        return result;
-      }, timeout / 200),
-
-      Promise.race([
-        await waitFor(() => {
-          if (instance.connected) {
-            instance.socket!.once('start permission received', () => result = true);
-            return true;
-          }
-        }, timeout / 200),
-
-        sleep(timeout).then(() => result = false)
-      ])
-    ]);
-
-    return result!;
-  }
-
   async startInstance(instance: Instance, timeout: number = 6e4): Promise<boolean> {
     let bootResult: boolean | undefined = undefined,
       dockerResult: boolean | undefined = undefined;
@@ -155,10 +131,10 @@ export class Controller extends EventEmitter {
     await Promise.all([
       Promise.race([
         (async() => {
-          if (await this.#sendStartPermission(instance, timeout)) {
+          if (await instance.sendStartPermission(timeout)) {
 
             console.log('instance connected! wait for "boot status booted"...');
-            instance.socket!.once('boot status booted', success => {
+            instance.once('boot status booted', success => {
               console.log('Controller', 'startInstance', '"boot status booted"');
               bootResult = success;
             });

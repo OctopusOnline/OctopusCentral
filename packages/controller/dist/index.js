@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Controller_instances, _Controller_instances_1, _Controller_running, _Controller_sendStartPermission;
+var _Controller_instances, _Controller_running;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = exports.CLIClient = exports.Instance = exports.Socket = exports.Docker = void 0;
 const types_1 = require("@octopuscentral/types");
@@ -40,13 +40,12 @@ Object.defineProperty(exports, "Instance", { enumerable: true, get: function () 
 const CLIClient_1 = require("./CLIClient");
 Object.defineProperty(exports, "CLIClient", { enumerable: true, get: function () { return CLIClient_1.CLIClient; } });
 class Controller extends node_events_1.default {
-    get instances() { return __classPrivateFieldGet(this, _Controller_instances_1, "f"); }
+    get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
     constructor(serviceName, databaseUrl, instanceDockerProps) {
         super();
-        _Controller_instances.add(this);
         this.instancesFetchInterval = 5000;
-        _Controller_instances_1.set(this, []);
+        _Controller_instances.set(this, []);
         _Controller_running.set(this, false);
         this.serviceName = serviceName;
         this.database = new Database_1.Database(databaseUrl);
@@ -63,7 +62,7 @@ class Controller extends node_events_1.default {
         }
     }
     addAndSetupInstance(instance) {
-        __classPrivateFieldGet(this, _Controller_instances_1, "f").push(instance);
+        __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
         instance.on('socket connected', (error) => this.emit('instance socket connected', instance, error));
         instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
     }
@@ -87,10 +86,10 @@ class Controller extends node_events_1.default {
         });
     }
     getInstance(id) {
-        return __classPrivateFieldGet(this, _Controller_instances_1, "f").find(_instance => _instance.id === id);
+        return __classPrivateFieldGet(this, _Controller_instances, "f").find(_instance => _instance.id === id);
     }
     removeInstance(instance) {
-        __classPrivateFieldSet(this, _Controller_instances_1, __classPrivateFieldGet(this, _Controller_instances_1, "f").filter(_instance => {
+        __classPrivateFieldSet(this, _Controller_instances, __classPrivateFieldGet(this, _Controller_instances, "f").filter(_instance => {
             if (_instance.id === instance.id) {
                 _instance.disconnect();
                 return true;
@@ -106,7 +105,7 @@ class Controller extends node_events_1.default {
     fetchSyncInstances() {
         return __awaiter(this, void 0, void 0, function* () {
             const instances = yield this.loadInstances();
-            for (const instance of __classPrivateFieldGet(this, _Controller_instances_1, "f"))
+            for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
                 if (!instances.some(_instance => _instance.id === instance.id))
                     this.removeInstance(instance);
             for (const newInstance of instances) {
@@ -114,7 +113,7 @@ class Controller extends node_events_1.default {
                 const instance = this.getInstance(newInstance.id);
                 instance.socketHostname = newInstance.socketHostname;
             }
-            return __classPrivateFieldGet(this, _Controller_instances_1, "f");
+            return __classPrivateFieldGet(this, _Controller_instances, "f");
         });
     }
     updateInstanceSocketHostname(instance_2, socketHostname_1) {
@@ -127,7 +126,7 @@ class Controller extends node_events_1.default {
     }
     connectInstances() {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const instance of __classPrivateFieldGet(this, _Controller_instances_1, "f"))
+            for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
                 if (!instance.connected)
                     yield instance.connect();
         });
@@ -138,9 +137,9 @@ class Controller extends node_events_1.default {
             yield Promise.all([
                 Promise.race([
                     (() => __awaiter(this, void 0, void 0, function* () {
-                        if (yield __classPrivateFieldGet(this, _Controller_instances, "m", _Controller_sendStartPermission).call(this, instance, timeout)) {
+                        if (yield instance.sendStartPermission(timeout)) {
                             console.log('instance connected! wait for "boot status booted"...');
-                            instance.socket.once('boot status booted', success => {
+                            instance.once('boot status booted', success => {
                                 console.log('Controller', 'startInstance', '"boot status booted"');
                                 bootResult = success;
                             });
@@ -212,26 +211,5 @@ class Controller extends node_events_1.default {
     }
 }
 exports.Controller = Controller;
-_Controller_instances_1 = new WeakMap(), _Controller_running = new WeakMap(), _Controller_instances = new WeakSet(), _Controller_sendStartPermission = function _Controller_sendStartPermission(instance_2) {
-    return __awaiter(this, arguments, void 0, function* (instance, timeout = 6e4) {
-        let result = undefined;
-        yield Promise.all([
-            (0, helper_1.waitFor)(() => {
-                var _a;
-                (_a = instance.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
-                return result;
-            }, timeout / 200),
-            Promise.race([
-                yield (0, helper_1.waitFor)(() => {
-                    if (instance.connected) {
-                        instance.socket.once('start permission received', () => result = true);
-                        return true;
-                    }
-                }, timeout / 200),
-                (0, helper_1.sleep)(timeout).then(() => result = false)
-            ])
-        ]);
-        return result;
-    });
-};
+_Controller_instances = new WeakMap(), _Controller_running = new WeakMap();
 //# sourceMappingURL=index.js.map

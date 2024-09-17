@@ -10,5 +10,6 @@ export declare class Instance extends EventEmitter {
     get connected(): boolean;
     constructor(id: number, socketHostname?: string, socketPort?: number);
     connect(reconnect?: boolean): Promise<boolean | Error>;
+    sendStartPermission(timeout?: number): Promise<boolean>;
     disconnect(): void;
 }

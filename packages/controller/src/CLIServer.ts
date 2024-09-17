@@ -107,7 +107,7 @@ export class CLIServer {
         else if (error) return;
 
         req.instance.off('socket connected', connectEvent);
-        req.instance.socket!.on('boot status', bootStatusEvent);
+        req.instance.on('boot status', bootStatusEvent);
 
         console.log('CLIServer stream: listening on "boot status" event');
 
@@ -116,7 +116,7 @@ export class CLIServer {
 
         console.log('CLIServer close stream cause instance has booted');
 
-        req.instance.socket?.off('boot status', bootStatusEvent);
+        req.instance.off('boot status', bootStatusEvent);
         res.end(''); // TODO: this necessary?
       };
 

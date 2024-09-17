@@ -27,6 +27,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = void 0;
 const node_events_1 = __importDefault(require("node:events"));
 const socket_io_client_1 = require("socket.io-client");
+const helper_1 = require("./helper");
 class Instance extends node_events_1.default {
     get socket() { return __classPrivateFieldGet(this, _Instance_socket, "f"); }
     get connected() { return !!__classPrivateFieldGet(this, _Instance_socket, "f"); }
@@ -63,7 +64,32 @@ class Instance extends node_events_1.default {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
                 return connectResult;
             }
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', message => this.emit('boot status', message));
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', success => this.emit('boot status booted', success));
             return true;
+        });
+    }
+    sendStartPermission() {
+        return __awaiter(this, arguments, void 0, function* (timeout = 6e4) {
+            let result = undefined;
+            const self = this;
+            yield Promise.all([
+                (0, helper_1.waitFor)(() => {
+                    var _a;
+                    (_a = self.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
+                    return result;
+                }, timeout / 200),
+                Promise.race([
+                    yield (0, helper_1.waitFor)(() => {
+                        if (this.connected) {
+                            self.socket.once('start permission received', () => result = true);
+                            return true;
+                        }
+                    }, timeout / 200),
+                    (0, helper_1.sleep)(timeout).then(() => result = false)
+                ])
+            ]);
+            return result;
         });
     }
     disconnect() {

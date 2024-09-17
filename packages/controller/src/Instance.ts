@@ -1,5 +1,6 @@
 import EventEmitter from 'node:events';
 import { io, Socket as IOSocket } from 'socket.io-client';
+import { sleep, waitFor } from './helper';
 
 export class Instance extends EventEmitter {
   readonly id: number;
@@ -48,7 +49,36 @@ export class Instance extends EventEmitter {
       this.#socket = undefined;
       return connectResult;
     }
+
+    this.#socket!.on('boot status',        message => this.emit('boot status',        message));
+    this.#socket!.on('boot status booted', success => this.emit('boot status booted', success));
+
     return true;
+  }
+
+  async sendStartPermission(timeout: number = 6e4): Promise<boolean> {
+    let result: boolean | undefined = undefined;
+
+    const self = this;
+    await Promise.all([
+      waitFor(() => {
+        self.socket?.emit('start permission');
+        return result;
+      }, timeout / 200),
+
+      Promise.race([
+        await waitFor(() => {
+          if (this.connected) {
+            self.socket!.once('start permission received', () => result = true);
+            return true;
+          }
+        }, timeout / 200),
+
+        sleep(timeout).then(() => result = false)
+      ])
+    ]);
+
+    return result!;
   }
 
   disconnect(): void {
