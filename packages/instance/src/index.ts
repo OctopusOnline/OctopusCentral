@@ -74,7 +74,6 @@ export class Instance {
   }
 
   async start(): Promise<boolean> {
-    console.log('starting socket');
     await this.socket.start();
     console.log('awaiting start permission');
     const startPermission = await this.socket.awaitStartPermission();

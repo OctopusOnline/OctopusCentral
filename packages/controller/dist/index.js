@@ -138,7 +138,6 @@ class Controller extends node_events_1.default {
             yield Promise.all([
                 Promise.race([
                     (() => __awaiter(this, void 0, void 0, function* () {
-                        console.log('sending start permission');
                         if (yield __classPrivateFieldGet(this, _Controller_instances, "m", _Controller_sendStartPermission).call(this, instance, timeout)) {
                             console.log('instance connected! wait for "boot status booted"...');
                             instance.socket.once('boot status booted', success => {
@@ -151,16 +150,20 @@ class Controller extends node_events_1.default {
                     }))(),
                     (() => __awaiter(this, void 0, void 0, function* () {
                         yield (0, helper_1.sleep)(timeout);
-                        !(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () { return bootResult !== undefined || dockerResult === false || !(yield this.docker.instanceRunning(instance)); })));
-                        console.log(`instance not running after ${timeout / 1e3}s`);
+                        if (!(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () {
+                            return bootResult !== undefined ||
+                                dockerResult !== undefined ||
+                                (yield this.docker.instanceRunning(instance));
+                        }))))
+                            dockerResult = false;
                     }))()
                 ]),
                 (() => __awaiter(this, void 0, void 0, function* () {
                     dockerResult = yield this.docker.startInstance(instance);
                     yield instance.connect();
-                    console.log('instance connect done');
                 }))()
             ]);
+            console.log('Controller index.js: startInstance() done! bootResult:', bootResult, 'dockerResult:', dockerResult);
             return bootResult;
         });
     }
@@ -216,18 +219,16 @@ _Controller_instances_1 = new WeakMap(), _Controller_running = new WeakMap(), _C
             (0, helper_1.waitFor)(() => {
                 var _a;
                 (_a = instance.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
-                console.log(instance.socket ? 'emit "start permission" successful' : 'emit "start permission" failed: no socket');
                 return result;
             }, timeout / 200),
             Promise.race([
                 yield (0, helper_1.waitFor)(() => {
                     if (instance.connected) {
-                        console.log('awaiting start permission received');
-                        instance.socket.once('start permission received', () => { console.log('start permission received!!!'); result = true; });
+                        instance.socket.once('start permission received', () => result = true);
                         return true;
                     }
                 }, timeout / 200),
-                (0, helper_1.sleep)(timeout).then(() => { console.log('start permission timeout'); result = false; }),
+                (0, helper_1.sleep)(timeout).then(() => result = false)
             ])
         ]);
         return result;

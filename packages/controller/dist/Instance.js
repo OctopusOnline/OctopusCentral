@@ -51,12 +51,11 @@ class Instance extends node_events_1.default {
             __classPrivateFieldSet(this, _Instance_socket, socket, "f");
             const connectResult = yield new Promise((resolve => {
                 socket.once('connect', () => {
-                    console.log('socket connected without error! YEAH!');
                     this.emit('socket connected');
                     resolve();
                 });
                 socket.once('connect_error', error => {
-                    this.emit('socket connected', error);
+                    this.emit('socket connect_error', error);
                     resolve(error);
                 });
             }));

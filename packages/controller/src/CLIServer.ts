@@ -95,21 +95,27 @@ export class CLIServer {
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
-      const bootStatusEvent = (message: string) => res.write(message);
+      const bootStatusEvent = (message: string) => {
+        console.log('CLIServer stream bootStatusEvent:', message);
+        res.write(message);
+      }
       const connectEvent = async (error?: Error) => {
-        console.log("connect event:", error?.message);
-        if (error || !this.eventBuffer.instance[req.instance.id]?.start)
+        if (!this.eventBuffer.instance[req.instance.id]?.start) {
+          req.instance.off('socket connected', connectEvent);
           return;
-        this.eventBuffer.instance[req.instance.id].start.connected = true;
+        }
+        else if (error) return;
 
-        console.log('CLIServer', 'stream', 'socket connected!', error);
-
+        req.instance.off('socket connected', connectEvent);
         req.instance.socket!.on('boot status', bootStatusEvent);
 
+        console.log('CLIServer stream: listening on "boot status" event');
+
+        this.eventBuffer.instance[req.instance.id].start.connected = true;
         await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300);
 
-        console.log('CLIServer', 'stream', 'started');
-        req.instance.off('socket connected', connectEvent);
+        console.log('CLIServer close stream cause instance has booted');
+
         req.instance.socket?.off('boot status', bootStatusEvent);
         res.end(''); // TODO: this necessary?
       };

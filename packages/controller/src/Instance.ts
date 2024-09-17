@@ -35,12 +35,11 @@ export class Instance extends EventEmitter {
 
     const connectResult = await new Promise<Error | void>((resolve => {
       socket.once('connect', () => {
-        console.log('socket connected without error! YEAH!');
         this.emit('socket connected');
         resolve();
       });
       socket.once('connect_error', error => {
-        this.emit('socket connected', error);
+        this.emit('socket connect_error', error);
         resolve(error);
       });
     }))

@@ -130,20 +130,18 @@ export class Controller extends EventEmitter {
     await Promise.all([
       waitFor(() => {
         instance.socket?.emit('start permission');
-        console.log(instance.socket ? 'emit "start permission" successful' : 'emit "start permission" failed: no socket');
         return result;
       }, timeout / 200),
 
       Promise.race([
         await waitFor(() => {
           if (instance.connected) {
-            console.log('awaiting start permission received');
-            instance.socket!.once('start permission received', () => {console.log('start permission received!!!');result = true;});
+            instance.socket!.once('start permission received', () => result = true);
             return true;
           }
         }, timeout / 200),
 
-        sleep(timeout).then(() => {console.log('start permission timeout');result = false;}),
+        sleep(timeout).then(() => result = false)
       ])
     ]);
 
@@ -157,8 +155,6 @@ export class Controller extends EventEmitter {
     await Promise.all([
       Promise.race([
         (async() => {
-
-          console.log('sending start permission');
           if (await this.#sendStartPermission(instance, timeout)) {
 
             console.log('instance connected! wait for "boot status booted"...');
@@ -172,18 +168,21 @@ export class Controller extends EventEmitter {
 
         (async() => {
           await sleep(timeout);
-          !await waitFor(async() => bootResult !== undefined || dockerResult === false || !await this.docker.instanceRunning(instance));
-          console.log(`instance not running after ${timeout/1e3}s`);
+          if (!await waitFor(async() =>
+            bootResult   !== undefined ||
+            dockerResult !== undefined ||
+            await this.docker.instanceRunning(instance))
+          ) dockerResult = false;
         })()
       ]),
 
       (async() => {
         dockerResult = await this.docker.startInstance(instance);
         await instance.connect();
-        console.log('instance connect done');
       })()
     ]);
 
+    console.log('Controller index.js: startInstance() done! bootResult:', bootResult, 'dockerResult:', dockerResult);
     return bootResult!;
   }
 

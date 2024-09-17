@@ -79,18 +79,24 @@ class CLIServer {
         this.express.get('/stream/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
             if (!(yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.waitingForStream; })))
                 return res.destroy(new Error('no waitingForStream'));
-            const bootStatusEvent = (message) => res.write(message);
+            const bootStatusEvent = (message) => {
+                console.log('CLIServer stream bootStatusEvent:', message);
+                res.write(message);
+            };
             const connectEvent = (error) => __awaiter(this, void 0, void 0, function* () {
                 var _a, _b;
-                console.log("connect event:", error === null || error === void 0 ? void 0 : error.message);
-                if (error || !((_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start))
+                if (!((_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start)) {
+                    req.instance.off('socket connected', connectEvent);
                     return;
-                this.eventBuffer.instance[req.instance.id].start.connected = true;
-                console.log('CLIServer', 'stream', 'socket connected!', error);
-                req.instance.socket.on('boot status', bootStatusEvent);
-                yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.booted; }, 300);
-                console.log('CLIServer', 'stream', 'started');
+                }
+                else if (error)
+                    return;
                 req.instance.off('socket connected', connectEvent);
+                req.instance.socket.on('boot status', bootStatusEvent);
+                console.log('CLIServer stream: listening on "boot status" event');
+                this.eventBuffer.instance[req.instance.id].start.connected = true;
+                yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.booted; }, 300);
+                console.log('CLIServer close stream cause instance has booted');
                 (_b = req.instance.socket) === null || _b === void 0 ? void 0 : _b.off('boot status', bootStatusEvent);
                 res.end(''); // TODO: this necessary?
             });
