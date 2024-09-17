@@ -62,7 +62,6 @@ class Socket {
     }
     awaitStartPermission() {
         return __awaiter(this, arguments, void 0, function* (timeout = 6e4) {
-            console.log('start permission:', __classPrivateFieldGet(this, _Socket_startPermission, "f"));
             return __classPrivateFieldGet(this, _Socket_startPermission, "f") ||
                 (__classPrivateFieldSet(this, _Socket_startPermission, yield Promise.race([
                     new Promise(resolve => this.io.on('start permission', () => { console.log('start permission received!!!'); resolve(true); })),

@@ -43,7 +43,6 @@ export class Socket {
   }
 
   async awaitStartPermission(timeout: number = 6e4): Promise<boolean> {
-    console.log('start permission:', this.#startPermission);
     return this.#startPermission ||
       (this.#startPermission = await Promise.race<boolean>([
         new Promise(resolve => this.io.on('start permission', () => {console.log('start permission received!!!');resolve(true);})),
