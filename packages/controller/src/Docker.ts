@@ -154,6 +154,7 @@ export class Docker {
       ],
       HostConfig: {
         Binds: binds,
+        NetworkMode: 'bridge',
         PortBindings: portBindings
       },
       Hostname: containerName,
