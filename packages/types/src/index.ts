@@ -34,15 +34,12 @@ import {
 
 import {
   labelPrefix,
+  volumeLabelPrefix,
   instanceIdEnvVarName,
   instanceDatabaseEnvVarName,
   DockerClientProps,
   DockerInstanceProps
 } from './types/docker';
-
-import {
-  labelPrefix as volumeLabelPrefix
-} from './types/volume';
 
 export {
   instancesTableName,
@@ -67,7 +64,7 @@ export {
   centralLabelPrefix,
   CentralInstanceFilter,
   labelPrefix,
+  volumeLabelPrefix,
   DockerClientProps,
-  DockerInstanceProps,
-  volumeLabelPrefix
+  DockerInstanceProps
 };

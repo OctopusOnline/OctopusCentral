@@ -50,6 +50,7 @@ export declare class Docker {
     private startInstanceContainer;
     private parseVolumesString;
     private createInstanceVolumes;
+    private parsePortsString;
     instanceRunning(instance: Instance): Promise<boolean>;
     instancePaused(instance: Instance): Promise<boolean | undefined>;
     startInstance(instance: Instance): Promise<boolean>;

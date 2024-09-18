@@ -92,6 +92,7 @@ class Docker {
     }
     startInstanceContainer(instance_1, networks_1) {
         return __awaiter(this, arguments, void 0, function* (instance, networks, forceRestart = true, autoReconnect = false) {
+            var _a;
             if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
             const containerName = this.getContainerName(instance);
@@ -102,6 +103,10 @@ class Docker {
                 endpointConfig = Object.assign(Object.assign({}, endpointConfig), { [networks[networkKey].NetworkID]: {
                         Aliases: [containerName]
                     } });
+            const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '');
+            let portBindings = {};
+            for (const portMapping in portMappings)
+                portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
             const container = yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
@@ -118,7 +123,8 @@ class Docker {
                     `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`
                 ],
                 HostConfig: {
-                    Binds: binds
+                    Binds: binds,
+                    PortBindings: portBindings
                 },
                 Hostname: containerName,
                 ExposedPorts: {
@@ -165,6 +171,13 @@ class Docker {
             }
             return namedVolumes;
         });
+    }
+    parsePortsString(portsString) {
+        return portsString.split(';').reduce((portMappings, portMapping) => {
+            const [srcPort, hstPort] = portMapping.split(':');
+            portMappings[Number(srcPort)] = Number(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort);
+            return portMappings;
+        }, {});
     }
     instanceRunning(instance) {
         return __awaiter(this, void 0, void 0, function* () {

@@ -16,8 +16,7 @@ const central_1 = require("./types/central");
 Object.defineProperty(exports, "centralLabelPrefix", { enumerable: true, get: function () { return central_1.labelPrefix; } });
 const docker_1 = require("./types/docker");
 Object.defineProperty(exports, "labelPrefix", { enumerable: true, get: function () { return docker_1.labelPrefix; } });
+Object.defineProperty(exports, "volumeLabelPrefix", { enumerable: true, get: function () { return docker_1.volumeLabelPrefix; } });
 Object.defineProperty(exports, "instanceIdEnvVarName", { enumerable: true, get: function () { return docker_1.instanceIdEnvVarName; } });
 Object.defineProperty(exports, "instanceDatabaseEnvVarName", { enumerable: true, get: function () { return docker_1.instanceDatabaseEnvVarName; } });
-const volume_1 = require("./types/volume");
-Object.defineProperty(exports, "volumeLabelPrefix", { enumerable: true, get: function () { return volume_1.labelPrefix; } });
 //# sourceMappingURL=index.js.map

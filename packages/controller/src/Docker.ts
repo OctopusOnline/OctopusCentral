@@ -126,6 +126,16 @@ export class Docker {
         }
       };
 
+    const portMappings: { [key: number]: number } = this.parsePortsString(
+      await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '');
+
+    let portBindings: { [key: string]: { HostPort: string }[] } = {};
+    for (const portMapping in portMappings)
+      portBindings = {
+       ...portBindings,
+        [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }]
+      };
+
     const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
       Tty: true,
@@ -142,7 +152,8 @@ export class Docker {
         `${instanceDatabaseEnvVarName}=${this.controller.database.url}`
       ],
       HostConfig: {
-        Binds: binds
+        Binds: binds,
+        PortBindings: portBindings
       },
       Hostname: containerName,
       ExposedPorts: {
@@ -194,6 +205,14 @@ export class Docker {
     }
 
     return namedVolumes;
+  }
+
+  private parsePortsString(portsString: string): { [key: number]: number } {
+    return portsString.split(';').reduce((portMappings, portMapping) => {
+      const [srcPort, hstPort] = portMapping.split(':');
+      portMappings[Number(srcPort)] = Number(hstPort ?? srcPort);
+      return portMappings;
+    }, {} as { [key: number]: number });
   }
 
   async instanceRunning(instance: Instance): Promise<boolean> {
