@@ -35,7 +35,6 @@ import {
 import {
   labelPrefix,
   volumeLabelPrefix,
-  networkLabelPrefix,
   instanceIdEnvVarName,
   instanceDatabaseEnvVarName,
   DockerClientProps,
@@ -66,7 +65,6 @@ export {
   CentralInstanceFilter,
   labelPrefix,
   volumeLabelPrefix,
-  networkLabelPrefix,
   DockerClientProps,
   DockerInstanceProps
 };

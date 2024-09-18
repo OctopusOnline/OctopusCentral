@@ -55,9 +55,6 @@ class Docker {
     getContainerName(instance) {
         return this.controller.serviceName + '_instance-' + (instance instanceof Instance_1.Instance ? instance.id : instance);
     }
-    getNetworkName(instance, suffix = '_default') {
-        return this.getContainerName(instance) + suffix;
-    }
     getVolumeName(instance, name) {
         return this.getContainerName(instance) + '-' + name;
     }
@@ -101,8 +98,6 @@ class Docker {
             const containerName = this.getContainerName(instance);
             const volumes = yield this.createInstanceVolumes(instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
-            // TODO: default network not necessary!
-            const defaultNetwork = yield this.createInstanceNetwork(instance);
             console.log('ports label:', yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`));
             const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
             console.log('mappings:', JSON.stringify(portMappings));
@@ -133,13 +128,6 @@ class Docker {
                     PortBindings: portBindings
                 },
                 Hostname: containerName,
-                NetworkingConfig: {
-                    EndpointsConfig: {
-                        [defaultNetwork.data.Id]: {
-                            Aliases: [containerName]
-                        }
-                    }
-                },
                 ExposedPorts: {
                     [instance.socketPort]: {}
                 }
@@ -201,20 +189,6 @@ class Docker {
                 }
             }
             return namedVolumes;
-        });
-    }
-    createInstanceNetwork(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const networkName = this.getNetworkName(instance);
-            return (_a = (yield this.client.network.list({ name: networkName }))
-                .find(network => network.data.Name === networkName)) !== null && _a !== void 0 ? _a : yield this.client.network.create({
-                Name: networkName,
-                Driver: "bridge",
-                Labels: {
-                    [`${types_1.labelPrefix}.${types_1.networkLabelPrefix}.service-name`]: this.controller.serviceName
-                }
-            });
         });
     }
     instanceRunning(instance) {

@@ -45,7 +45,6 @@ export declare class Docker {
     constructor(controller: Controller, instanceProps: DockerInstanceProps);
     init(): Promise<void>;
     private getContainerName;
-    private getNetworkName;
     private getVolumeName;
     private getImageLabel;
     private getContainer;
@@ -56,7 +55,6 @@ export declare class Docker {
     private parseVolumesString;
     private parsePortsString;
     private createInstanceVolumes;
-    private createInstanceNetwork;
     instanceRunning(instance: Instance): Promise<boolean>;
     instancePaused(instance: Instance): Promise<boolean | undefined>;
     startInstance(instance: Instance): Promise<boolean>;
