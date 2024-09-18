@@ -124,15 +124,21 @@ export class Docker {
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
+    // TODO: default network not necessary!
     const defaultNetwork: DockerNetwork = await this.createInstanceNetwork(instance);
 
+    console.log('ports label:', await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`));
     const portMappings: { [key: number]: number } = this.parsePortsString(await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '', instance);
+    console.log('mappings:', JSON.stringify(portMappings));
+    console.log(portMappings);
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     for (const portMapping in portMappings)
       portBindings = {
        ...portBindings,
         [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }]
       };
+    console.log('bindings:', JSON.stringify(portBindings));
+    console.log(portBindings);
 
     const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
