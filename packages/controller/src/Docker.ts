@@ -126,10 +126,7 @@ export class Docker {
 
     const defaultNetwork: DockerNetwork = await this.createInstanceNetwork(instance);
 
-    const portMappings: { [key: number]: number } = this.parsePortsString(
-      await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '',
-      instance);
-
+    const portMappings: { [key: number]: number } = this.parsePortsString(await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '', instance);
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     for (const portMapping in portMappings)
       portBindings = {
