@@ -127,7 +127,8 @@ export class Docker {
       };
 
     const portMappings: { [key: number]: number } = this.parsePortsString(
-      await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '');
+      await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '',
+      instance);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     for (const portMapping in portMappings)
@@ -171,10 +172,15 @@ export class Docker {
     return container;
   }
 
-  private parseVolumesString(volumesString: string): { [key: string]: string } {
+  private evalLabelString(labelString: string, instance: Instance): string {
+    return labelString.replace(/{([^}]+)}/g, (_, expression: string) =>
+      eval(expression.trim().replace(/id/g, () => instance.id.toString())));
+  }
+
+  private parseVolumesString(volumesString: string, instance: Instance): { [key: string]: string } {
     return volumesString.split(';').reduce((volumes, volume) => {
       const [name, mountPath] = volume.split(':');
-      volumes[name] = mountPath;
+      volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
       return volumes;
     }, {} as { [key: string]: string });
   }
@@ -184,7 +190,7 @@ export class Docker {
     if (!volumesString) return {};
 
     const namedVolumes: { [key: string]: string } = {};
-    const imageVolumes: { [key: string]: string } = this.parseVolumesString(volumesString);
+    const imageVolumes: { [key: string]: string } = this.parseVolumesString(volumesString, instance);
     if (Object.keys(imageVolumes).length > 0) {
 
       const volumes = ((await this.client.volume.list()) as DockerVolume[])
@@ -207,10 +213,10 @@ export class Docker {
     return namedVolumes;
   }
 
-  private parsePortsString(portsString: string): { [key: number]: number } {
+  private parsePortsString(portsString: string, instance: Instance): { [key: number]: number } {
     return portsString.split(';').reduce((portMappings, portMapping) => {
       const [srcPort, hstPort] = portMapping.split(':');
-      portMappings[Number(srcPort)] = Number(hstPort ?? srcPort);
+      portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
       return portMappings;
     }, {} as { [key: number]: number });
   }

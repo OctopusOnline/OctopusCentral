@@ -48,6 +48,7 @@ export declare class Docker {
     private getContainerNetwork;
     private fetchSelfContainer;
     private startInstanceContainer;
+    private evalLabelString;
     private parseVolumesString;
     private createInstanceVolumes;
     private parsePortsString;

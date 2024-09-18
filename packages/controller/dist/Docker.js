@@ -103,7 +103,7 @@ class Docker {
                 endpointConfig = Object.assign(Object.assign({}, endpointConfig), { [networks[networkKey].NetworkID]: {
                         Aliases: [containerName]
                     } });
-            const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '');
+            const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
             let portBindings = {};
             for (const portMapping in portMappings)
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
@@ -140,10 +140,13 @@ class Docker {
             return container;
         });
     }
-    parseVolumesString(volumesString) {
+    evalLabelString(labelString, instance) {
+        return labelString.replace(/{([^}]+)}/g, (_, expression) => eval(expression.trim().replace(/id/g, () => instance.id.toString())));
+    }
+    parseVolumesString(volumesString, instance) {
         return volumesString.split(';').reduce((volumes, volume) => {
             const [name, mountPath] = volume.split(':');
-            volumes[name] = mountPath;
+            volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
             return volumes;
         }, {});
     }
@@ -153,7 +156,7 @@ class Docker {
             if (!volumesString)
                 return {};
             const namedVolumes = {};
-            const imageVolumes = this.parseVolumesString(volumesString);
+            const imageVolumes = this.parseVolumesString(volumesString, instance);
             if (Object.keys(imageVolumes).length > 0) {
                 const volumes = (yield this.client.volume.list())
                     .filter(volume => { var _a; return ((_a = volume === null || volume === void 0 ? void 0 : volume.data) === null || _a === void 0 ? void 0 : _a.Labels) && volume.data.Labels[`${types_1.labelPrefix}.${types_1.volumeLabelPrefix}.service-name`] === this.controller.serviceName; });
@@ -172,10 +175,10 @@ class Docker {
             return namedVolumes;
         });
     }
-    parsePortsString(portsString) {
+    parsePortsString(portsString, instance) {
         return portsString.split(';').reduce((portMappings, portMapping) => {
             const [srcPort, hstPort] = portMapping.split(':');
-            portMappings[Number(srcPort)] = Number(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort);
+            portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
             return portMappings;
         }, {});
     }
