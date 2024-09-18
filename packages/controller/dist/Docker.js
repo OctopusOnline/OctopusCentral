@@ -201,7 +201,8 @@ class Docker {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const networkName = this.getNetworkName(instance);
-            return (_a = (yield this.client.network.list()).find(network => network.data.Name === networkName)) !== null && _a !== void 0 ? _a : yield this.client.network.create({
+            return (_a = (yield this.client.network.list({ name: networkName }))
+                .find(network => network.data.Name === networkName)) !== null && _a !== void 0 ? _a : yield this.client.network.create({
                 Name: networkName,
                 Driver: "bridge",
                 Labels: {

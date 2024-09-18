@@ -239,7 +239,8 @@ export class Docker {
   private async createInstanceNetwork(instance: Instance): Promise<DockerNetwork> {
     const networkName = this.getNetworkName(instance);
 
-    return (await this.client.network.list() as DockerNetwork[]).find(network => network.data.Name === networkName)
+    return (await this.client.network.list({ name: networkName }) as DockerNetwork[])
+        .find(network => network.data.Name === networkName)
       ?? await this.client.network.create({
         Name: networkName,
         Driver: "bridge",
