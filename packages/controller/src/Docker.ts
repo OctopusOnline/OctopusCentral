@@ -117,14 +117,14 @@ export class Docker {
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
-    let endpointConfig = {};
-    for (const networkKey in networks)
-      endpointConfig = {
-        ...endpointConfig,
-        [networks[networkKey].NetworkID]: {
-          Aliases: [containerName]
-        }
-      };
+    //let endpointConfig = {};
+    //for (const networkKey in networks)
+    //  endpointConfig = {
+    //    ...endpointConfig,
+    //    [networks[networkKey].NetworkID]: {
+    //      Aliases: [containerName]
+    //    }
+    //  };
 
     const portMappings: { [key: number]: number } = this.parsePortsString(
       await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '',
@@ -161,14 +161,27 @@ export class Docker {
       ExposedPorts: {
         [instance.socketPort]: {}
       },
-      NetworkingConfig: {
-        EndpointsConfig: endpointConfig
-      }
+      //NetworkingConfig: {
+      //  EndpointsConfig: endpointConfig
+      //}
     });
+
     await container.rename({ name: containerName });
     await container.start();
 
-    await this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
+    await Promise.all([
+      (async() => {
+        for (const networkKey in networks)
+          await this.client.network.get(networkKey).connect({
+            Container: container.id,
+            EndpointConfig: {
+              Aliases: [containerName]
+            }
+          });
+      })(),
+
+      this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect)
+    ]);
 
     return container;
   }

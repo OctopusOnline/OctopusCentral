@@ -98,11 +98,14 @@ class Docker {
             const containerName = this.getContainerName(instance);
             const volumes = yield this.createInstanceVolumes(instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
-            let endpointConfig = {};
-            for (const networkKey in networks)
-                endpointConfig = Object.assign(Object.assign({}, endpointConfig), { [networks[networkKey].NetworkID]: {
-                        Aliases: [containerName]
-                    } });
+            //let endpointConfig = {};
+            //for (const networkKey in networks)
+            //  endpointConfig = {
+            //    ...endpointConfig,
+            //    [networks[networkKey].NetworkID]: {
+            //      Aliases: [containerName]
+            //    }
+            //  };
             const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
             let portBindings = {};
             for (const portMapping in portMappings)
@@ -131,13 +134,24 @@ class Docker {
                 ExposedPorts: {
                     [instance.socketPort]: {}
                 },
-                NetworkingConfig: {
-                    EndpointsConfig: endpointConfig
-                }
+                //NetworkingConfig: {
+                //  EndpointsConfig: endpointConfig
+                //}
             });
             yield container.rename({ name: containerName });
             yield container.start();
-            yield this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect);
+            yield Promise.all([
+                (() => __awaiter(this, void 0, void 0, function* () {
+                    for (const networkKey in networks)
+                        yield this.client.network.get(networkKey).connect({
+                            Container: container.id,
+                            EndpointConfig: {
+                                Aliases: [containerName]
+                            }
+                        });
+                }))(),
+                this.controller.updateInstanceSocketHostname(instance, containerName, autoReconnect)
+            ]);
             return container;
         });
     }
