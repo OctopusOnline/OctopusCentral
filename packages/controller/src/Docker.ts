@@ -176,7 +176,7 @@ export class Docker {
     await Promise.all([
       (async() => {
         for (const networkKey in networks)
-          await networks[networkKey].connect({
+          await this.client.network.get(networkKey).connect({
             Container: container.id,
             EndpointConfig: {
               Aliases: [containerName]

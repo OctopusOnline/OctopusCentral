@@ -143,7 +143,7 @@ class Docker {
             yield Promise.all([
                 (() => __awaiter(this, void 0, void 0, function* () {
                     for (const networkKey in networks)
-                        yield networks[networkKey].connect({
+                        yield this.client.network.get(networkKey).connect({
                             Container: container.id,
                             EndpointConfig: {
                                 Aliases: [containerName]
