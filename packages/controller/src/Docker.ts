@@ -208,7 +208,7 @@ export class Docker {
 
   private parsePortsString(portsString: string, instance: Instance): { [key: number]: number } {
     return portsString.split(';').reduce((portMappings, portMapping) => {
-      const [srcPort, hstPort] = portMapping.split(':');
+      const [hstPort, srcPort] = portMapping.split(':');
       portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
       return portMappings;
     }, {} as { [key: number]: number });

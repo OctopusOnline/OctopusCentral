@@ -173,7 +173,7 @@ class Docker {
     }
     parsePortsString(portsString, instance) {
         return portsString.split(';').reduce((portMappings, portMapping) => {
-            const [srcPort, hstPort] = portMapping.split(':');
+            const [hstPort, srcPort] = portMapping.split(':');
             portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
             return portMappings;
         }, {});
