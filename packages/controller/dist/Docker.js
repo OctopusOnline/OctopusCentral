@@ -55,6 +55,9 @@ class Docker {
     getContainerName(instance) {
         return this.controller.serviceName + '_instance-' + (instance instanceof Instance_1.Instance ? instance.id : instance);
     }
+    getNetworkName(instance, suffix = '_default') {
+        return this.getContainerName(instance) + suffix;
+    }
     getVolumeName(instance, name) {
         return this.getContainerName(instance) + '-' + name;
     }
@@ -98,14 +101,7 @@ class Docker {
             const containerName = this.getContainerName(instance);
             const volumes = yield this.createInstanceVolumes(instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
-            //let endpointConfig = {};
-            //for (const networkKey in networks)
-            //  endpointConfig = {
-            //    ...endpointConfig,
-            //    [networks[networkKey].NetworkID]: {
-            //      Aliases: [containerName]
-            //    }
-            //  };
+            const defaultNetwork = yield this.createInstanceNetwork(instance);
             const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
             let portBindings = {};
             for (const portMapping in portMappings)
@@ -131,19 +127,23 @@ class Docker {
                     PortBindings: portBindings
                 },
                 Hostname: containerName,
+                NetworkingConfig: {
+                    EndpointsConfig: {
+                        [defaultNetwork.data.Id]: {
+                            Aliases: [containerName]
+                        }
+                    }
+                },
                 ExposedPorts: {
                     [instance.socketPort]: {}
-                },
-                //NetworkingConfig: {
-                //  EndpointsConfig: endpointConfig
-                //}
+                }
             });
             yield container.rename({ name: containerName });
             yield container.start();
             yield Promise.all([
                 (() => __awaiter(this, void 0, void 0, function* () {
                     for (const networkKey in networks)
-                        yield this.client.network.get(networkKey).connect({
+                        yield networks[networkKey].connect({
                             Container: container.id,
                             EndpointConfig: {
                                 Aliases: [containerName]
@@ -163,6 +163,13 @@ class Docker {
             const [name, mountPath] = volume.split(':');
             volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
             return volumes;
+        }, {});
+    }
+    parsePortsString(portsString, instance) {
+        return portsString.split(';').reduce((portMappings, portMapping) => {
+            const [srcPort, hstPort] = portMapping.split(':');
+            portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
+            return portMappings;
         }, {});
     }
     createInstanceVolumes(instance) {
@@ -190,12 +197,18 @@ class Docker {
             return namedVolumes;
         });
     }
-    parsePortsString(portsString, instance) {
-        return portsString.split(';').reduce((portMappings, portMapping) => {
-            const [srcPort, hstPort] = portMapping.split(':');
-            portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
-            return portMappings;
-        }, {});
+    createInstanceNetwork(instance) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const networkName = this.getNetworkName(instance);
+            return (_a = (yield this.client.network.list()).find(network => network.data.Name === networkName)) !== null && _a !== void 0 ? _a : yield this.client.network.create({
+                Name: networkName,
+                Driver: "bridge",
+                Labels: {
+                    [`${types_1.labelPrefix}.${types_1.networkLabelPrefix}.service-name`]: this.controller.serviceName
+                }
+            });
+        });
     }
     instanceRunning(instance) {
         return __awaiter(this, void 0, void 0, function* () {

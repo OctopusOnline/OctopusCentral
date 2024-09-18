@@ -30,7 +30,10 @@ export interface DockerContainer extends Container {
     };
 }
 export interface DockerNetwork extends Network {
-    NetworkID: string;
+    data: {
+        Name: string;
+        Id: string;
+    };
 }
 export declare class Docker {
     #private;
@@ -42,6 +45,7 @@ export declare class Docker {
     constructor(controller: Controller, instanceProps: DockerInstanceProps);
     init(): Promise<void>;
     private getContainerName;
+    private getNetworkName;
     private getVolumeName;
     private getImageLabel;
     private getContainer;
@@ -50,8 +54,9 @@ export declare class Docker {
     private startInstanceContainer;
     private evalLabelString;
     private parseVolumesString;
-    private createInstanceVolumes;
     private parsePortsString;
+    private createInstanceVolumes;
+    private createInstanceNetwork;
     instanceRunning(instance: Instance): Promise<boolean>;
     instancePaused(instance: Instance): Promise<boolean | undefined>;
     startInstance(instance: Instance): Promise<boolean>;

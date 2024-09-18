@@ -1,4 +1,4 @@
-import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix, networkLabelPrefix } from '@octopuscentral/types';
 import { instanceIdEnvVarName } from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
 import { Image } from 'node-docker-api/lib/image';
@@ -12,28 +12,31 @@ import { hostname } from 'os';
 export interface DockerImage extends Image {
   data: {
     Config: {
-      Labels: { [key: string]: string }
-    }
-  }
+      Labels: { [key: string]: string };
+    };
+  };
 }
 
 export interface DockerVolume extends Volume {
   data: {
-    Labels: { [key: string]: string },
-    Mountpoint: string,
-    Name: string
-  }
+    Labels: { [key: string]: string };
+    Mountpoint: string;
+    Name: string;
+  };
 }
 
 export interface DockerContainer extends Container {
   State?: {
     Running?: boolean;
     Paused?: boolean;
-  }
+  };
 }
 
 export interface DockerNetwork extends Network {
-  NetworkID: string;
+  data: {
+    Name: string;
+    Id: string;
+  };
 }
 
 export class Docker {
@@ -71,6 +74,10 @@ export class Docker {
 
   private getContainerName(instance: Instance | number): string {
     return this.controller.serviceName + '_instance-' + (instance instanceof Instance ? instance.id : instance);
+  }
+
+  private getNetworkName(instance: Instance | number, suffix: string = '_default'): string {
+    return this.getContainerName(instance) + suffix;
   }
 
   private getVolumeName(instance: Instance | number, name: string): string {
@@ -117,14 +124,7 @@ export class Docker {
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
-    //let endpointConfig = {};
-    //for (const networkKey in networks)
-    //  endpointConfig = {
-    //    ...endpointConfig,
-    //    [networks[networkKey].NetworkID]: {
-    //      Aliases: [containerName]
-    //    }
-    //  };
+    const defaultNetwork: DockerNetwork = await this.createInstanceNetwork(instance);
 
     const portMappings: { [key: number]: number } = this.parsePortsString(
       await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '',
@@ -158,12 +158,16 @@ export class Docker {
         PortBindings: portBindings
       },
       Hostname: containerName,
+      NetworkingConfig: {
+        EndpointsConfig: {
+          [defaultNetwork.data.Id]: {
+            Aliases: [containerName]
+          }
+        }
+      },
       ExposedPorts: {
         [instance.socketPort]: {}
-      },
-      //NetworkingConfig: {
-      //  EndpointsConfig: endpointConfig
-      //}
+      }
     });
 
     await container.rename({ name: containerName });
@@ -172,7 +176,7 @@ export class Docker {
     await Promise.all([
       (async() => {
         for (const networkKey in networks)
-          await this.client.network.get(networkKey).connect({
+          await networks[networkKey].connect({
             Container: container.id,
             EndpointConfig: {
               Aliases: [containerName]
@@ -197,6 +201,14 @@ export class Docker {
       volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
       return volumes;
     }, {} as { [key: string]: string });
+  }
+
+  private parsePortsString(portsString: string, instance: Instance): { [key: number]: number } {
+    return portsString.split(';').reduce((portMappings, portMapping) => {
+      const [srcPort, hstPort] = portMapping.split(':');
+      portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
+      return portMappings;
+    }, {} as { [key: number]: number });
   }
 
   private async createInstanceVolumes(instance: Instance): Promise<{ [key: string]: string }> {
@@ -227,12 +239,17 @@ export class Docker {
     return namedVolumes;
   }
 
-  private parsePortsString(portsString: string, instance: Instance): { [key: number]: number } {
-    return portsString.split(';').reduce((portMappings, portMapping) => {
-      const [srcPort, hstPort] = portMapping.split(':');
-      portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
-      return portMappings;
-    }, {} as { [key: number]: number });
+  private async createInstanceNetwork(instance: Instance): Promise<DockerNetwork> {
+    const networkName = this.getNetworkName(instance);
+
+    return (await this.client.network.list() as DockerNetwork[]).find(network => network.data.Name === networkName)
+      ?? await this.client.network.create({
+        Name: networkName,
+        Driver: "bridge",
+        Labels: {
+          [`${labelPrefix}.${networkLabelPrefix}.service-name`]: this.controller.serviceName
+        }
+      }) as DockerNetwork;
   }
 
   async instanceRunning(instance: Instance): Promise<boolean> {
