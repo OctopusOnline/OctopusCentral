@@ -98,15 +98,10 @@ class Docker {
             const containerName = this.getContainerName(instance);
             const volumes = yield this.createInstanceVolumes(instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
-            console.log('ports label:', yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`));
             const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
-            console.log('mappings:', JSON.stringify(portMappings));
-            console.log(portMappings);
             let portBindings = {};
             for (const portMapping in portMappings)
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
-            console.log('bindings:', JSON.stringify(portBindings));
-            console.log(portBindings);
             const container = yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
