@@ -59,10 +59,11 @@ class Settings extends node_events_1.default {
     }
     loadSettings() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this.instance.database.connection.execute(`
+            var _a;
+            return (_a = (yield this.instance.database.connection.execute(`
         SELECT name, value, type, min, max
         FROM ${types_1.instanceSettingsTableName}
-        WHERE instance_id = ?`, [this.instance.id])).map(({ name, value, type, min, max }) => new Setting_1.Setting(name, value, type, min, max));
+        WHERE instance_id = ?`, [this.instance.id]))) === null || _a === void 0 ? void 0 : _a.map(({ name, value, type, min, max }) => new Setting_1.Setting(name, value, type, min, max));
         });
     }
     fetchSettings() {

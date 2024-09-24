@@ -9,7 +9,7 @@ export declare class Instance {
     readonly settings: Settings;
     get id(): number;
     get database(): Database;
-    constructor(databaseUrl?: string, id?: number);
+    constructor(databaseUrl?: string, id?: number | null);
     init(): Promise<void>;
     initDatabase(): Promise<void>;
     start(awaitStartPermission?: boolean): Promise<boolean>;

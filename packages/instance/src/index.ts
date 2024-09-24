@@ -8,7 +8,7 @@ import { Socket } from './Socket';
 export { Settings, Setting, Socket };
 
 export class Instance {
-  #id?: number;
+  #id?: number | null;
   #database?: Database;
 
   readonly socket: Socket;
@@ -24,7 +24,7 @@ export class Instance {
     return this.#database!;
   }
 
-  constructor(databaseUrl?: string, id?: number) {
+  constructor(databaseUrl?: string, id?: number | null) {
     if (databaseUrl) this.#database = new Database(databaseUrl);
     this.#id = id;
 
@@ -44,9 +44,11 @@ export class Instance {
 
     await this.initDatabase();
 
-    if (this.#id === undefined)
-      this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
-    else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
+    if (this.#id !== null) {
+      if (this.#id === undefined)
+        this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
+      else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
+    }
 
     await this.settings.init();
   }

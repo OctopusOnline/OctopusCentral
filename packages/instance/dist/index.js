@@ -65,10 +65,12 @@ class Instance {
                     throw new Error(`invalid ${types_1.instanceIdEnvVarName} value: '${id}'`);
             }
             yield this.initDatabase();
-            if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
-                __classPrivateFieldSet(this, _Instance_id, Number((yield this.database.connection.query(`INSERT INTO ${types_1.instancesTableName} (id) VALUES (NULL)`)).insertId), "f");
-            else
-                yield this.database.connection.execute(`INSERT IGNORE INTO ${types_1.instancesTableName} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
+            if (__classPrivateFieldGet(this, _Instance_id, "f") !== null) {
+                if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
+                    __classPrivateFieldSet(this, _Instance_id, Number((yield this.database.connection.query(`INSERT INTO ${types_1.instancesTableName} (id) VALUES (NULL)`)).insertId), "f");
+                else
+                    yield this.database.connection.execute(`INSERT IGNORE INTO ${types_1.instancesTableName} (id) VALUES (?)`, [__classPrivateFieldGet(this, _Instance_id, "f")]);
+            }
             yield this.settings.init();
         });
     }

@@ -162,7 +162,7 @@ export class Controller extends EventEmitter {
 
   async init(): Promise<void> {
     await this.database.connect();
-    //await (new VirtualInstance(this.database.url)).initDatabase();
+    await (new VirtualInstance(this.database.url, null)).initDatabase();
     await this.docker.init();
   }
 

@@ -64,7 +64,7 @@ export class Settings extends EventEmitter {
         FROM ${instanceSettingsTableName}
         WHERE instance_id = ?`,
       [this.instance.id]
-    ) as unknown as Setting[]).map(({ name, value, type, min, max }) =>
+    ) as unknown as Setting[])?.map(({ name, value, type, min, max }) =>
       new Setting(name, value, type, min, max));
   }
 
