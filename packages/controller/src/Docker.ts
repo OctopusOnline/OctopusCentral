@@ -124,12 +124,20 @@ export class Docker {
     console.log('portMappings:', JSON.stringify(portMappings));
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
-    for (const portMapping in portMappings)
-      portBindings = {
-       ...portBindings,
-        [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }]
+    let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
+
+    for (const portMapping in portMappings) {
+      exposedPorts = {
+        ...exposedPorts,
+        [`${portMapping}/tcp`]: {}
       };
+      portBindings = {
+        ...portBindings,
+        [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }],
+      };
+    }
     console.log('portBindings:', JSON.stringify(portBindings));
+    console.log('exposedPorts:', JSON.stringify(exposedPorts));
 
     const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
@@ -152,9 +160,7 @@ export class Docker {
         PortBindings: portBindings
       },
       Hostname: containerName,
-      ExposedPorts: {
-        [instance.socketPort]: {}
-      }
+      ExposedPorts: exposedPorts
     });
 
     await container.rename({ name: containerName });

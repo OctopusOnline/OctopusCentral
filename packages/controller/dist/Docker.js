@@ -101,9 +101,13 @@ class Docker {
             const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
             console.log('portMappings:', JSON.stringify(portMappings));
             let portBindings = {};
-            for (const portMapping in portMappings)
+            let exposedPorts = { [`${instance.socketPort}/tcp`]: {} };
+            for (const portMapping in portMappings) {
+                exposedPorts = Object.assign(Object.assign({}, exposedPorts), { [`${portMapping}/tcp`]: {} });
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
+            }
             console.log('portBindings:', JSON.stringify(portBindings));
+            console.log('exposedPorts:', JSON.stringify(exposedPorts));
             const container = yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
@@ -125,9 +129,7 @@ class Docker {
                     PortBindings: portBindings
                 },
                 Hostname: containerName,
-                ExposedPorts: {
-                    [instance.socketPort]: {}
-                }
+                ExposedPorts: exposedPorts
             });
             yield container.rename({ name: containerName });
             yield container.start();
