@@ -120,12 +120,10 @@ export class Docker {
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
-    const portMappings: { [key: number]: number } = this.parsePortsString(await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '', instance);
-    console.log('portMappings:', JSON.stringify(portMappings));
-
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
 
+    const portMappings: { [key: number]: number } = this.parsePortsString(await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '', instance);
     for (const portMapping in portMappings) {
       exposedPorts = {
         ...exposedPorts,
@@ -136,8 +134,6 @@ export class Docker {
         [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }],
       };
     }
-    console.log('portBindings:', JSON.stringify(portBindings));
-    console.log('exposedPorts:', JSON.stringify(exposedPorts));
 
     const container: DockerContainer = await this.client.container.create({
       Image: this.instanceProps.image,
