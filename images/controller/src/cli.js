@@ -2,6 +2,7 @@ import { CLIClient } from "@octopuscentral/controller";
 import { cliWarningCode } from "@octopuscentral/types";
 import Table from 'cli-table3';
 
+console.clear();
 console.log('===============================\n OctopusCentral Controller CLI \n===============================');
 
 const cli = new CLIClient();
