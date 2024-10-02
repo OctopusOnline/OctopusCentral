@@ -169,9 +169,7 @@ export class Settings extends EventEmitter {
     return thisSetting;
   }
 
-  async deleteSetting(
-    setting: Setting | string
-  ): Promise<void> {
+  async deleteSetting(setting: Setting | string): Promise<void> {
     const settingName = setting instanceof Setting ? setting.name : setting;
 
     await this.instance.database.connection.execute(
@@ -182,4 +180,27 @@ export class Settings extends EventEmitter {
 
     this.emit('setting delete', settingName);
   }
+
+  // aliases
+
+  g(name: string): Setting | undefined { return this.getSetting(name) }
+
+  gS(name: string): string | null | undefined { return this.getSettingStrValue(name) }
+
+  gN(name: string): number | null | undefined { return this.getSettingNumValue(name) }
+
+  gB(name: string): boolean | null | undefined { return this.getSettingBolValue(name) }
+
+  async u(
+    setting: Setting | string,
+    settingValue?: SettingValueType,
+    settingType?: SettingValueTypeType,
+    settingMin?: number,
+    settingMax?: number,
+    overwrite: boolean = true
+  ): Promise<Setting> {
+    return await this.updateSetting(setting, settingValue, settingType, settingMin, settingMax, overwrite);
+  }
+
+  async d(setting: Setting | string): Promise<void> { return await this.deleteSetting(setting) }
 }

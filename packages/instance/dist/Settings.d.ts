@@ -20,4 +20,10 @@ export declare class Settings extends EventEmitter {
     getSettingBolValue(name: string): boolean | null | undefined;
     updateSetting(setting: Setting | string, settingValue?: SettingValueType, settingType?: SettingValueTypeType, settingMin?: number, settingMax?: number, overwrite?: boolean): Promise<Setting>;
     deleteSetting(setting: Setting | string): Promise<void>;
+    g(name: string): Setting | undefined;
+    gS(name: string): string | null | undefined;
+    gN(name: string): number | null | undefined;
+    gB(name: string): boolean | null | undefined;
+    u(setting: Setting | string, settingValue?: SettingValueType, settingType?: SettingValueTypeType, settingMin?: number, settingMax?: number, overwrite?: boolean): Promise<Setting>;
+    d(setting: Setting | string): Promise<void>;
 }
