@@ -131,9 +131,13 @@ export class Controller extends EventEmitter {
     await Promise.all([
       Promise.race([
         new Promise(async resolve => {
-          if (await instance.sendStartPermission(timeout))
-            instance.once('boot status booted', success =>
-              resolve(bootResult = success));
+          if (await instance.sendStartPermission(timeout)) {
+            instance.once('boot status booted', success => {
+              console.log('Controller', '::', 'got boot status booted:', success);
+              resolve(bootResult = success);
+            });
+            console.log('Controller', '::', "awaiting boot status...");
+          }
           else resolve(bootResult = false);
         }),
 
@@ -143,13 +147,19 @@ export class Controller extends EventEmitter {
             bootResult   !== undefined ||
             dockerResult !== undefined ||
             await this.docker.instanceRunning(instance))
-          ) dockerResult = false;
+          ) {
+            dockerResult = false;
+            console.log('Controller', '::', "instance start timeout!");
+          }
         })()
       ]),
 
       (async() => {
+        console.log('Controller', '::', "startInstance", instance.id);
         dockerResult = await this.docker.startInstance(instance);
+        console.log('Controller', '::', "connect to instance:", instance.id);
         await instance.connect();
+        console.log('Controller', '::', "connected to instance successfully");
       })()
     ]);
 

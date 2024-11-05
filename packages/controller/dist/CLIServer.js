@@ -59,6 +59,7 @@ class CLIServer {
             if (!(yield (0, helper_1.waitFor)(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream)))
                 result = new Error('boot stream timeout');
             else {
+                console.log('CLIServer', '::', 'starting instance:', req.instance.id);
                 try {
                     result = yield this.controller.startInstance(req.instance);
                 }
@@ -67,6 +68,7 @@ class CLIServer {
                 }
             }
             this.eventBuffer.instance[req.instance.id].start.booted = true;
+            console.log('CLIServer', '::', "instance start result:", result);
             if (result !== true)
                 yield this.controller.stopInstance(req.instance);
             res.json({

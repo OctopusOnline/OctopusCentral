@@ -100,10 +100,12 @@ class CLIClient extends node_events_1.default {
                 case 'exit':
                     return this.stop();
                 default:
+                    console.log('CLIClient', '::', "request:", input);
                     yield Promise.all([
                         this.request(input),
                         this.requestTextStream(input)
                     ]);
+                    console.log('CLIClient', '::', "request done");
             }
             yield this.inputLoop();
         });

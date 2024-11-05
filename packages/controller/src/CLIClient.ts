@@ -85,10 +85,12 @@ export class CLIClient extends EventEmitter {
         return this.stop();
 
       default:
+        console.log('CLIClient', '::', "request:", input);
         await Promise.all([
           this.request(input),
           this.requestTextStream(input)
         ]);
+        console.log('CLIClient', '::', "request done");
     }
 
     await this.inputLoop();
