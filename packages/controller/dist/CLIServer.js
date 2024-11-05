@@ -67,7 +67,6 @@ class CLIServer {
                 }
             }
             this.eventBuffer.instance[req.instance.id].start.booted = true;
-            console.log('CLIServer', '::', "instance start result:", result);
             if (result !== true)
                 yield this.controller.stopInstance(req.instance);
             res.json({
