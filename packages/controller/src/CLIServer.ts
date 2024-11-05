@@ -74,7 +74,6 @@ export class CLIServer {
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
-        console.log('CLIServer', '::', 'starting instance:', req.instance.id);
         try { result = await this.controller.startInstance(req.instance) }
         catch (error: any) { result = error }
       }

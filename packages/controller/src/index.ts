@@ -155,11 +155,8 @@ export class Controller extends EventEmitter {
       ]),
 
       (async() => {
-        console.log('Controller', '::', "startInstance", instance.id);
         dockerResult = await this.docker.startInstance(instance);
-        console.log('Controller', '::', "connect to instance:", instance.id);
         await instance.connect();
-        console.log('Controller', '::', "connected to instance successfully");
       })()
     ]);
 

@@ -160,11 +160,8 @@ class Controller extends node_events_1.default {
                     }))()
                 ]),
                 (() => __awaiter(this, void 0, void 0, function* () {
-                    console.log('Controller', '::', "startInstance", instance.id);
                     dockerResult = yield this.docker.startInstance(instance);
-                    console.log('Controller', '::', "connect to instance:", instance.id);
                     yield instance.connect();
-                    console.log('Controller', '::', "connected to instance successfully");
                 }))()
             ]);
             return bootResult;
