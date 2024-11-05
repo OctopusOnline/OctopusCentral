@@ -59,8 +59,6 @@ export class Instance extends EventEmitter {
   async sendStartPermission(timeout: number = 6e4): Promise<boolean> {
     let startPermissionReceived: boolean | undefined = undefined;
 
-    console.log("Instance", "::", "sending start permission...");
-
     const self = this;
     await Promise.all([
       waitFor(() => {
@@ -73,18 +71,14 @@ export class Instance extends EventEmitter {
 
       Promise.race([
         waitFor(() => {
-          self.socket?.once('start permission received', () => {
-            startPermissionReceived = true;
-            console.log("Instance", "::", "start permission received!");
-          });
+          self.socket?.once('start permission received', () =>
+            startPermissionReceived = true);
           return startPermissionReceived;
         }, timeout / 60),
 
         sleep(timeout).then(() => {
-          if (startPermissionReceived === undefined) {
+          if (startPermissionReceived === undefined)
             startPermissionReceived = false;
-            console.log("Instance", "::", "start permission timeout!");
-          }
         })
       ])
     ]);

@@ -132,11 +132,8 @@ export class Controller extends EventEmitter {
       Promise.race([
         new Promise(async resolve => {
           if (await instance.sendStartPermission(timeout)) {
-            instance.once('boot status booted', success => {
-              console.log('Controller', '::', 'got boot status booted:', success);
-              resolve(bootResult = success);
-            });
-            console.log('Controller', '::', "awaiting boot status...");
+            instance.once('boot status booted', success =>
+              resolve(bootResult = success));
           }
           else resolve(bootResult = false);
         }),
@@ -147,10 +144,8 @@ export class Controller extends EventEmitter {
             bootResult   !== undefined ||
             dockerResult !== undefined ||
             await this.docker.instanceRunning(instance))
-          ) {
+          )
             dockerResult = false;
-            console.log('Controller', '::', "instance start timeout!");
-          }
         })()
       ]),
 
