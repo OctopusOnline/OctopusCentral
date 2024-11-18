@@ -29,7 +29,8 @@ export interface DockerContainer extends Container {
         Paused?: boolean;
     };
     data: {
-        Names: string[];
+        Name?: string;
+        Names?: string[];
         Config: {
             Labels: {
                 [key: string]: string;
@@ -67,6 +68,7 @@ export declare class Docker {
     private startInstanceContainer;
     private evalLabelString;
     private parseVolumesString;
+    private parseBindsString;
     private parsePortsString;
     private createInstanceVolumes;
     instanceRunning(instance: Instance): Promise<boolean>;

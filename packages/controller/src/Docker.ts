@@ -31,7 +31,8 @@ export interface DockerContainer extends Container {
     Paused?: boolean;
   };
   data: {
-    Names: string[],
+    Name?: string,
+    Names?: string[],
     Config: {
       Labels: { [key: string]: string };
     };
@@ -97,10 +98,9 @@ export class Docker {
   private async getSelfContainerLabel(label: string): Promise<string | undefined> {
     const status = (await this.#selfContainer?.status()) as DockerContainer;
     console.log('-------------------------------------------------------------');
-    console.log(`SELF CONTAINER STATUS [${label}]:`);
-    console.log(status);
-    console.log('-------------------------------------------------------------');
-    console.log(JSON.stringify(status));
+    console.log(`LABELS:`);
+    console.log(status?.data.Config.Labels);
+    console.log(JSON.stringify(status?.data.Config.Labels));
     console.log('-------------------------------------------------------------');
     return status?.data.Config.Labels[label];
   }
@@ -108,7 +108,8 @@ export class Docker {
   private async getContainer(instance: Instance | string, onlyRunning: boolean = false): Promise<DockerContainer | undefined> {
     const name: string = instance instanceof Instance ? this.getContainerName(instance) : instance
     return ((await this.client.container.list({ all: !onlyRunning })) as DockerContainer[]).find(container =>
-      container.data.Names.includes(`/${name}`)
+      container.data.Name?.includes(`/${name}`)
+      || container.data.Names?.includes(`/${name}`)
       || container.id.startsWith(name)
     );
   }
@@ -137,19 +138,20 @@ export class Docker {
 
     const containerName: string = this.getContainerName(instance);
 
-    const selfContainerVolumesString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.volumes`);
-    console.log('selfContainerVolumesString', selfContainerVolumesString);
-    const volumes: { [key: string]: string } =
-      await this.createInstanceVolumes(await this.getImageLabel(selfContainerVolumesString || `${labelPrefix}.${instanceLabelPrefix}.volumes`) || '', instance);
-    const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
+    const volumesString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.volumes`)
+      || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`) || '';
+    const volumes: { [key: string]: string } = await this.createInstanceVolumes(volumesString, instance);
+    const binds: string[] = [
+      ...Object.entries(volumes),
+      ...Object.entries(this.parseBindsString(volumesString))
+    ].map(([name, mountPath]) => `${name}:${mountPath}`);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
 
-    const selfContainerPortsString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.ports`);
-    console.log('selfContainerPortsString', selfContainerPortsString);
-    const portMappings: { [key: number]: number } =
-      this.parsePortsString(selfContainerPortsString || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) || '', instance);
+    const portsString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.ports`)
+      || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) || '';
+    const portMappings: { [key: number]: number } = this.parsePortsString(portsString, instance);
     for (const portMapping in portMappings) {
       exposedPorts = {
         ...exposedPorts,
@@ -213,7 +215,17 @@ export class Docker {
   private parseVolumesString(volumesString: string, instance: Instance): { [key: string]: string } {
     return volumesString.split(';').reduce((volumes, volume) => {
       const [name, mountPath] = volume.split(':');
-      volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
+      if (!name.includes('/'))
+        volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
+      return volumes;
+    }, {} as { [key: string]: string });
+  }
+
+  private parseBindsString(volumesString: string): { [key: string]: string } {
+    return volumesString.split(';').reduce((volumes, volume) => {
+      const [path, mountPath] = volume.split(':');
+      if (path.includes('/'))
+        volumes[path] = mountPath;
       return volumes;
     }, {} as { [key: string]: string });
   }
