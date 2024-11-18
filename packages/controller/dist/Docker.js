@@ -140,7 +140,11 @@ class Docker {
                 HostConfig: {
                     Binds: binds,
                     NetworkMode: 'bridge',
-                    PortBindings: portBindings
+                    PortBindings: portBindings,
+                    RestartPolicy: {
+                        Name: 'always',
+                        MaximumRetryCount: 10
+                    },
                 },
                 Hostname: containerName,
                 ExposedPorts: exposedPorts
