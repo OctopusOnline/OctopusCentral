@@ -178,7 +178,7 @@ export class Docker {
         NetworkMode: 'bridge',
         PortBindings: portBindings,
         RestartPolicy: {
-          Name: 'always',
+          Name: 'on-failure',
           MaximumRetryCount: 10
         },
       },
