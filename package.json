@@ -17,8 +17,5 @@
     "build": "lerna run build",
     "clean": "lerna run clean",
     "publish": "lerna publish"
-  },
-  "dependencies": {
-    "@octopuscentral/types": "^1.4.2"
   }
 }
