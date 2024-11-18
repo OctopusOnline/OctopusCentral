@@ -30,6 +30,15 @@ export interface DockerContainer extends Container {
     Running?: boolean;
     Paused?: boolean;
   };
+  data: {
+    Names: string[],
+    Config: {
+      Labels: { [key: string]: string };
+    };
+    NetworkSettings: {
+      Networks: { [key: string]: DockerNetwork };
+    };
+  };
 }
 
 export interface DockerNetwork extends Network {
@@ -85,17 +94,22 @@ export class Docker {
     return status.data.Config.Labels[label];
   }
 
+  private async getSelfContainerLabel(label: string): Promise<string | undefined> {
+    const status = (await this.#selfContainer?.status()) as DockerContainer;
+    return status?.data.Config.Labels[label];
+  }
+
   private async getContainer(instance: Instance | string, onlyRunning: boolean = false): Promise<DockerContainer | undefined> {
     const name: string = instance instanceof Instance ? this.getContainerName(instance) : instance
-    return (await this.client.container.list({ all: !onlyRunning })).find(container =>
-      (container.data as { Names: string[] }).Names.includes(`/${name}`)
+    return ((await this.client.container.list({ all: !onlyRunning })) as DockerContainer[]).find(container =>
+      container.data.Names.includes(`/${name}`)
       || container.id.startsWith(name)
     );
   }
 
   private async getContainerNetwork(container: DockerContainer): Promise<{ [key: string]: DockerNetwork } | undefined> {
     const networks: { [key: string]: DockerNetwork } | undefined
-      = (container.data as { NetworkSettings: { Networks: object } })?.NetworkSettings?.Networks as { [key: string]: DockerNetwork };
+      = container.data?.NetworkSettings?.Networks;
     if (!networks) return;
 
     return networks;
@@ -117,13 +131,17 @@ export class Docker {
 
     const containerName: string = this.getContainerName(instance);
 
-    const volumes: { [key: string]: string } = await this.createInstanceVolumes(instance);
+    const selfContainerVolumesString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.volumes`);
+    const volumes: { [key: string]: string } =
+      await this.createInstanceVolumes(await this.getImageLabel(selfContainerVolumesString || `${labelPrefix}.${instanceLabelPrefix}.volumes`) || '', instance);
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
 
-    const portMappings: { [key: number]: number } = this.parsePortsString(await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) ?? '', instance);
+    const selfContainerPortsString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.ports`);
+    const portMappings: { [key: number]: number } =
+      this.parsePortsString(selfContainerPortsString || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) || '', instance);
     for (const portMapping in portMappings) {
       exposedPorts = {
         ...exposedPorts,
@@ -135,7 +153,7 @@ export class Docker {
       };
     }
 
-    const container: DockerContainer = await this.client.container.create({
+    const container: DockerContainer = (await this.client.container.create({
       Image: this.instanceProps.image,
       Tty: true,
       AttachStdin: false,
@@ -157,7 +175,7 @@ export class Docker {
       },
       Hostname: containerName,
       ExposedPorts: exposedPorts
-    });
+    })) as DockerContainer;
 
     await container.rename({ name: containerName });
     await container.start();
@@ -200,8 +218,7 @@ export class Docker {
     }, {} as { [key: number]: number });
   }
 
-  private async createInstanceVolumes(instance: Instance): Promise<{ [key: string]: string }> {
-    const volumesString = await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`);
+  private async createInstanceVolumes(volumesString: string, instance: Instance): Promise<{ [key: string]: string }> {
     if (!volumesString) return {};
 
     const namedVolumes: { [key: string]: string } = {};

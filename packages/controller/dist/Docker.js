@@ -8,16 +8,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
 var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
     if (kind === "m") throw new TypeError("Private method is not writable");
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
 var _Docker_selfContainer;
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -64,6 +64,13 @@ class Docker {
             return status.data.Config.Labels[label];
         });
     }
+    getSelfContainerLabel(label) {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const status = (yield ((_a = __classPrivateFieldGet(this, _Docker_selfContainer, "f")) === null || _a === void 0 ? void 0 : _a.status()));
+            return status === null || status === void 0 ? void 0 : status.data.Config.Labels[label];
+        });
+    }
     getContainer(instance_1) {
         return __awaiter(this, arguments, void 0, function* (instance, onlyRunning = false) {
             const name = instance instanceof Instance_1.Instance ? this.getContainerName(instance) : instance;
@@ -92,20 +99,21 @@ class Docker {
     }
     startInstanceContainer(instance_1, networks_1) {
         return __awaiter(this, arguments, void 0, function* (instance, networks, forceRestart = true, autoReconnect = false) {
-            var _a;
             if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
             const containerName = this.getContainerName(instance);
-            const volumes = yield this.createInstanceVolumes(instance);
+            const selfContainerVolumesString = yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.volumes`);
+            const volumes = yield this.createInstanceVolumes((yield this.getImageLabel(selfContainerVolumesString || `${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`)) || '', instance);
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
             let portBindings = {};
             let exposedPorts = { [`${instance.socketPort}/tcp`]: {} };
-            const portMappings = this.parsePortsString((_a = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) !== null && _a !== void 0 ? _a : '', instance);
+            const selfContainerPortsString = yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.ports`);
+            const portMappings = this.parsePortsString(selfContainerPortsString || (yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) || '', instance);
             for (const portMapping in portMappings) {
                 exposedPorts = Object.assign(Object.assign({}, exposedPorts), { [`${portMapping}/tcp`]: {} });
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
             }
-            const container = yield this.client.container.create({
+            const container = (yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
                 AttachStdin: false,
@@ -127,7 +135,7 @@ class Docker {
                 },
                 Hostname: containerName,
                 ExposedPorts: exposedPorts
-            });
+            }));
             yield container.rename({ name: containerName });
             yield container.start();
             yield Promise.all([
@@ -162,9 +170,8 @@ class Docker {
             return portMappings;
         }, {});
     }
-    createInstanceVolumes(instance) {
+    createInstanceVolumes(volumesString, instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            const volumesString = yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`);
             if (!volumesString)
                 return {};
             const namedVolumes = {};

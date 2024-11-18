@@ -28,6 +28,19 @@ export interface DockerContainer extends Container {
         Running?: boolean;
         Paused?: boolean;
     };
+    data: {
+        Names: string[];
+        Config: {
+            Labels: {
+                [key: string]: string;
+            };
+        };
+        NetworkSettings: {
+            Networks: {
+                [key: string]: DockerNetwork;
+            };
+        };
+    };
 }
 export interface DockerNetwork extends Network {
     data: {
@@ -47,6 +60,7 @@ export declare class Docker {
     private getContainerName;
     private getVolumeName;
     private getImageLabel;
+    private getSelfContainerLabel;
     private getContainer;
     private getContainerNetwork;
     private fetchSelfContainer;
