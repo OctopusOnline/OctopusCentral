@@ -68,7 +68,12 @@ class Docker {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const status = (yield ((_a = __classPrivateFieldGet(this, _Docker_selfContainer, "f")) === null || _a === void 0 ? void 0 : _a.status()));
-            console.log(`SELF CONTAINER STATUS [${label}]:`, JSON.stringify(status));
+            console.log('-------------------------------------------------------------');
+            console.log(`SELF CONTAINER STATUS [${label}]:`);
+            console.log(status);
+            console.log('-------------------------------------------------------------');
+            console.log(JSON.stringify(status));
+            console.log('-------------------------------------------------------------');
             return status === null || status === void 0 ? void 0 : status.data.Config.Labels[label];
         });
     }
@@ -106,14 +111,12 @@ class Docker {
             const selfContainerVolumesString = yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.volumes`);
             console.log('selfContainerVolumesString', selfContainerVolumesString);
             const volumes = yield this.createInstanceVolumes((yield this.getImageLabel(selfContainerVolumesString || `${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`)) || '', instance);
-            console.log('volumes', JSON.stringify(volumes));
             const binds = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
             let portBindings = {};
             let exposedPorts = { [`${instance.socketPort}/tcp`]: {} };
             const selfContainerPortsString = yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.ports`);
             console.log('selfContainerPortsString', selfContainerPortsString);
             const portMappings = this.parsePortsString(selfContainerPortsString || (yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`)) || '', instance);
-            console.log('volumes', JSON.stringify(volumes));
             for (const portMapping in portMappings) {
                 exposedPorts = Object.assign(Object.assign({}, exposedPorts), { [`${portMapping}/tcp`]: {} });
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
