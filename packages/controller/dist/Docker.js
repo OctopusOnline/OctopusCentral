@@ -68,11 +68,6 @@ class Docker {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             const status = (yield ((_a = __classPrivateFieldGet(this, _Docker_selfContainer, "f")) === null || _a === void 0 ? void 0 : _a.status()));
-            console.log('-------------------------------------------------------------');
-            console.log(`LABELS (for: ${label}):`);
-            console.log(status === null || status === void 0 ? void 0 : status.data.Config.Labels);
-            console.log(JSON.stringify(status === null || status === void 0 ? void 0 : status.data.Config.Labels));
-            console.log('-------------------------------------------------------------');
             return status === null || status === void 0 ? void 0 : status.data.Config.Labels[label];
         });
     }
@@ -113,15 +108,11 @@ class Docker {
             const containerName = this.getContainerName(instance);
             const volumesString = (yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`))
                 || (yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`)) || '';
-            console.log("VOLUMES STRING:", volumesString);
             const volumes = yield this.createInstanceVolumes(volumesString, instance);
-            console.log("VOLUMES:", volumes);
-            console.log("PARSED BINDS STRING", this.parseBindsString(volumesString));
             const binds = [
                 ...Object.entries(volumes),
                 ...Object.entries(this.parseBindsString(volumesString))
             ].map(([name, mountPath]) => `${name}:${mountPath}`);
-            console.log("BINDS:", binds);
             let portBindings = {};
             let exposedPorts = { [`${instance.socketPort}/tcp`]: {} };
             const portsString = (yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.ports`))

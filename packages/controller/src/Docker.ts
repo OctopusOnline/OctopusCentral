@@ -97,11 +97,6 @@ export class Docker {
 
   private async getSelfContainerLabel(label: string): Promise<string | undefined> {
     const status = (await this.#selfContainer?.status()) as DockerContainer;
-    console.log('-------------------------------------------------------------');
-    console.log(`LABELS (for: ${label}):`);
-    console.log(status?.data.Config.Labels);
-    console.log(JSON.stringify(status?.data.Config.Labels));
-    console.log('-------------------------------------------------------------');
     return status?.data.Config.Labels[label];
   }
 
@@ -140,15 +135,11 @@ export class Docker {
 
     const volumesString = await this.getSelfContainerLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`)
       || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`) || '';
-    console.log("VOLUMES STRING:", volumesString);
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(volumesString, instance);
-    console.log("VOLUMES:", volumes);
-    console.log("PARSED BINDS STRING", this.parseBindsString(volumesString));
     const binds: string[] = [
       ...Object.entries(volumes),
       ...Object.entries(this.parseBindsString(volumesString))
     ].map(([name, mountPath]) => `${name}:${mountPath}`);
-    console.log("BINDS:", binds);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
