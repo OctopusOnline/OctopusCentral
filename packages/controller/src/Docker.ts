@@ -96,6 +96,7 @@ export class Docker {
 
   private async getSelfContainerLabel(label: string): Promise<string | undefined> {
     const status = (await this.#selfContainer?.status()) as DockerContainer;
+    console.log(`SELF CONTAINER STATUS [${label}]:`, JSON.stringify(status));
     return status?.data.Config.Labels[label];
   }
 
@@ -132,16 +133,20 @@ export class Docker {
     const containerName: string = this.getContainerName(instance);
 
     const selfContainerVolumesString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.volumes`);
+    console.log('selfContainerVolumesString', selfContainerVolumesString);
     const volumes: { [key: string]: string } =
       await this.createInstanceVolumes(await this.getImageLabel(selfContainerVolumesString || `${labelPrefix}.${instanceLabelPrefix}.volumes`) || '', instance);
+    console.log('volumes', JSON.stringify(volumes));
     const binds: string[] = Object.entries(volumes).map(([name, mountPath]) => `${name}:${mountPath}`);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
     let exposedPorts: { [key: string]: {} } = { [`${instance.socketPort}/tcp`]: {} };
 
     const selfContainerPortsString = await this.getSelfContainerLabel(`${labelPrefix}.${controllerLabelPrefix}.ports`);
+    console.log('selfContainerPortsString', selfContainerPortsString);
     const portMappings: { [key: number]: number } =
       this.parsePortsString(selfContainerPortsString || await this.getImageLabel(`${labelPrefix}.${instanceLabelPrefix}.ports`) || '', instance);
+    console.log('volumes', JSON.stringify(volumes));
     for (const portMapping in portMappings) {
       exposedPorts = {
         ...exposedPorts,
