@@ -8,6 +8,7 @@ export declare class Instance {
     readonly socket: Socket;
     readonly settings: Settings;
     get id(): number;
+    get serviceName(): string;
     get database(): Database;
     constructor(databaseUrl?: string, id?: number | null);
     init(): Promise<void>;

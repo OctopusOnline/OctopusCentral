@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.volumeLabelPrefix = exports.labelPrefix = exports.centralLabelPrefix = exports.cliWarningCode = exports.cliServerPort = exports.controllerLabelPrefix = exports.controllersTableName = exports.instanceDatabaseEnvVarName = exports.instanceIdEnvVarName = exports.instanceSettingsTableName = exports.instanceLabelPrefix = exports.instancesTableName = void 0;
+exports.volumeLabelPrefix = exports.labelPrefix = exports.centralLabelPrefix = exports.cliWarningCode = exports.cliServerPort = exports.controllerLabelPrefix = exports.controllersTableName = exports.instanceDatabaseEnvVarName = exports.instanceServiceNameEnvVarName = exports.instanceIdEnvVarName = exports.instanceSettingsTableName = exports.instanceLabelPrefix = exports.instancesTableName = void 0;
 const instance_1 = require("./types/instance");
 Object.defineProperty(exports, "instancesTableName", { enumerable: true, get: function () { return instance_1.tableName; } });
 Object.defineProperty(exports, "instanceLabelPrefix", { enumerable: true, get: function () { return instance_1.labelPrefix; } });
@@ -18,5 +18,6 @@ const docker_1 = require("./types/docker");
 Object.defineProperty(exports, "labelPrefix", { enumerable: true, get: function () { return docker_1.labelPrefix; } });
 Object.defineProperty(exports, "volumeLabelPrefix", { enumerable: true, get: function () { return docker_1.volumeLabelPrefix; } });
 Object.defineProperty(exports, "instanceIdEnvVarName", { enumerable: true, get: function () { return docker_1.instanceIdEnvVarName; } });
+Object.defineProperty(exports, "instanceServiceNameEnvVarName", { enumerable: true, get: function () { return docker_1.instanceServiceNameEnvVarName; } });
 Object.defineProperty(exports, "instanceDatabaseEnvVarName", { enumerable: true, get: function () { return docker_1.instanceDatabaseEnvVarName; } });
 //# sourceMappingURL=index.js.map

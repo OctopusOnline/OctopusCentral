@@ -36,6 +36,7 @@ import {
   labelPrefix,
   volumeLabelPrefix,
   instanceIdEnvVarName,
+  instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
   DockerClientProps,
   DockerInstanceProps
@@ -46,6 +47,7 @@ export {
   instanceLabelPrefix,
   instanceSettingsTableName,
   instanceIdEnvVarName,
+  instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
   SettingValueType,
   SettingValueTypeType,

@@ -1,4 +1,4 @@
-import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instancesTableName } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName } from '@octopuscentral/types';
 import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
@@ -9,6 +9,7 @@ export { Settings, Setting, Socket };
 
 export class Instance {
   #id?: number | null;
+  #serviceName?: string;
   #database?: Database;
 
   readonly socket: Socket;
@@ -17,6 +18,11 @@ export class Instance {
   get id(): number {
     if (this.#id === undefined) throw new Error('instance.id is not set\nmaybe run init() first?');
     return this.#id!;
+  }
+
+  get serviceName(): string {
+    if (this.#serviceName === undefined) throw new Error('instance.serviceName is not set\nmaybe run init() first?');
+    return this.#serviceName!;
   }
 
   get database(): Database {
@@ -34,12 +40,18 @@ export class Instance {
 
   async init(): Promise<void> {
     if (this.#id === undefined) {
-      const id: string | undefined = process.env[instanceIdEnvVarName] as any;
+      const id: string | undefined = process.env[instanceIdEnvVarName];
       if (id === undefined)
         throw new Error(`env var ${instanceIdEnvVarName} is not set`);
       this.#id = Number(id);
       if (isNaN(this.#id as number) || this.#id <= 0)
         throw new Error(`invalid ${instanceIdEnvVarName} value: '${id}'`);
+    }
+
+    if (this.#serviceName === undefined) {
+      this.#serviceName = String(process.env[instanceServiceNameEnvVarName]).trim() || undefined;
+      if (this.#serviceName === undefined)
+        throw new Error(`env var ${instanceServiceNameEnvVarName} is not set`);
     }
 
     await this.initDatabase();

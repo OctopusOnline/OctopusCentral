@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_id, _Instance_database;
+var _Instance_id, _Instance_serviceName, _Instance_database;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = exports.Socket = exports.Setting = exports.Settings = void 0;
 const types_1 = require("@octopuscentral/types");
@@ -40,6 +40,11 @@ class Instance {
             throw new Error('instance.id is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_id, "f");
     }
+    get serviceName() {
+        if (__classPrivateFieldGet(this, _Instance_serviceName, "f") === undefined)
+            throw new Error('instance.serviceName is not set\nmaybe run init() first?');
+        return __classPrivateFieldGet(this, _Instance_serviceName, "f");
+    }
     get database() {
         if (__classPrivateFieldGet(this, _Instance_database, "f") === undefined)
             throw new Error('instance.database is not set\nmaybe run init() first?');
@@ -47,6 +52,7 @@ class Instance {
     }
     constructor(databaseUrl, id) {
         _Instance_id.set(this, void 0);
+        _Instance_serviceName.set(this, void 0);
         _Instance_database.set(this, void 0);
         if (databaseUrl)
             __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(databaseUrl), "f");
@@ -63,6 +69,11 @@ class Instance {
                 __classPrivateFieldSet(this, _Instance_id, Number(id), "f");
                 if (isNaN(__classPrivateFieldGet(this, _Instance_id, "f")) || __classPrivateFieldGet(this, _Instance_id, "f") <= 0)
                     throw new Error(`invalid ${types_1.instanceIdEnvVarName} value: '${id}'`);
+            }
+            if (__classPrivateFieldGet(this, _Instance_serviceName, "f") === undefined) {
+                __classPrivateFieldSet(this, _Instance_serviceName, String(node_process_1.default.env[types_1.instanceServiceNameEnvVarName]).trim() || undefined, "f");
+                if (__classPrivateFieldGet(this, _Instance_serviceName, "f") === undefined)
+                    throw new Error(`env var ${types_1.instanceServiceNameEnvVarName} is not set`);
             }
             yield this.initDatabase();
             if (__classPrivateFieldGet(this, _Instance_id, "f") !== null) {
@@ -112,5 +123,5 @@ class Instance {
     }
 }
 exports.Instance = Instance;
-_Instance_id = new WeakMap(), _Instance_database = new WeakMap();
+_Instance_id = new WeakMap(), _Instance_serviceName = new WeakMap(), _Instance_database = new WeakMap();
 //# sourceMappingURL=index.js.map

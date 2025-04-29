@@ -23,7 +23,6 @@ var _Docker_selfContainer;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Docker = void 0;
 const types_1 = require("@octopuscentral/types");
-const types_2 = require("@octopuscentral/types");
 const node_docker_api_1 = require("node-docker-api");
 const Instance_1 = require("./Instance");
 const os_1 = require("os");
@@ -134,7 +133,8 @@ class Docker {
                     [`${types_1.labelPrefix}.${types_1.controllerLabelPrefix}.service-name`]: this.controller.serviceName
                 },
                 Env: [
-                    `${types_2.instanceIdEnvVarName}=${instance.id}`,
+                    `${types_1.instanceIdEnvVarName}=${instance.id}`,
+                    `${types_1.instanceServiceNameEnvVarName}=${this.controller.serviceName}`,
                     `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`
                 ],
                 HostConfig: {
