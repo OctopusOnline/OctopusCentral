@@ -1,4 +1,4 @@
-import { sleep, waitFor } from './helper';
+import { waitFor } from './helper';
 import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
