@@ -71,9 +71,10 @@ class Instance {
                     throw new Error(`invalid ${types_1.instanceIdEnvVarName} value: '${id}'`);
             }
             if (__classPrivateFieldGet(this, _Instance_serviceName, "f") === undefined) {
-                __classPrivateFieldSet(this, _Instance_serviceName, String(node_process_1.default.env[types_1.instanceServiceNameEnvVarName]).trim() || undefined, "f");
-                if (__classPrivateFieldGet(this, _Instance_serviceName, "f") === undefined)
+                const serviceName = node_process_1.default.env[types_1.instanceServiceNameEnvVarName];
+                if (serviceName === undefined)
                     throw new Error(`env var ${types_1.instanceServiceNameEnvVarName} is not set`);
+                __classPrivateFieldSet(this, _Instance_serviceName, serviceName, "f");
             }
             yield this.initDatabase();
             if (__classPrivateFieldGet(this, _Instance_id, "f") !== null) {

@@ -49,9 +49,10 @@ export class Instance {
     }
 
     if (this.#serviceName === undefined) {
-      this.#serviceName = String(process.env[instanceServiceNameEnvVarName]).trim() || undefined;
-      if (this.#serviceName === undefined)
+      const serviceName: string | undefined = process.env[instanceServiceNameEnvVarName];
+      if (serviceName === undefined)
         throw new Error(`env var ${instanceServiceNameEnvVarName} is not set`);
+      this.#serviceName = serviceName;
     }
 
     await this.initDatabase();
