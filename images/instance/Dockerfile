@@ -1,4 +1,4 @@
-FROM node:18.7-slim
+FROM node:20.19-slim
 
 LABEL octopus.instance.volumes=""
 LABEL octopus.instance.ports=""
