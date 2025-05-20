@@ -13,8 +13,5 @@ fi
 
 #---------------------------------------
 
-for image in images/*/ ; do
-  if [ -d "$image" ] && [ -f "$image/build.sh" ]; then
-    (cd "$image" && ./build.sh)
-  fi
-done
+git pull
+./scripts/build-all-images.sh
