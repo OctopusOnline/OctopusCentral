@@ -43,7 +43,11 @@ export class CLIServer {
     this.express.get('/serviceName', (_: Request, res: Response) =>
       res.json({ type: 'value', data: this.controller.serviceName } as CLIResponseValueData));
 
-    this.express.get(['/instance/ls', '/instances'], async (_: Request, res: Response) => {
+    this.express.get([
+      '/instance/ls',
+      '/i/ls',
+      '/instances'
+    ], async (_: Request, res: Response) => {
       const data: CLIResponseTableDataType = {
         head: ['id', 'running'],
         rows: [] as CLIResponseValueDataType[][]
@@ -56,7 +60,12 @@ export class CLIServer {
       res.json({ type: 'table', data });
     });
 
-    this.express.use(['/instance/:id/*', '/stream/instance/:id/*'], (req: RequestWithInstance, res: Response, next: any) => {
+    this.express.use([
+      '/instance/:id/*',
+      '/stream/instance/:id/*',
+      '/i/:id/*',
+      '/stream/i/:id/*',
+    ], (req: RequestWithInstance, res: Response, next: any) => {
       req.instance = this.controller.getInstance(Number(req.params.id))!;
       if (!req.instance)
         res.json({
@@ -66,7 +75,12 @@ export class CLIServer {
       else next();
     });
 
-    this.express.get(['/instance/:id/start', '/instance/:id/start/:mode'], async (req: RequestWithInstance, res: Response) => {
+    this.express.get([
+      '/instance/:id/start',
+      '/instance/:id/start/:mode',
+      '/i/:id/start',
+      '/i/:id/start/:mode'
+    ], async (req: RequestWithInstance, res: Response) => {
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
 
@@ -90,7 +104,12 @@ export class CLIServer {
       } as CLIResponseValueData);
     });
 
-    this.express.get(['/stream/instance/:id/start', '/stream/instance/:id/start/*'], async (req: RequestWithInstance, res: Response) => {
+    this.express.get([
+      '/stream/instance/:id/start',
+      '/stream/instance/:id/start/*',
+      '/stream/i/:id/start',
+      '/stream/i/:id/start/*'
+    ], async (req: RequestWithInstance, res: Response) => {
 
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
@@ -126,7 +145,10 @@ export class CLIServer {
       }
     });
 
-    this.express.get('/instance/:id/stop', async (req: RequestWithInstance, res: Response) => {
+    this.express.get([
+      '/instance/:id/stop',
+      '/i/:id/stop'
+      ], async (req: RequestWithInstance, res: Response) => {
       let result: boolean | Error;
       try { result = await this.controller.stopInstance(req.instance) }
       catch (error: any) { result = error }

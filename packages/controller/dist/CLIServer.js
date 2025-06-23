@@ -31,7 +31,11 @@ class CLIServer {
         this.express.use(express_1.default.json());
         this.express.get('/', (_, res) => res.send('Octopus Central CLI Server'));
         this.express.get('/serviceName', (_, res) => res.json({ type: 'value', data: this.controller.serviceName }));
-        this.express.get(['/instance/ls', '/instances'], (_, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get([
+            '/instance/ls',
+            '/instances',
+            '/i'
+        ], (_, res) => __awaiter(this, void 0, void 0, function* () {
             const data = {
                 head: ['id', 'running'],
                 rows: []
@@ -43,7 +47,12 @@ class CLIServer {
                 ]);
             res.json({ type: 'table', data });
         }));
-        this.express.use(['/instance/:id/*', '/stream/instance/:id/*'], (req, res, next) => {
+        this.express.use([
+            '/instance/:id/*',
+            '/i/:id/*',
+            '/stream/instance/:id/*',
+            '/stream/i/:id/*',
+        ], (req, res, next) => {
             req.instance = this.controller.getInstance(Number(req.params.id));
             if (!req.instance)
                 res.json({
@@ -53,7 +62,12 @@ class CLIServer {
             else
                 next();
         });
-        this.express.get(['/instance/:id/start', '/instance/:id/start/:mode'], (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get([
+            '/instance/:id/start',
+            '/instance/:id/start/:mode',
+            '/i/:id/start',
+            '/i/:id/start/:mode'
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
             this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
             let result;
             if (!(yield (0, helper_1.waitFor)(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream)))
@@ -77,7 +91,12 @@ class CLIServer {
                     : `instance ${req.instance.id} could not be started`)
             });
         }));
-        this.express.get(['/stream/instance/:id/start', '/stream/instance/:id/start/*'], (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get([
+            '/stream/instance/:id/start',
+            '/stream/instance/:id/start/*',
+            '/stream/i/:id/start',
+            '/stream/i/:id/start/*'
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
             if (!(yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.waitingForStream; })))
                 return res.destroy(new Error('no waitingForStream'));
             const bootStatusEvent = (message) => res.write(message);
@@ -106,7 +125,10 @@ class CLIServer {
                 res.end('');
             }
         }));
-        this.express.get('/instance/:id/stop', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get([
+            '/instance/:id/stop',
+            '/i/:id/stop'
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
             let result;
             try {
                 result = yield this.controller.stopInstance(req.instance);
