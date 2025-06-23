@@ -56,4 +56,35 @@ export class Settings {
       settingResult.max === null ? undefined : settingResult.max
     );
   }
+
+  async set(name: string, value: string): Promise<Setting> {
+    const existing = await this.get(name);
+
+    const setting = new Setting(
+      existing.name,
+      value,
+      existing.type,
+      existing.min,
+      existing.max
+    );
+
+    const result = await this.controller.database.connection.query(`
+        UPDATE ${instanceSettingsTableName}
+        SET value = ?, type = ?, min = ?, max = ?
+        WHERE instance_id = ? AND name = ?
+      `, [
+        setting.value === null ? null : String(existing.value),
+        setting.type,
+        setting.min,
+        setting.max,
+        this.instance.id,
+        setting.name
+      ]
+    );
+
+    if (result.affectedRows === 0)
+      throw new Error(`Failed to set Setting ${name} for Instance ${this.instance.id}`);
+
+    return setting;
+  }
 }

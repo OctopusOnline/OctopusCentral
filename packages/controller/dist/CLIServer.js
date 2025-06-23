@@ -164,8 +164,8 @@ class CLIServer {
                         setting.name,
                         String(setting.value),
                         setting.type,
-                        setting.min === undefined ? '-' : setting.min,
-                        setting.max === undefined ? '-' : setting.max
+                        setting.min === undefined ? '' : setting.min,
+                        setting.max === undefined ? '' : setting.max
                     ]);
             }
             catch (error) {
@@ -186,8 +186,31 @@ class CLIServer {
                     setting.name,
                     String(setting.value),
                     setting.type,
-                    setting.min === undefined ? '-' : setting.min,
-                    setting.max === undefined ? '-' : setting.max
+                    setting.min === undefined ? '' : setting.min,
+                    setting.max === undefined ? '' : setting.max
+                ]);
+            }
+            catch (error) {
+                res.json({ type: 'value', data: error.message });
+            }
+            res.json({ type: 'table', data });
+        }));
+        this.express.get([
+            '/instance/:id/setting/:name/set/:value',
+            '/instance/:id/s/:name/set/:value',
+            '/i/:id/setting/:name/set/:value',
+            '/i/:id/s/:name/set/:value',
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] };
+            try {
+                const setting = yield new Settings_1.Settings(req.instance, this.controller)
+                    .set(req.params.name, req.params.value === "''" ? '' : req.params.value);
+                data.rows.push([
+                    setting.name,
+                    String(setting.value),
+                    setting.type,
+                    setting.min === undefined ? '' : setting.min,
+                    setting.max === undefined ? '' : setting.max
                 ]);
             }
             catch (error) {

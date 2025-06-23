@@ -7,4 +7,5 @@ export declare class Settings {
     constructor(instance: Instance, controller: Controller);
     getAll(): Promise<Setting[]>;
     get(name: string): Promise<Setting>;
+    set(name: string, value: string): Promise<Setting>;
 }

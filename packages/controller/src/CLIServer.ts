@@ -183,8 +183,8 @@ export class CLIServer {
             setting.name,
             String(setting.value),
             setting.type,
-            setting.min === undefined ? '-' : setting.min,
-            setting.max === undefined ? '-' : setting.max
+            setting.min === undefined ? '' : setting.min,
+            setting.max === undefined ? '' : setting.max
           ])
       }
       catch (error) {
@@ -208,8 +208,34 @@ export class CLIServer {
           setting.name,
           String(setting.value),
           setting.type,
-          setting.min === undefined ? '-' : setting.min,
-          setting.max === undefined ? '-' : setting.max
+          setting.min === undefined ? '' : setting.min,
+          setting.max === undefined ? '' : setting.max
+        ])
+      }
+      catch (error) {
+        res.json({ type: 'value', data: (error as Error).message } as CLIResponseValueData);
+      }
+
+      res.json({ type: 'table', data });
+    });
+
+    this.express.get([
+      '/instance/:id/setting/:name/set/:value',
+      '/instance/:id/s/:name/set/:value',
+      '/i/:id/setting/:name/set/:value',
+      '/i/:id/s/:name/set/:value',
+    ], async (req: RequestWithInstance, res: Response) => {
+      const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
+
+      try {
+        const setting = await new Settings(req.instance, this.controller)
+          .set(req.params.name, req.params.value === "''" ? '' : req.params.value);
+        data.rows.push([
+          setting.name,
+          String(setting.value),
+          setting.type,
+          setting.min === undefined ? '' : setting.min,
+          setting.max === undefined ? '' : setting.max
         ])
       }
       catch (error) {
