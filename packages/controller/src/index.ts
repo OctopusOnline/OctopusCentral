@@ -1,4 +1,4 @@
-import { instancesTableName, DockerInstanceProps, Setting } from '@octopuscentral/types';
+import { instancesTableName, DockerInstanceProps, DockerInstanceMode, Setting } from '@octopuscentral/types';
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
@@ -124,9 +124,9 @@ export class Controller extends EventEmitter {
       if (!instance.connected) await instance.connect();
   }
 
-  async startInstance(instance: Instance, timeout: number = 6e4): Promise<boolean> {
-    let bootResult: boolean | undefined = undefined,
-      dockerResult: boolean | undefined = undefined;
+  async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {
+    let bootResult: boolean | undefined,
+      dockerResult: boolean | undefined;
 
     await Promise.all([
       Promise.race([
@@ -150,7 +150,7 @@ export class Controller extends EventEmitter {
       ]),
 
       (async() => {
-        dockerResult = await this.docker.startInstance(instance);
+        dockerResult = await this.docker.startInstance(instance, mode);
         await instance.connect();
       })()
     ]);

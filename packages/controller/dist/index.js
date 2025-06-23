@@ -131,9 +131,9 @@ class Controller extends node_events_1.default {
                     yield instance.connect();
         });
     }
-    startInstance(instance_2) {
-        return __awaiter(this, arguments, void 0, function* (instance, timeout = 6e4) {
-            let bootResult = undefined, dockerResult = undefined;
+    startInstance(instance_2, mode_1) {
+        return __awaiter(this, arguments, void 0, function* (instance, mode, timeout = 6e4) {
+            let bootResult, dockerResult;
             yield Promise.all([
                 Promise.race([
                     new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
@@ -154,7 +154,7 @@ class Controller extends node_events_1.default {
                     }))()
                 ]),
                 (() => __awaiter(this, void 0, void 0, function* () {
-                    dockerResult = yield this.docker.startInstance(instance);
+                    dockerResult = yield this.docker.startInstance(instance, mode);
                     yield instance.connect();
                 }))()
             ]);

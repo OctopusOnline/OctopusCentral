@@ -1,10 +1,10 @@
 export declare const serverPort: number;
 type responseDataType = 'value' | 'list' | 'table';
-export type responseValueDataType = null | number | string;
-export type responseListDataType = responseValueDataType[];
-export type responseTableDataType = {
+export type ResponseValueDataType = null | number | string;
+export type ResponseListDataType = ResponseValueDataType[];
+export type ResponseTableDataType = {
     head: string[];
-    rows: responseValueDataType[][];
+    rows: ResponseValueDataType[][];
 };
 interface ResponseData {
     type: responseDataType;
@@ -12,15 +12,15 @@ interface ResponseData {
 }
 export interface ResponseValueData extends ResponseData {
     type: 'value';
-    data: responseValueDataType;
+    data: ResponseValueDataType;
 }
 export interface ResponseListData extends ResponseData {
     type: 'list';
-    data: responseListDataType;
+    data: ResponseListDataType;
 }
 export interface ResponseTableData extends ResponseData {
     type: 'table';
-    data: responseTableDataType;
+    data: ResponseTableDataType;
 }
 export declare const warningCode: {
     invalid_command: number;

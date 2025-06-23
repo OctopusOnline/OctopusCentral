@@ -1,4 +1,4 @@
-import { DockerInstanceProps, Setting } from '@octopuscentral/types';
+import { DockerInstanceProps, DockerInstanceMode, Setting } from '@octopuscentral/types';
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
 import { Database } from './Database';
@@ -28,7 +28,7 @@ export declare class Controller extends EventEmitter {
     fetchSyncInstances(): Promise<Instance[]>;
     updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect?: boolean): Promise<void>;
     connectInstances(): Promise<void>;
-    startInstance(instance: Instance, timeout?: number): Promise<boolean>;
+    startInstance(instance: Instance, mode?: DockerInstanceMode, timeout?: number): Promise<boolean>;
     stopInstance(instance: Instance): Promise<boolean>;
     init(): Promise<void>;
     start(): Promise<void>;

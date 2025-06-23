@@ -1,5 +1,4 @@
-import { cliServerPort,  CliResponseValueData } from '@octopuscentral/types';
-import { responseTableDataType, responseValueDataType } from '@octopuscentral/types/dist/types/cli';
+import { cliServerPort, CLIResponseValueData, CLIResponseTableDataType, CLIResponseValueDataType, DockerInstanceMode } from '@octopuscentral/types';
 import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
@@ -42,12 +41,12 @@ export class CLIServer {
       res.send('Octopus Central CLI Server'));
 
     this.express.get('/serviceName', (_: Request, res: Response) =>
-      res.json({ type: 'value', data: this.controller.serviceName } as CliResponseValueData));
+      res.json({ type: 'value', data: this.controller.serviceName } as CLIResponseValueData));
 
     this.express.get(['/instance/ls', '/instances'], async (_: Request, res: Response) => {
-      const data: responseTableDataType = {
+      const data: CLIResponseTableDataType = {
         head: ['id', 'running'],
-        rows: [] as responseValueDataType[][]
+        rows: [] as CLIResponseValueDataType[][]
       };
       for (const instance of this.controller.instances)
         data.rows.push([
@@ -63,18 +62,18 @@ export class CLIServer {
         res.json({
           type: 'value',
           data: `instance ${req.params.id} does not exist`
-        } as CliResponseValueData);
+        } as CLIResponseValueData);
       else next();
     });
 
-    this.express.get('/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+    this.express.get(['/instance/:id/start', '/instance/:id/start/:mode'], async (req: RequestWithInstance, res: Response) => {
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
 
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
-        try { result = await this.controller.startInstance(req.instance) }
+        try { result = await this.controller.startInstance(req.instance, req.params.mode as DockerInstanceMode) }
         catch (error: any) { result = error }
       }
       this.eventBuffer.instance[req.instance.id].start.booted = true;
@@ -88,10 +87,10 @@ export class CLIServer {
           ? result.message : (result
             ? `instance ${ req.instance.id } started`
             : `instance ${ req.instance.id } could not be started`)
-      } as CliResponseValueData);
+      } as CLIResponseValueData);
     });
 
-    this.express.get('/stream/instance/:id/start', async (req: RequestWithInstance, res: Response) => {
+    this.express.get(['/stream/instance/:id/start', '/stream/instance/:id/start/*'], async (req: RequestWithInstance, res: Response) => {
 
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
@@ -137,7 +136,7 @@ export class CLIServer {
           ? result.message : (result
             ? `instance ${ req.instance.id } stopped`
             : `instance ${ req.instance.id } could not be stopped`)
-      } as CliResponseValueData);
+      } as CLIResponseValueData);
     });
 
     this.express.use((_: Request, res: Response) =>

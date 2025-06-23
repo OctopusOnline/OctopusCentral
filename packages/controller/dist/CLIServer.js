@@ -53,14 +53,14 @@ class CLIServer {
             else
                 next();
         });
-        this.express.get('/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get(['/instance/:id/start', '/instance/:id/start/:mode'], (req, res) => __awaiter(this, void 0, void 0, function* () {
             this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
             let result;
             if (!(yield (0, helper_1.waitFor)(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream)))
                 result = new Error('boot stream timeout');
             else {
                 try {
-                    result = yield this.controller.startInstance(req.instance);
+                    result = yield this.controller.startInstance(req.instance, req.params.mode);
                 }
                 catch (error) {
                     result = error;
@@ -77,7 +77,7 @@ class CLIServer {
                     : `instance ${req.instance.id} could not be started`)
             });
         }));
-        this.express.get('/stream/instance/:id/start', (req, res) => __awaiter(this, void 0, void 0, function* () {
+        this.express.get(['/stream/instance/:id/start', '/stream/instance/:id/start/*'], (req, res) => __awaiter(this, void 0, void 0, function* () {
             if (!(yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.waitingForStream; })))
                 return res.destroy(new Error('no waitingForStream'));
             const bootStatusEvent = (message) => res.write(message);

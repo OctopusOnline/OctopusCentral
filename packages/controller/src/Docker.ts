@@ -1,4 +1,4 @@
-import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix, instanceIdEnvVarName, instanceServiceNameEnvVarName } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix, instanceIdEnvVarName, instanceServiceNameEnvVarName, DockerInstanceMode, instanceModeEnvVarName } from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
 import { Image } from 'node-docker-api/lib/image';
 import { Volume } from 'node-docker-api/lib/volume';
@@ -126,7 +126,13 @@ export class Docker {
       throw new Error(`could not find controller container (${containerName})`);
   }
 
-  private async startInstanceContainer(instance: Instance, networks: { [key: string]: DockerNetwork }, forceRestart: boolean = true, autoReconnect: boolean = false): Promise<DockerContainer | undefined> {
+  private async startInstanceContainer(
+    instance: Instance,
+    networks: { [key: string]: DockerNetwork },
+    mode?: DockerInstanceMode,
+    forceRestart: boolean = true,
+    autoReconnect: boolean = false
+  ): Promise<DockerContainer | undefined> {
     if (forceRestart && await this.getContainer(instance))
       await this.stopInstance(instance);
 
@@ -171,7 +177,8 @@ export class Docker {
       Env: [
         `${instanceIdEnvVarName}=${instance.id}`,
         `${instanceServiceNameEnvVarName}=${this.controller.serviceName}`,
-        `${instanceDatabaseEnvVarName}=${this.controller.database.url}`
+        `${instanceDatabaseEnvVarName}=${this.controller.database.url}`,
+        `${instanceModeEnvVarName}=${mode || 'production'}`
       ],
       HostConfig: {
         Binds: binds,
@@ -272,11 +279,11 @@ export class Docker {
     return (await this.getContainer(instance))?.State!.Paused;
   }
 
-  async startInstance(instance: Instance): Promise<boolean> {
+  async startInstance(instance: Instance, mode?: DockerInstanceMode): Promise<boolean> {
     const networks = await this.getContainerNetwork(this.#selfContainer!);
     if (!networks) return false;
 
-    const container = await this.startInstanceContainer(instance, networks, true, true);
+    const container = await this.startInstanceContainer(instance, networks, mode, true, true);
     return !!container;
   }
 

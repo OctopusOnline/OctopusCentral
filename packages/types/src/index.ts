@@ -18,10 +18,10 @@ import {
 
 import {
   serverPort as cliServerPort,
-  responseValueDataType as cliResponseValueDataType,
-  responseListDataType as cliResponseListDataType,
-  responseTableDataType as cliResponseTableDataType,
-  ResponseValueData as CliResponseValueData,
+  ResponseValueDataType as CLIResponseValueDataType,
+  ResponseListDataType as CLIResponseListDataType,
+  ResponseTableDataType as CLIResponseTableDataType,
+  ResponseValueData as CLIResponseValueData,
   ResponseListData as CLIResponseListData,
   ResponseTableData as CLIResponseTableData,
   warningCode as cliWarningCode
@@ -38,8 +38,10 @@ import {
   instanceIdEnvVarName,
   instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
+  instanceModeEnvVarName,
   DockerClientProps,
-  DockerInstanceProps
+  DockerInstanceProps,
+  InstanceMode as DockerInstanceMode
 } from './types/docker';
 
 export {
@@ -49,6 +51,7 @@ export {
   instanceIdEnvVarName,
   instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
+  instanceModeEnvVarName,
   SettingValueType,
   SettingValueTypeType,
   Setting,
@@ -56,10 +59,10 @@ export {
   controllersTableName,
   controllerLabelPrefix,
   cliServerPort,
-  cliResponseValueDataType,
-  cliResponseListDataType,
-  cliResponseTableDataType,
-  CliResponseValueData,
+  CLIResponseValueDataType,
+  CLIResponseListDataType,
+  CLIResponseTableDataType,
+  CLIResponseValueData,
   CLIResponseListData,
   CLIResponseTableData,
   cliWarningCode,
@@ -68,5 +71,6 @@ export {
   labelPrefix,
   volumeLabelPrefix,
   DockerClientProps,
-  DockerInstanceProps
+  DockerInstanceProps,
+  DockerInstanceMode
 };

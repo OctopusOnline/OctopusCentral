@@ -1,4 +1,4 @@
-import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName, instanceModeEnvVarName, DockerInstanceMode } from '@octopuscentral/types';
 import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
@@ -10,6 +10,7 @@ export { Settings, Setting, Socket };
 export class Instance {
   #id?: number | null;
   #serviceName?: string;
+  #mode?: DockerInstanceMode;
   #database?: Database;
 
   readonly socket: Socket;
@@ -23,6 +24,11 @@ export class Instance {
   get serviceName(): string {
     if (this.#serviceName === undefined) throw new Error('instance.serviceName is not set\nmaybe run init() first?');
     return this.#serviceName!;
+  }
+
+  get mode(): DockerInstanceMode {
+    if (this.#mode === undefined) throw new Error('instance.mode is not set\nmaybe run init() first?');
+    return this.#mode!;
   }
 
   get database(): Database {
@@ -53,6 +59,13 @@ export class Instance {
       if (serviceName === undefined)
         throw new Error(`env var ${instanceServiceNameEnvVarName} is not set`);
       this.#serviceName = serviceName;
+    }
+
+    if (this.#mode === undefined) {
+      const mode: DockerInstanceMode | undefined = process.env[instanceModeEnvVarName] as DockerInstanceMode;
+      if (mode === undefined)
+        throw new Error(`env var ${instanceModeEnvVarName} is not set`);
+      this.#mode = mode;
     }
 
     await this.initDatabase();

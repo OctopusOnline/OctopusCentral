@@ -100,8 +100,8 @@ class Docker {
                 throw new Error(`could not find controller container (${containerName})`);
         });
     }
-    startInstanceContainer(instance_1, networks_1) {
-        return __awaiter(this, arguments, void 0, function* (instance, networks, forceRestart = true, autoReconnect = false) {
+    startInstanceContainer(instance_1, networks_1, mode_1) {
+        return __awaiter(this, arguments, void 0, function* (instance, networks, mode, forceRestart = true, autoReconnect = false) {
             if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
             const containerName = this.getContainerName(instance);
@@ -135,7 +135,8 @@ class Docker {
                 Env: [
                     `${types_1.instanceIdEnvVarName}=${instance.id}`,
                     `${types_1.instanceServiceNameEnvVarName}=${this.controller.serviceName}`,
-                    `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`
+                    `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`,
+                    `${types_1.instanceModeEnvVarName}=${mode || 'production'}`
                 ],
                 HostConfig: {
                     Binds: binds,
@@ -228,12 +229,12 @@ class Docker {
             return (_a = (yield this.getContainer(instance))) === null || _a === void 0 ? void 0 : _a.State.Paused;
         });
     }
-    startInstance(instance) {
+    startInstance(instance, mode) {
         return __awaiter(this, void 0, void 0, function* () {
             const networks = yield this.getContainerNetwork(__classPrivateFieldGet(this, _Docker_selfContainer, "f"));
             if (!networks)
                 return false;
-            const container = yield this.startInstanceContainer(instance, networks, true, true);
+            const container = yield this.startInstanceContainer(instance, networks, mode, true, true);
             return !!container;
         });
     }
