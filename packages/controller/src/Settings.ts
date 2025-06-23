@@ -12,6 +12,27 @@ export class Settings {
     this.controller = controller;
   }
 
+  async getAll(): Promise<Setting[]> {
+    const settingsResult = (await this.controller.database.connection.query(`
+        SELECT name, value, type, min, max FROM ${instanceSettingsTableName}
+        WHERE instance_id = ?
+      `, [this.instance.id])) as {
+      name: string,
+      value: string,
+      type: SettingValueTypeType,
+      min: number | null,
+      max: number | null,
+    }[];
+
+    return settingsResult.map(settingResult => new Setting(
+      settingResult.name,
+      settingResult.value,
+      settingResult.type,
+      settingResult.min === null ? undefined : settingResult.min,
+      settingResult.max === null ? undefined : settingResult.max
+    ));
+  }
+
   async get(name: string): Promise<Setting> {
     const settingResult = (await this.controller.database.connection.query(`
         SELECT name, value, type, min, max FROM ${instanceSettingsTableName}
@@ -22,7 +43,7 @@ export class Settings {
         type: SettingValueTypeType,
         min: number | null,
         max: number | null,
-    }
+    };
 
     if (!settingResult)
       throw new Error(`Setting ${name} for Instance ${this.instance.id} not found`);

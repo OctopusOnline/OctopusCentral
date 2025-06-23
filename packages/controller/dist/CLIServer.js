@@ -152,6 +152,28 @@ class CLIServer {
             });
         }));
         this.express.get([
+            '/instance/:id/settings',
+            '/instance/:id/s/ls',
+            '/i/:id/settings',
+            '/i/:id/s/ls',
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] };
+            try {
+                for (const setting of yield new Settings_1.Settings(req.instance, this.controller).getAll())
+                    data.rows.push([
+                        setting.name,
+                        String(setting.value),
+                        setting.type,
+                        setting.min === undefined ? '-' : setting.min,
+                        setting.max === undefined ? '-' : setting.max
+                    ]);
+            }
+            catch (error) {
+                res.json({ type: 'value', data: error.message });
+            }
+            res.json({ type: 'table', data });
+        }));
+        this.express.get([
             '/instance/:id/setting/:name',
             '/instance/:id/s/:name',
             '/i/:id/setting/:name',

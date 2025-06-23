@@ -170,6 +170,31 @@ export class CLIServer {
     });
 
     this.express.get([
+      '/instance/:id/settings',
+      '/instance/:id/s/ls',
+      '/i/:id/settings',
+      '/i/:id/s/ls',
+    ], async (req: RequestWithInstance, res: Response) => {
+      const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
+
+      try {
+        for (const setting of await new Settings(req.instance, this.controller).getAll())
+          data.rows.push([
+            setting.name,
+            String(setting.value),
+            setting.type,
+            setting.min === undefined ? '-' : setting.min,
+            setting.max === undefined ? '-' : setting.max
+          ])
+      }
+      catch (error) {
+        res.json({ type: 'value', data: (error as Error).message } as CLIResponseValueData);
+      }
+
+      res.json({ type: 'table', data });
+    });
+
+    this.express.get([
       '/instance/:id/setting/:name',
       '/instance/:id/s/:name',
       '/i/:id/setting/:name',

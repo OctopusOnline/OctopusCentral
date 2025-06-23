@@ -17,6 +17,15 @@ class Settings {
         this.instance = instance;
         this.controller = controller;
     }
+    getAll() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const settingsResult = (yield this.controller.database.connection.query(`
+        SELECT name, value, type, min, max FROM ${types_1.instanceSettingsTableName}
+        WHERE instance_id = ?
+      `, [this.instance.id]));
+            return settingsResult.map(settingResult => new instance_1.Setting(settingResult.name, settingResult.value, settingResult.type, settingResult.min === null ? undefined : settingResult.min, settingResult.max === null ? undefined : settingResult.max));
+        });
+    }
     get(name) {
         return __awaiter(this, void 0, void 0, function* () {
             const settingResult = (yield this.controller.database.connection.query(`
