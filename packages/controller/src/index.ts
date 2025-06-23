@@ -53,7 +53,7 @@ export class Controller extends EventEmitter {
   }
 
   private get lastInstanceId(): number {
-    return Math.max(1, ...this.#instances.map(instance => instance.id));
+    return Math.max(0, ...this.#instances.map(instance => instance.id));
   }
 
   async createInstance(): Promise<Instance> {

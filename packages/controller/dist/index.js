@@ -67,7 +67,7 @@ class Controller extends node_events_1.default {
         instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
     }
     get lastInstanceId() {
-        return Math.max(1, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
+        return Math.max(0, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
     }
     createInstance() {
         return __awaiter(this, void 0, void 0, function* () {
