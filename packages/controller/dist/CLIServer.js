@@ -17,6 +17,7 @@ const types_1 = require("@octopuscentral/types");
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const helper_1 = require("./helper");
+const Settings_1 = require("./Settings");
 class CLIServer {
     constructor(controller) {
         this.eventBuffer = {
@@ -33,8 +34,8 @@ class CLIServer {
         this.express.get('/serviceName', (_, res) => res.json({ type: 'value', data: this.controller.serviceName }));
         this.express.get([
             '/instance/ls',
-            '/instances',
-            '/i'
+            '/i/ls',
+            '/instances'
         ], (_, res) => __awaiter(this, void 0, void 0, function* () {
             const data = {
                 head: ['id', 'running'],
@@ -49,8 +50,8 @@ class CLIServer {
         }));
         this.express.use([
             '/instance/:id/*',
-            '/i/:id/*',
             '/stream/instance/:id/*',
+            '/i/:id/*',
             '/stream/i/:id/*',
         ], (req, res, next) => {
             req.instance = this.controller.getInstance(Number(req.params.id));
@@ -143,6 +144,26 @@ class CLIServer {
                     ? `instance ${req.instance.id} stopped`
                     : `instance ${req.instance.id} could not be stopped`)
             });
+        }));
+        this.express.get([
+            '/instance/:id/setting/:name',
+            '/instance/:id/s/:name',
+            '/i/:id/setting/:name',
+            '/i/:id/s/:name',
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const data = { head: [], rows: [] };
+            try {
+                const setting = yield new Settings_1.Settings(req.instance, this.controller).get(req.params.name);
+                data.head = ['name', setting.name];
+                data.rows.push(['value', String(setting.value)]);
+                data.rows.push(['type', setting.type]);
+                data.rows.push(['min', setting.min === undefined ? '--' : setting.min]);
+                data.rows.push(['max', setting.max === undefined ? '--' : setting.max]);
+            }
+            catch (error) {
+                res.json({ type: 'value', data: error.message });
+            }
+            res.json({ type: 'table', data });
         }));
         this.express.use((_, res) => res.status(404).send());
     }

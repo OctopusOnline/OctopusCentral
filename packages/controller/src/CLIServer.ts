@@ -3,6 +3,7 @@ import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
 import http, { Server as HttpServer } from 'http';
 import { waitFor } from './helper';
+import { Settings } from './Settings';
 
 interface RequestWithInstance extends Request {
   instance: Instance;
@@ -159,6 +160,29 @@ export class CLIServer {
             ? `instance ${ req.instance.id } stopped`
             : `instance ${ req.instance.id } could not be stopped`)
       } as CLIResponseValueData);
+    });
+
+    this.express.get([
+      '/instance/:id/setting/:name',
+      '/instance/:id/s/:name',
+      '/i/:id/setting/:name',
+      '/i/:id/s/:name',
+    ], async (req: RequestWithInstance, res: Response) => {
+      const data = { head: [], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
+
+      try {
+        const setting = await new Settings(req.instance, this.controller).get(req.params.name);
+        data.head    = ['name', setting.name];
+        data.rows.push(['value', String(setting.value)])
+        data.rows.push(['type', setting.type])
+        data.rows.push(['min', setting.min === undefined ? '--' : setting.min])
+        data.rows.push(['max', setting.max === undefined ? '--' : setting.max])
+      }
+      catch (error) {
+        res.json({ type: 'value', data: (error as Error).message } as CLIResponseValueData);
+      }
+
+      res.json({ type: 'table', data });
     });
 
     this.express.use((_: Request, res: Response) =>
