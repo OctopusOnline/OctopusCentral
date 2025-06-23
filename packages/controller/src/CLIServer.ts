@@ -65,7 +65,7 @@ export class CLIServer {
       '/instance/create'
     ], async (_: Request, res: Response) => {
       const instance = await this.controller.createInstance();
-      res.json({ type: 'table', data: `instance created with id: ${instance.id}` });
+      res.json({ type: 'value', data: `instance created with id: ${instance.id}` });
     });
 
     this.express.use([

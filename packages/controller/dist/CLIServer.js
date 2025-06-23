@@ -52,7 +52,7 @@ class CLIServer {
             '/instance/create'
         ], (_, res) => __awaiter(this, void 0, void 0, function* () {
             const instance = yield this.controller.createInstance();
-            res.json({ type: 'table', data: `instance created with id: ${instance.id}` });
+            res.json({ type: 'value', data: `instance created with id: ${instance.id}` });
         }));
         this.express.use([
             '/instance/:id/*',
