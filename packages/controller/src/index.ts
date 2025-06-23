@@ -52,9 +52,15 @@ export class Controller extends EventEmitter {
     instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
   }
 
+  private get lastInstanceId(): number {
+    return Math.max(1, ...this.#instances.map(instance => instance.id));
+  }
+
   async createInstance(): Promise<Instance> {
-    const virtualInstance = new VirtualInstance(this.database.url);
-    await virtualInstance.init();
+    await this.fetchSyncInstances();
+    const virtualInstance = new VirtualInstance(this.database.url, this.lastInstanceId + 1);
+    await virtualInstance._initVirtual(this.serviceName, 'init');
+
     await this.fetchSyncInstances();
     return this.getInstance(virtualInstance.id)!;
   }

@@ -55,6 +55,13 @@ class Instance {
             throw new Error('instance.database is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_database, "f");
     }
+    _initVirtual(serviceName, mode) {
+        return __awaiter(this, void 0, void 0, function* () {
+            __classPrivateFieldSet(this, _Instance_serviceName, serviceName, "f");
+            __classPrivateFieldSet(this, _Instance_mode, mode, "f");
+            yield this.init();
+        });
+    }
     constructor(databaseUrl, id) {
         _Instance_id.set(this, void 0);
         _Instance_serviceName.set(this, void 0);

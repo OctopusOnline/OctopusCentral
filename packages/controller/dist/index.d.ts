@@ -20,6 +20,7 @@ export declare class Controller extends EventEmitter {
     constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps);
     addInstance(instance: Instance, overwrite?: boolean): void;
     private addAndSetupInstance;
+    private get lastInstanceId();
     createInstance(): Promise<Instance>;
     updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void>;
     getInstance(id: number): Instance | undefined;

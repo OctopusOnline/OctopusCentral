@@ -10,4 +10,4 @@ export interface DockerClientProps {
 export interface DockerInstanceProps {
     image: string;
 }
-export type InstanceMode = 'setup' | 'production';
+export type InstanceMode = 'init' | 'setup' | 'production';

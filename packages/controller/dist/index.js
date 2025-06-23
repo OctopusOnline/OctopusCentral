@@ -66,10 +66,14 @@ class Controller extends node_events_1.default {
         instance.on('socket connected', (error) => this.emit('instance socket connected', instance, error));
         instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
     }
+    get lastInstanceId() {
+        return Math.max(1, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
+    }
     createInstance() {
         return __awaiter(this, void 0, void 0, function* () {
-            const virtualInstance = new instance_1.Instance(this.database.url);
-            yield virtualInstance.init();
+            yield this.fetchSyncInstances();
+            const virtualInstance = new instance_1.Instance(this.database.url, this.lastInstanceId + 1);
+            yield virtualInstance._initVirtual(this.serviceName, 'init');
             yield this.fetchSyncInstances();
             return this.getInstance(virtualInstance.id);
         });

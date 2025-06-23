@@ -12,6 +12,7 @@ export declare class Instance {
     get serviceName(): string;
     get mode(): DockerInstanceMode;
     get database(): Database;
+    _initVirtual(serviceName: string, mode: DockerInstanceMode): Promise<void>;
     constructor(databaseUrl?: string, id?: number | null);
     init(): Promise<void>;
     initDatabase(): Promise<void>;

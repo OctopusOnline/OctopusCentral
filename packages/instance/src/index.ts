@@ -36,6 +36,13 @@ export class Instance {
     return this.#database!;
   }
 
+  async _initVirtual(serviceName: string, mode: DockerInstanceMode): Promise<void> {
+    this.#serviceName = serviceName;
+    this.#mode = mode;
+
+    await this.init();
+  }
+
   constructor(databaseUrl?: string, id?: number | null) {
     if (databaseUrl) this.#database = new Database(databaseUrl);
     this.#id = id;
