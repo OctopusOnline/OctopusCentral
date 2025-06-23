@@ -185,7 +185,7 @@ export class Docker {
         NetworkMode: 'bridge',
         PortBindings: portBindings,
         RestartPolicy: {
-          Name: 'always',
+          Name: mode === 'init' || mode === 'setup' ? 'no' : 'always',
         },
       },
       Hostname: containerName,
