@@ -79,7 +79,7 @@ export class CLIClient extends EventEmitter {
       case '':
         break;
       case 'clear':
-        this.emit('clear');
+        this.clear();
         break;
       case 'exit':
         return this.stop();
@@ -97,5 +97,9 @@ export class CLIClient extends EventEmitter {
   stop(): void {
     this.rl.close();
     this.emit('stop');
+  }
+
+  clear(): void {
+    this.emit('clear');
   }
 }

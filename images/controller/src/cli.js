@@ -2,9 +2,6 @@ import { CLIClient } from "@octopuscentral/controller";
 import { cliWarningCode } from "@octopuscentral/types";
 import Table from 'cli-table3';
 
-console.clear();
-console.log('===============================\n OctopusCentral Controller CLI \n===============================');
-
 const cli = new CLIClient();
 
 cli.on('response', (type, data) => {
@@ -35,7 +32,11 @@ cli.on('warning', (code, data) =>
     }
   })(code)));
 
-cli.on('clear', () => console.clear());
+cli.on('clear', () => {
+  console.clear();
+  console.log('===============================\n OctopusCentral Controller CLI \n===============================');
+});
 cli.on('stop', () => process.exit());
 
 cli.start();
+cli.clear();

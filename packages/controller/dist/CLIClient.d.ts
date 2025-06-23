@@ -10,4 +10,5 @@ export declare class CLIClient extends EventEmitter {
     private requestTextStream;
     private inputLoop;
     stop(): void;
+    clear(): void;
 }

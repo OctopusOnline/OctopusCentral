@@ -95,7 +95,7 @@ class CLIClient extends node_events_1.default {
                 case '':
                     break;
                 case 'clear':
-                    this.emit('clear');
+                    this.clear();
                     break;
                 case 'exit':
                     return this.stop();
@@ -111,6 +111,9 @@ class CLIClient extends node_events_1.default {
     stop() {
         this.rl.close();
         this.emit('stop');
+    }
+    clear() {
+        this.emit('clear');
     }
 }
 exports.CLIClient = CLIClient;
