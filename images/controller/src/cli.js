@@ -38,5 +38,5 @@ cli.on('clear', () => {
 });
 cli.on('stop', () => process.exit());
 
-cli.start();
 cli.clear();
+cli.start();
