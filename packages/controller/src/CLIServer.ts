@@ -175,15 +175,17 @@ export class CLIServer {
       '/i/:id/setting/:name',
       '/i/:id/s/:name',
     ], async (req: RequestWithInstance, res: Response) => {
-      const data = { head: [], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
+      const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
 
       try {
         const setting = await new Settings(req.instance, this.controller).get(req.params.name);
-        data.head    = ['name', setting.name];
-        data.rows.push(['value', String(setting.value)])
-        data.rows.push(['type', setting.type])
-        data.rows.push(['min', setting.min === undefined ? '--' : setting.min])
-        data.rows.push(['max', setting.max === undefined ? '--' : setting.max])
+        data.rows.push([
+          setting.name,
+          String(setting.value),
+          setting.type,
+          setting.min === undefined ? '-' : setting.min,
+          setting.max === undefined ? '-' : setting.max
+        ])
       }
       catch (error) {
         res.json({ type: 'value', data: (error as Error).message } as CLIResponseValueData);

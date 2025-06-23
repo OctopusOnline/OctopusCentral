@@ -157,14 +157,16 @@ class CLIServer {
             '/i/:id/setting/:name',
             '/i/:id/s/:name',
         ], (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const data = { head: [], rows: [] };
+            const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] };
             try {
                 const setting = yield new Settings_1.Settings(req.instance, this.controller).get(req.params.name);
-                data.head = ['name', setting.name];
-                data.rows.push(['value', String(setting.value)]);
-                data.rows.push(['type', setting.type]);
-                data.rows.push(['min', setting.min === undefined ? '--' : setting.min]);
-                data.rows.push(['max', setting.max === undefined ? '--' : setting.max]);
+                data.rows.push([
+                    setting.name,
+                    String(setting.value),
+                    setting.type,
+                    setting.min === undefined ? '-' : setting.min,
+                    setting.max === undefined ? '-' : setting.max
+                ]);
             }
             catch (error) {
                 res.json({ type: 'value', data: error.message });
