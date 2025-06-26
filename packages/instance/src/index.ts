@@ -50,14 +50,14 @@ export class Instance {
     const bindingSrcHostHasIP = !/^[0-9]+$/.test(bindingSrcHost[0]);
     return {
       host: {
+        ip: bindingSrcHostHasIP ? bindingSrcHost[0] : '0.0.0.0',
         port: Number(binding[1]),
+        protocol: bindingSrc[1] as 'tcp' | 'udp',
       },
       src: {
-        ip: bindingSrcHostHasIP ? '0.0.0.0' : bindingSrcHost[0],
         port: Number(bindingSrcHost[bindingSrcHostHasIP ? 1 : 0]),
-        protocol: bindingSrc[1] as 'tcp' | 'udp',
-      }
-    }
+      },
+    };
   }
 
   async _initVirtual(serviceName: string, mode: DockerInstanceMode, portBindings: InstancePortBinding[] = []): Promise<void> {

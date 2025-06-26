@@ -4,11 +4,11 @@ export const labelPrefix: string = 'instance';
 
 export interface PortBinding {
   host: {
-    port: number;
-  }
-  src: {
     ip: string;
     port: number;
     protocol: 'tcp' | 'udp';
+  }
+  src: {
+    port: number;
   }
 }
