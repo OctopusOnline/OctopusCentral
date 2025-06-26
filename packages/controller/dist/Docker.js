@@ -136,7 +136,8 @@ class Docker {
                     `${types_1.instanceIdEnvVarName}=${instance.id}`,
                     `${types_1.instanceServiceNameEnvVarName}=${this.controller.serviceName}`,
                     `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`,
-                    `${types_1.instanceModeEnvVarName}=${mode || 'production'}`
+                    `${types_1.instanceModeEnvVarName}=${mode || 'production'}`,
+                    `${types_1.instancePortBindingsEnvVarName}=${Object.entries(portBindings).map(([src, hosts]) => `${src},${hosts[0].HostPort}`).join(';')}`,
                 ],
                 HostConfig: {
                     Binds: binds,

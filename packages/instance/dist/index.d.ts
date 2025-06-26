@@ -1,4 +1,4 @@
-import { DockerInstanceMode } from '@octopuscentral/types';
+import { DockerInstanceMode, InstancePortBinding } from '@octopuscentral/types';
 import { Database } from './Database';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
@@ -12,7 +12,9 @@ export declare class Instance {
     get serviceName(): string;
     get mode(): DockerInstanceMode;
     get database(): Database;
-    _initVirtual(serviceName: string, mode: DockerInstanceMode): Promise<void>;
+    get portBindings(): InstancePortBinding[];
+    private parsePortBindingString;
+    _initVirtual(serviceName: string, mode: DockerInstanceMode, portBindings?: InstancePortBinding[]): Promise<void>;
     constructor(databaseUrl?: string, id?: number | null);
     init(): Promise<void>;
     initDatabase(): Promise<void>;

@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_id, _Instance_serviceName, _Instance_mode, _Instance_database;
+var _Instance_id, _Instance_serviceName, _Instance_mode, _Instance_database, _Instance_portBindings;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = exports.Socket = exports.Setting = exports.Settings = void 0;
 const types_1 = require("@octopuscentral/types");
@@ -55,10 +55,32 @@ class Instance {
             throw new Error('instance.database is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_database, "f");
     }
-    _initVirtual(serviceName, mode) {
-        return __awaiter(this, void 0, void 0, function* () {
+    get portBindings() {
+        if (__classPrivateFieldGet(this, _Instance_portBindings, "f") === undefined)
+            throw new Error('instance.portBindings is not set\nmaybe run init() first?');
+        return __classPrivateFieldGet(this, _Instance_portBindings, "f");
+    }
+    parsePortBindingString(bindingString) {
+        const binding = bindingString.split(',');
+        const bindingSrc = binding[0].split('/');
+        const bindingSrcHost = bindingSrc[0].split(':');
+        const bindingSrcHostHasIP = !/^[0-9]+$/.test(bindingSrcHost[0]);
+        return {
+            host: {
+                port: Number(binding[1]),
+            },
+            src: {
+                ip: bindingSrcHostHasIP ? '0.0.0.0' : bindingSrcHost[0],
+                port: Number(bindingSrcHost[bindingSrcHostHasIP ? 1 : 0]),
+                protocol: bindingSrc[1],
+            }
+        };
+    }
+    _initVirtual(serviceName_1, mode_1) {
+        return __awaiter(this, arguments, void 0, function* (serviceName, mode, portBindings = []) {
             __classPrivateFieldSet(this, _Instance_serviceName, serviceName, "f");
             __classPrivateFieldSet(this, _Instance_mode, mode, "f");
+            __classPrivateFieldSet(this, _Instance_portBindings, portBindings, "f");
             yield this.init();
         });
     }
@@ -67,6 +89,7 @@ class Instance {
         _Instance_serviceName.set(this, void 0);
         _Instance_mode.set(this, void 0);
         _Instance_database.set(this, void 0);
+        _Instance_portBindings.set(this, void 0);
         if (databaseUrl)
             __classPrivateFieldSet(this, _Instance_database, new Database_1.Database(databaseUrl), "f");
         __classPrivateFieldSet(this, _Instance_id, id, "f");
@@ -75,6 +98,7 @@ class Instance {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined) {
                 const id = node_process_1.default.env[types_1.instanceIdEnvVarName];
                 if (id === undefined)
@@ -94,6 +118,12 @@ class Instance {
                 if (mode === undefined)
                     throw new Error(`env var ${types_1.instanceModeEnvVarName} is not set`);
                 __classPrivateFieldSet(this, _Instance_mode, mode, "f");
+            }
+            if (__classPrivateFieldGet(this, _Instance_portBindings, "f") === undefined) {
+                const portBindings = (_a = node_process_1.default.env[types_1.instancePortBindingsEnvVarName]) === null || _a === void 0 ? void 0 : _a.split(';').map(this.parsePortBindingString);
+                if (portBindings === undefined)
+                    throw new Error(`env var ${types_1.instancePortBindingsEnvVarName} is not set`);
+                __classPrivateFieldSet(this, _Instance_portBindings, portBindings, "f");
             }
             yield this.initDatabase();
             if (__classPrivateFieldGet(this, _Instance_id, "f") !== null) {
@@ -143,5 +173,5 @@ class Instance {
     }
 }
 exports.Instance = Instance;
-_Instance_id = new WeakMap(), _Instance_serviceName = new WeakMap(), _Instance_mode = new WeakMap(), _Instance_database = new WeakMap();
+_Instance_id = new WeakMap(), _Instance_serviceName = new WeakMap(), _Instance_mode = new WeakMap(), _Instance_database = new WeakMap(), _Instance_portBindings = new WeakMap();
 //# sourceMappingURL=index.js.map

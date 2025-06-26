@@ -4,6 +4,7 @@ export const instanceIdEnvVarName: string = envVarPrefix + '_ID';
 export const instanceServiceNameEnvVarName: string = envVarPrefix + '_SERVICE_NAME';
 export const instanceDatabaseEnvVarName: string = envVarPrefix + '_DATABASE_URL';
 export const instanceModeEnvVarName: string = envVarPrefix + '_MODE';
+export const instancePortBindingsEnvVarName: string = envVarPrefix + '_PORT_BINDINGS';
 
 export const labelPrefix: string = 'octopus';
 export const volumeLabelPrefix: string = 'volume';

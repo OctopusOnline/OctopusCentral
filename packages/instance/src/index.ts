@@ -1,4 +1,4 @@
-import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName, instanceModeEnvVarName, DockerInstanceMode } from '@octopuscentral/types';
+import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName, instanceModeEnvVarName, instancePortBindingsEnvVarName, DockerInstanceMode, InstancePortBinding } from '@octopuscentral/types';
 import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
@@ -12,6 +12,8 @@ export class Instance {
   #serviceName?: string;
   #mode?: DockerInstanceMode;
   #database?: Database;
+
+  #portBindings?: InstancePortBinding[];
 
   readonly socket: Socket;
   readonly settings: Settings;
@@ -36,9 +38,32 @@ export class Instance {
     return this.#database!;
   }
 
-  async _initVirtual(serviceName: string, mode: DockerInstanceMode): Promise<void> {
+  get portBindings(): InstancePortBinding[] {
+    if (this.#portBindings === undefined) throw new Error('instance.portBindings is not set\nmaybe run init() first?');
+    return this.#portBindings!;
+  }
+
+  private parsePortBindingString(bindingString: string): InstancePortBinding {
+    const binding = bindingString.split(',') as [string, string];
+    const bindingSrc = binding[0].split('/') as [string, string];
+    const bindingSrcHost = bindingSrc[0].split(':') as [string, string];
+    const bindingSrcHostHasIP = !/^[0-9]+$/.test(bindingSrcHost[0]);
+    return {
+      host: {
+        port: Number(binding[1]),
+      },
+      src: {
+        ip: bindingSrcHostHasIP ? '0.0.0.0' : bindingSrcHost[0],
+        port: Number(bindingSrcHost[bindingSrcHostHasIP ? 1 : 0]),
+        protocol: bindingSrc[1] as 'tcp' | 'udp',
+      }
+    }
+  }
+
+  async _initVirtual(serviceName: string, mode: DockerInstanceMode, portBindings: InstancePortBinding[] = []): Promise<void> {
     this.#serviceName = serviceName;
     this.#mode = mode;
+    this.#portBindings = portBindings;
 
     await this.init();
   }
@@ -73,6 +98,14 @@ export class Instance {
       if (mode === undefined)
         throw new Error(`env var ${instanceModeEnvVarName} is not set`);
       this.#mode = mode;
+    }
+
+    if (this.#portBindings === undefined) {
+      const portBindings: InstancePortBinding[] | undefined = (process.env[instancePortBindingsEnvVarName] as string)
+        ?.split(';').map(this.parsePortBindingString);
+      if (portBindings === undefined)
+        throw new Error(`env var ${instancePortBindingsEnvVarName} is not set`);
+      this.#portBindings = portBindings;
     }
 
     await this.initDatabase();

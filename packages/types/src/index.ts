@@ -1,6 +1,7 @@
 import {
   tableName as instancesTableName,
-  labelPrefix as instanceLabelPrefix
+  labelPrefix as instanceLabelPrefix,
+  PortBinding as InstancePortBinding
 } from './types/instance';
 
 import {
@@ -39,6 +40,7 @@ import {
   instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
   instanceModeEnvVarName,
+  instancePortBindingsEnvVarName,
   DockerClientProps,
   DockerInstanceProps,
   InstanceMode as DockerInstanceMode
@@ -47,11 +49,13 @@ import {
 export {
   instancesTableName,
   instanceLabelPrefix,
+  InstancePortBinding,
   instanceSettingsTableName,
   instanceIdEnvVarName,
   instanceServiceNameEnvVarName,
   instanceDatabaseEnvVarName,
   instanceModeEnvVarName,
+  instancePortBindingsEnvVarName,
   SettingValueType,
   SettingValueTypeType,
   Setting,
