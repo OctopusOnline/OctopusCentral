@@ -98,7 +98,7 @@ class Instance {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b;
             if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined) {
                 const id = node_process_1.default.env[types_1.instanceIdEnvVarName];
                 if (id === undefined)
@@ -114,16 +114,10 @@ class Instance {
                 __classPrivateFieldSet(this, _Instance_serviceName, serviceName, "f");
             }
             if (__classPrivateFieldGet(this, _Instance_mode, "f") === undefined) {
-                const mode = node_process_1.default.env[types_1.instanceModeEnvVarName];
-                if (mode === undefined)
-                    throw new Error(`env var ${types_1.instanceModeEnvVarName} is not set`);
-                __classPrivateFieldSet(this, _Instance_mode, mode, "f");
+                __classPrivateFieldSet(this, _Instance_mode, (node_process_1.default.env[types_1.instanceModeEnvVarName] || 'production'), "f");
             }
             if (__classPrivateFieldGet(this, _Instance_portBindings, "f") === undefined) {
-                const portBindings = (_a = node_process_1.default.env[types_1.instancePortBindingsEnvVarName]) === null || _a === void 0 ? void 0 : _a.split(';').map(this.parsePortBindingString);
-                if (portBindings === undefined)
-                    throw new Error(`env var ${types_1.instancePortBindingsEnvVarName} is not set`);
-                __classPrivateFieldSet(this, _Instance_portBindings, portBindings, "f");
+                __classPrivateFieldSet(this, _Instance_portBindings, (_b = (_a = node_process_1.default.env[types_1.instancePortBindingsEnvVarName]) === null || _a === void 0 ? void 0 : _a.split(';').map(this.parsePortBindingString)) !== null && _b !== void 0 ? _b : [], "f");
             }
             yield this.initDatabase();
             if (__classPrivateFieldGet(this, _Instance_id, "f") !== null) {

@@ -94,18 +94,12 @@ export class Instance {
     }
 
     if (this.#mode === undefined) {
-      const mode: DockerInstanceMode | undefined = process.env[instanceModeEnvVarName] as DockerInstanceMode;
-      if (mode === undefined)
-        throw new Error(`env var ${instanceModeEnvVarName} is not set`);
-      this.#mode = mode;
+      this.#mode = (process.env[instanceModeEnvVarName] || 'production') as DockerInstanceMode;
     }
 
     if (this.#portBindings === undefined) {
-      const portBindings: InstancePortBinding[] | undefined = (process.env[instancePortBindingsEnvVarName] as string)
-        ?.split(';').map(this.parsePortBindingString);
-      if (portBindings === undefined)
-        throw new Error(`env var ${instancePortBindingsEnvVarName} is not set`);
-      this.#portBindings = portBindings;
+      this.#portBindings = (process.env[instancePortBindingsEnvVarName] as string)
+        ?.split(';').map(this.parsePortBindingString) ?? [];
     }
 
     await this.initDatabase();
