@@ -163,6 +163,10 @@ export class Socket {
           instance.socket!.emit('request', sessionId, command, args);
         }
       });
+
+      socket.on('disconnect', () => {
+        socket.removeAllListeners();
+      });
     });
   }
 
