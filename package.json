@@ -18,7 +18,10 @@
     "lerna:clean": "lerna run clean",
     "lerna:publish": "lerna publish",
 
+    "postlerna:publish": "npm run scripts:update-image-package-versions-and-push",
+
     "scripts:build-all-images": "scripts/build-all-images.sh",
-    "scripts:pull-and-build-all-images": "scripts/pull-and-build-all-images.sh"
+    "scripts:pull-and-build-all-images": "scripts/pull-and-build-all-images.sh",
+    "scripts:update-image-package-versions-and-push": "node scripts/update-image-package-versions-and-push.mjs"
   }
 }
