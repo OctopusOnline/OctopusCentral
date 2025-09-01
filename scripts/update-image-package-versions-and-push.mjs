@@ -28,7 +28,10 @@ execSync('npm install', { stdio: 'inherit' });
 process.chdir(rootDir);
 
 const diff = execSync(`git diff --name-only ${imagePackagePath} ${imageLockPath}`).toString().trim();
-if (!diff) process.exit(0);
+if (!diff) {
+    console.log('No changes to commit.');
+    process.exit(0);
+}
 
 execSync(`git add ${imagePackagePath} ${imageLockPath}`);
 execSync(`git commit -m "Update controller image to v${newVersion}"`, { stdio: 'inherit' });
