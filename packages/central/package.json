@@ -14,10 +14,6 @@
     "watch": "tsc --watch",
     "clean": "rm -rf dist"
   },
-  "devDependencies": {
-    "@types/node": "20.14.8",
-    "typescript": "^5.8.3"
-  },
   "dependencies": {
     "@octopuscentral/types": "^1.18.2",
     "mariadb": "^3.4.2",
