@@ -20,7 +20,7 @@
   "dependencies": {
     "@octopuscentral/types": "^1.18.2",
     "express": "^4.21.0",
-    "mariadb": "^3.4.2",
+    "mariadb": "^3.4.5",
     "socket.io": "^4.8.1"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"
