@@ -14,9 +14,10 @@ const newVersion = controllerPackage.version;
 const imagePackage = JSON.parse(fs.readFileSync(imagePackagePath, 'utf8'));
 const oldVersion = imagePackage.dependencies['@octopuscentral/controller'];
 
-if (newVersion === oldVersion)
+if (newVersion === oldVersion) {
+    console.log('No version change detected.');
     process.exit(0);
-
+}
 
 imagePackage.dependencies['@octopuscentral/controller'] = newVersion;
 fs.writeFileSync(imagePackagePath, JSON.stringify(imagePackage, null, 2) + '\n', 'utf8');
