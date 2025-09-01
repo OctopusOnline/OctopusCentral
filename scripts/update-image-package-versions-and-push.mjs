@@ -22,6 +22,7 @@ imagePackage.dependencies['@octopuscentral/controller'] = newVersion;
 fs.writeFileSync(imagePackagePath, JSON.stringify(imagePackage, null, 2) + '\n', 'utf8');
 
 process.chdir(imageDir);
+execSync('npm cache clean --force', { stdio: 'inherit' });
 execSync('npm install', { stdio: 'inherit' });
 
 process.chdir(rootDir);
