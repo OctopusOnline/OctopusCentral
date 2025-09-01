@@ -1,0 +1,10 @@
+LICENSE
+README.md
+package-lock.json
+dist
+node_modules
+*.tsbuildinfo
+
+/.git
+/.idea
+/test
