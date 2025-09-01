@@ -64,8 +64,14 @@ class Instance extends node_events_1.default {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
                 return connectResult;
             }
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', message => this.emit('boot status', message));
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', success => this.emit('boot status booted', success));
+            const bootHandler = (message) => this.emit('boot status', message);
+            const bootedHandler = (success) => this.emit('boot status booted', success);
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('disconnect', () => {
+                __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status', bootHandler);
+                __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status booted', bootedHandler);
+            });
             return true;
         });
     }

@@ -50,8 +50,16 @@ export class Instance extends EventEmitter {
       return connectResult;
     }
 
-    this.#socket!.on('boot status',        message => this.emit('boot status',        message));
-    this.#socket!.on('boot status booted', success => this.emit('boot status booted', success));
+    const bootHandler   = (message: string ) => this.emit('boot status',        message);
+    const bootedHandler = (success: boolean) => this.emit('boot status booted', success);
+
+    this.#socket!.on('boot status',          bootHandler);
+    this.#socket!.on('boot status booted', bootedHandler);
+
+    this.#socket!.on('disconnect', () => {
+      this.#socket!.off('boot status',          bootHandler);
+      this.#socket!.off('boot status booted', bootedHandler);
+    });
 
     return true;
   }
