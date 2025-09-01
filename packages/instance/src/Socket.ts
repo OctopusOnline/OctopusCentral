@@ -83,6 +83,10 @@ export class Socket {
             socket.emit('response', 404 as any, sessionId as any);
         }
       });
+
+      socket.on('disconnect', () => {
+        socket.removeAllListeners();
+      });
     });
   }
 }

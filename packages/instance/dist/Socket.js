@@ -92,6 +92,9 @@ class Socket {
                         socket.emit('response', 404, sessionId);
                 }
             }));
+            socket.on('disconnect', () => {
+                socket.removeAllListeners();
+            });
         });
     }
 }
