@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Controller_instances, _Controller_running;
+var _Controller_instances, _Controller_running, _Controller_runIntervalTimeout;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = exports.CLIClient = exports.Instance = exports.Socket = exports.Docker = void 0;
 const types_1 = require("@octopuscentral/types");
@@ -47,6 +47,7 @@ class Controller extends node_events_1.default {
         this.instancesFetchInterval = 5000;
         _Controller_instances.set(this, []);
         _Controller_running.set(this, false);
+        _Controller_runIntervalTimeout.set(this, void 0);
         this.serviceName = serviceName;
         this.database = new Database_1.Database(databaseUrl);
         this.docker = new Docker_1.Docker(this, instanceDockerProps);
@@ -62,9 +63,12 @@ class Controller extends node_events_1.default {
         }
     }
     addAndSetupInstance(instance) {
-        __classPrivateFieldGet(this, _Controller_instances, "f").push(instance);
-        instance.on('socket connected', (error) => this.emit('instance socket connected', instance, error));
-        instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
+        const instanceWithHandlers = instance;
+        __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
+        instanceWithHandlers._connectedHandler = (error) => this.emit('instance socket connected', instance, error);
+        instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
+        instance.on('socket connected', instanceWithHandlers._connectedHandler);
+        instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
     }
     get lastInstanceId() {
         return Math.max(0, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
@@ -93,12 +97,14 @@ class Controller extends node_events_1.default {
         return __classPrivateFieldGet(this, _Controller_instances, "f").find(_instance => _instance.id === id);
     }
     removeInstance(instance) {
-        __classPrivateFieldSet(this, _Controller_instances, __classPrivateFieldGet(this, _Controller_instances, "f").filter(_instance => {
-            if (_instance.id === instance.id) {
-                _instance.disconnect();
-                return true;
-            }
-        }), "f");
+        const index = __classPrivateFieldGet(this, _Controller_instances, "f").findIndex(_instance => _instance.id === instance.id);
+        if (index !== -1) {
+            const instanceWithHandlers = __classPrivateFieldGet(this, _Controller_instances, "f")[index];
+            instanceWithHandlers.disconnect();
+            instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
+            instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
+            __classPrivateFieldGet(this, _Controller_instances, "f").splice(index, 1);
+        }
     }
     loadInstances() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -192,23 +198,26 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.fetchSyncInstances();
             yield this.connectInstances();
-            setTimeout(() => {
+            __classPrivateFieldSet(this, _Controller_runIntervalTimeout, setTimeout(() => {
                 if (__classPrivateFieldGet(this, _Controller_running, "f"))
                     this.runInterval().then();
-            }, this.instancesFetchInterval);
+            }, this.instancesFetchInterval), "f");
         });
     }
     destroy() {
         return __awaiter(this, void 0, void 0, function* () {
+            __classPrivateFieldSet(this, _Controller_running, false, "f");
+            clearTimeout(__classPrivateFieldGet(this, _Controller_runIntervalTimeout, "f"));
+            for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
+                this.removeInstance(instance);
             yield Promise.all([
                 this.cli.stop(),
                 this.socket.stop(),
                 this.database.disconnect()
             ]);
-            __classPrivateFieldSet(this, _Controller_running, false, "f");
         });
     }
 }
 exports.Controller = Controller;
-_Controller_instances = new WeakMap(), _Controller_running = new WeakMap();
+_Controller_instances = new WeakMap(), _Controller_running = new WeakMap(), _Controller_runIntervalTimeout = new WeakMap();
 //# sourceMappingURL=index.js.map

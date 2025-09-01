@@ -11,6 +11,11 @@ import { CLIClient } from './CLIClient';
 
 export { Docker, Socket, Instance, CLIClient };
 
+interface InstanceWithHandlers extends Instance {
+  _connectedHandler: (error?: Error) => void
+  _disconnectedHandler: () => void
+}
+
 export class Controller extends EventEmitter {
   readonly serviceName: string;
   instancesFetchInterval: number = 5000;
@@ -20,8 +25,9 @@ export class Controller extends EventEmitter {
   readonly socket: Socket;
   readonly cli: CLIServer;
 
-  #instances: Instance[] = [];
+  #instances: InstanceWithHandlers[] = [];
   #running: boolean = false;
+  #runIntervalTimeout?: NodeJS.Timeout;
 
   get instances(): Instance[] { return this.#instances }
   get running(): boolean { return this.#running }
@@ -46,10 +52,14 @@ export class Controller extends EventEmitter {
   }
 
   private addAndSetupInstance(instance: Instance) {
-    this.#instances.push(instance);
+    const instanceWithHandlers = instance as InstanceWithHandlers;
+    this.#instances.push(instanceWithHandlers);
 
-    instance.on('socket connected', (error?: Error) => this.emit('instance socket connected', instance, error));
-    instance.on('socket disconnected', () => this.emit('instance socket disconnected', instance));
+    instanceWithHandlers._connectedHandler    = (error?: Error) => this.emit('instance socket connected', instance, error);
+    instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
+
+    instance.on('socket connected',    instanceWithHandlers._connectedHandler);
+    instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
   }
 
   private get lastInstanceId(): number {
@@ -86,12 +96,14 @@ export class Controller extends EventEmitter {
   }
 
   removeInstance(instance: Instance): void {
-    this.#instances = this.#instances.filter(_instance => {
-      if (_instance.id === instance.id) {
-        _instance.disconnect();
-        return true;
-      }
-    });
+    const index = this.#instances.findIndex(_instance => _instance.id === instance.id);
+    if (index !== -1) {
+      const instanceWithHandlers = this.#instances[index];
+      instanceWithHandlers.disconnect();
+      instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
+      instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
+      this.#instances.splice(index, 1);
+    }
   }
 
   private async loadInstances(): Promise<Instance[]> {
@@ -190,17 +202,22 @@ export class Controller extends EventEmitter {
     await this.fetchSyncInstances();
     await this.connectInstances();
 
-    setTimeout(() => {
+    this.#runIntervalTimeout = setTimeout(() => {
       if (this.#running) this.runInterval().then();
     }, this.instancesFetchInterval);
   }
 
   async destroy(): Promise<void> {
+    this.#running = false;
+    clearTimeout(this.#runIntervalTimeout);
+
+    for (const instance of this.#instances)
+      this.removeInstance(instance);
+
     await Promise.all([
       this.cli.stop(),
       this.socket.stop(),
       this.database.disconnect()
     ]);
-    this.#running = false;
   }
 }
