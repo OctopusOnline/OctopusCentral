@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { CLIClient } from "@octopuscentral/controller";
 import { cliWarningCode } from "@octopuscentral/types";
 import Table from 'cli-table3';
