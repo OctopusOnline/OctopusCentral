@@ -19,6 +19,7 @@
     "lerna:clean": "lerna run clean",
     "lerna:publish": "lerna publish",
 
+    "prelerna:publish": "npm run lerna:build",
     "postlerna:publish": "npm run scripts:update-image-package-versions-and-push",
 
     "scripts:build-all-images": "scripts/build-all-images.sh",
