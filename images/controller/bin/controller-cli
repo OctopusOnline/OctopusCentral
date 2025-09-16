@@ -4,5 +4,3 @@ cd /home/node
 
 shift
 node cli.js $@
-
-exit

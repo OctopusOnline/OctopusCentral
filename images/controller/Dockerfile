@@ -12,8 +12,8 @@ RUN npm i --no-update-notifier
 
 COPY src/ ./
 
-RUN echo "cd /home/node && controller-cli && exit" >> /root/.bashrc \
- && chmod +x ./entrypoint.sh \
- && chmod +x /usr/local/bin/controller-cli
+RUN chmod +x ./entrypoint.sh \
+ && chmod +x /usr/local/bin/controller-cli \
+ && echo "controller-cli && exit" >> /root/.bashrc
 
 ENTRYPOINT ["./entrypoint.sh"]
