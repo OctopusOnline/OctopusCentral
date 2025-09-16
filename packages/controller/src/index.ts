@@ -144,14 +144,15 @@ export class Controller extends EventEmitter {
 
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {
     let bootResult: boolean | undefined,
-      dockerResult: boolean | undefined;
+      dockerResult: boolean | undefined,
+         timeoutId: NodeJS.Timeout;
 
-    const resetTimeout = (): NodeJS.Timeout => {
+    const resetTimeout = () => {
       clearTimeout(timeoutId);
-      return timeoutId = setTimeout(() => timeoutController.abort(), timeout);
+      timeoutId = setTimeout(() => timeoutController.abort(), timeout);
     }
     const timeoutController = new AbortController();
-    let timeoutId: NodeJS.Timeout = resetTimeout();
+    resetTimeout();
 
     const bootStatusListener = (_: string, reset: boolean) => reset && resetTimeout();
     instance.on('boot status',        bootStatusListener);
@@ -187,7 +188,7 @@ export class Controller extends EventEmitter {
     } finally {
       instance.off('boot status',        bootStatusListener);
       instance.off('boot status booted', bootStatusListener);
-      clearTimeout(timeoutId);
+      clearTimeout(timeoutId!);
     }
 
     return bootResult!;

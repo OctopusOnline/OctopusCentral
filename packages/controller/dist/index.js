@@ -143,13 +143,13 @@ class Controller extends node_events_1.default {
     }
     startInstance(instance_2, mode_1) {
         return __awaiter(this, arguments, void 0, function* (instance, mode, timeout = 6e4) {
-            let bootResult, dockerResult;
+            let bootResult, dockerResult, timeoutId;
             const resetTimeout = () => {
                 clearTimeout(timeoutId);
-                return timeoutId = setTimeout(() => timeoutController.abort(), timeout);
+                timeoutId = setTimeout(() => timeoutController.abort(), timeout);
             };
             const timeoutController = new AbortController();
-            let timeoutId = resetTimeout();
+            resetTimeout();
             const bootStatusListener = (_, reset) => reset && resetTimeout();
             instance.on('boot status', bootStatusListener);
             instance.on('boot status booted', bootStatusListener);
