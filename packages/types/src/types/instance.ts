@@ -20,4 +20,4 @@ export interface Status {
   data?: object;
 }
 
-export type StatusParam = Omit<Status, 'timestamp'> | undefined;
+export type StatusParam = Omit<Status, 'timestamp'>;

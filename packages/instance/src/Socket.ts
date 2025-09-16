@@ -57,7 +57,7 @@ export class Socket {
       resetTimeout);
   }
 
-  sendStatus(status: InstanceStatusParam = this.#status): void {
+  sendStatus(status: InstanceStatusParam | undefined = this.#status): void {
     if (status) {
       this.#status = {
         ...status,

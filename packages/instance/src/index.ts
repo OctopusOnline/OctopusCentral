@@ -1,4 +1,14 @@
-import { instanceDatabaseEnvVarName, instanceIdEnvVarName, instanceServiceNameEnvVarName, instancesTableName, instanceModeEnvVarName, instancePortBindingsEnvVarName, DockerInstanceMode, InstancePortBinding } from '@octopuscentral/types';
+import {
+  instanceDatabaseEnvVarName,
+  instanceIdEnvVarName,
+  instanceServiceNameEnvVarName,
+  instancesTableName,
+  instanceModeEnvVarName,
+  instancePortBindingsEnvVarName,
+  DockerInstanceMode,
+  InstancePortBinding,
+  InstanceStatusParam
+} from '@octopuscentral/types';
 import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
@@ -142,6 +152,10 @@ export class Instance {
 
   sendBootStatus(messageOrBooted: string | boolean, resetTimeout: boolean = true): void{
     this.socket.sendBootStatus(messageOrBooted, resetTimeout);
+  }
+
+  sendStatus(status: InstanceStatusParam): void {
+    this.socket.sendStatus(status);
   }
 
   async setSocketHostname(hostname: string): Promise<void> {

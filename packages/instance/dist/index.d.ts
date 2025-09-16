@@ -1,4 +1,4 @@
-import { DockerInstanceMode, InstancePortBinding } from '@octopuscentral/types';
+import { DockerInstanceMode, InstancePortBinding, InstanceStatusParam } from '@octopuscentral/types';
 import { Database } from './Database';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
@@ -20,5 +20,6 @@ export declare class Instance {
     initDatabase(): Promise<void>;
     start(awaitStartPermission?: boolean): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
+    sendStatus(status: InstanceStatusParam): void;
     setSocketHostname(hostname: string): Promise<void>;
 }
