@@ -143,9 +143,7 @@ class Docker {
                     Binds: binds,
                     NetworkMode: 'bridge',
                     PortBindings: portBindings,
-                    RestartPolicy: {
-                        Name: mode === 'init' || mode === 'setup' ? 'no' : 'always',
-                    },
+                    RestartPolicy: { Name: 'no' },
                 },
                 Hostname: containerName,
                 ExposedPorts: exposedPorts
