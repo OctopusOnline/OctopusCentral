@@ -87,6 +87,15 @@ class CLIClient extends node_events_1.default {
             }));
         });
     }
+    handleCommand(args) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const command = typeof args === 'string' ? args : args.join(' ');
+            yield Promise.all([
+                this.request(command),
+                this.requestTextStream(command)
+            ]);
+        });
+    }
     inputLoop() {
         return __awaiter(this, void 0, void 0, function* () {
             const input = (yield this.rl.question(this.consoleInputPrefix)).trim();
@@ -100,10 +109,7 @@ class CLIClient extends node_events_1.default {
                 case 'exit':
                     return this.stop();
                 default:
-                    yield Promise.all([
-                        this.request(input),
-                        this.requestTextStream(input)
-                    ]);
+                    yield this.handleCommand(input);
             }
             yield this.inputLoop();
         });

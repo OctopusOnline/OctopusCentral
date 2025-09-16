@@ -4,6 +4,9 @@ import { CLIClient } from "@octopuscentral/controller";
 import { cliWarningCode } from "@octopuscentral/types";
 import Table from 'cli-table3';
 
+const args = process.argv.slice(2);
+const batching = args.length > 0;
+
 const cli = new CLIClient();
 
 cli.on('response', (type, data) => {
@@ -32,6 +35,8 @@ cli.on('warning', (code, data) =>
       case cliWarningCode.empty_response:        return 'empty response';
       case cliWarningCode.unknown_response_code: return `unknown response code: ${data}`;
     }
+
+    if (batching) process.exit(1);
   })(code)));
 
 cli.on('clear', () => {
@@ -39,6 +44,11 @@ cli.on('clear', () => {
   console.log('===============================\n OctopusCentral Controller CLI \n===============================');
 });
 cli.on('stop', () => process.exit());
+
+if (batching) {
+  await cli.handleCommand(args);
+  process.exit(0);
+}
 
 cli.clear();
 cli.start();

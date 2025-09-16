@@ -71,6 +71,14 @@ export class CLIClient extends EventEmitter {
     });
   }
 
+  async handleCommand(args: string | string[]): Promise<void> {
+    const command: string = typeof args === 'string' ? args : args.join(' ');
+    await Promise.all([
+      this.request(command),
+      this.requestTextStream(command)
+    ]);
+  }
+
   private async inputLoop(): Promise<void> {
     const input: string = (await this.rl.question(this.consoleInputPrefix)).trim();
     this.emit('input', input);
@@ -85,10 +93,7 @@ export class CLIClient extends EventEmitter {
         return this.stop();
 
       default:
-        await Promise.all([
-          this.request(input),
-          this.requestTextStream(input)
-        ]);
+        await this.handleCommand(input);
     }
 
     await this.inputLoop();

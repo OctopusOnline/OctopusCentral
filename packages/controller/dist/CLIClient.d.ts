@@ -8,6 +8,7 @@ export declare class CLIClient extends EventEmitter {
     start(): void;
     private request;
     private requestTextStream;
+    handleCommand(args: string | string[]): Promise<void>;
     private inputLoop;
     stop(): void;
     clear(): void;
