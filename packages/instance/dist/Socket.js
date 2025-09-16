@@ -66,10 +66,10 @@ class Socket {
             return yield (0, helper_1.waitFor)(() => __classPrivateFieldGet(this, _Socket_startPermission, "f"), timeout / 200);
         });
     }
-    sendBootStatus(messageOrBooted) {
+    sendBootStatus(messageOrBooted, resetTimeout = true) {
         this.io.emit(typeof messageOrBooted === 'boolean'
             ? 'boot status booted'
-            : 'boot status', messageOrBooted);
+            : 'boot status', messageOrBooted, resetTimeout);
     }
     sendStatus(status = __classPrivateFieldGet(this, _Socket_status, "f")) {
         if (status) {

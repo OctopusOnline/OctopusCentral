@@ -19,6 +19,6 @@ export declare class Instance {
     init(): Promise<void>;
     initDatabase(): Promise<void>;
     start(awaitStartPermission?: boolean): Promise<boolean>;
-    sendBootStatus(messageOrBooted: string | boolean): void;
+    sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
     setSocketHostname(hostname: string): Promise<void>;
 }

@@ -140,8 +140,8 @@ export class Instance {
     return !awaitStartPermission || await this.socket.awaitStartPermission();
   }
 
-  sendBootStatus(messageOrBooted: string | boolean): void{
-    this.socket.sendBootStatus(messageOrBooted);
+  sendBootStatus(messageOrBooted: string | boolean, resetTimeout: boolean = true): void{
+    this.socket.sendBootStatus(messageOrBooted, resetTimeout);
   }
 
   async setSocketHostname(hostname: string): Promise<void> {

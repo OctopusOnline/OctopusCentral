@@ -54,8 +54,8 @@ export class Instance extends EventEmitter {
       return connectResult;
     }
 
-    const bootHandler   = (message: string ) => this.emit('boot status',        message);
-    const bootedHandler = (success: boolean) => this.emit('boot status booted', success);
+    const bootHandler   = (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout);
+    const bootedHandler = (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout);
     const statusHandler = (status: InstanceStatus) => {
       if (!this.#status || status.timestamp > this.#status.timestamp) {
         this.#status = status;

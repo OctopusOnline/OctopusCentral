@@ -13,7 +13,7 @@ export declare class Socket {
     start(): Promise<void>;
     stop(): Promise<void>;
     awaitStartPermission(timeout?: number): Promise<boolean>;
-    sendBootStatus(messageOrBooted: string | boolean): void;
+    sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
     sendStatus(status?: InstanceStatusParam): void;
     private setupSocketHandlers;
 }

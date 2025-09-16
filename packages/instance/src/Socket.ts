@@ -48,12 +48,13 @@ export class Socket {
     return await waitFor(() => this.#startPermission, timeout / 200);
   }
 
-  sendBootStatus(messageOrBooted: string | boolean): void {
+  sendBootStatus(messageOrBooted: string | boolean, resetTimeout: boolean = true): void {
     this.io.emit(
       typeof messageOrBooted === 'boolean'
         ? 'boot status booted'
         : 'boot status',
-      messageOrBooted);
+      messageOrBooted,
+      resetTimeout);
   }
 
   sendStatus(status: InstanceStatusParam = this.#status): void {

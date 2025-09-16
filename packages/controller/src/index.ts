@@ -146,32 +146,49 @@ export class Controller extends EventEmitter {
     let bootResult: boolean | undefined,
       dockerResult: boolean | undefined;
 
-    await Promise.all([
-      Promise.race([
-        new Promise(async resolve => {
-          if (await instance.sendStartPermission(timeout)) {
-            instance.once('boot status booted', success =>
-              resolve(bootResult = success));
-          }
-          else resolve(bootResult = false);
-        }),
+    const resetTimeout = (): NodeJS.Timeout => {
+      clearTimeout(timeoutId);
+      return timeoutId = setTimeout(() => timeoutController.abort(), timeout);
+    }
+    const timeoutController = new AbortController();
+    let timeoutId: NodeJS.Timeout = resetTimeout();
+
+    const bootStatusListener = (_: string, reset: boolean) => reset && resetTimeout();
+    instance.on('boot status',        bootStatusListener);
+    instance.on('boot status booted', bootStatusListener);
+
+    try {
+      await Promise.all([
+        Promise.race([
+          new Promise(async resolve => {
+            if (await instance.sendStartPermission(timeout)) {
+              instance.once('boot status booted', success =>
+                resolve(bootResult = success));
+            }
+            else resolve(bootResult = false);
+          }),
+
+          (async() => {
+            await new Promise(resolve => timeoutController.signal.addEventListener('abort', resolve));
+            if (!await waitFor(async() =>
+              bootResult   !== undefined ||
+              dockerResult !== undefined ||
+              await this.docker.instanceRunning(instance))
+            )
+              dockerResult = false;
+          })()
+        ]),
 
         (async() => {
-          await sleep(timeout);
-          if (!await waitFor(async() =>
-            bootResult   !== undefined ||
-            dockerResult !== undefined ||
-            await this.docker.instanceRunning(instance))
-          )
-            dockerResult = false;
+          dockerResult = await this.docker.startInstance(instance, mode);
+          await instance.connect();
         })()
-      ]),
-
-      (async() => {
-        dockerResult = await this.docker.startInstance(instance, mode);
-        await instance.connect();
-      })()
-    ]);
+      ]);
+    } finally {
+      instance.off('boot status',        bootStatusListener);
+      instance.off('boot status booted', bootStatusListener);
+      clearTimeout(timeoutId);
+    }
 
     return bootResult!;
   }

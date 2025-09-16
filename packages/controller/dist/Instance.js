@@ -66,8 +66,8 @@ class Instance extends node_events_1.default {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
                 return connectResult;
             }
-            const bootHandler = (message) => this.emit('boot status', message);
-            const bootedHandler = (success) => this.emit('boot status booted', success);
+            const bootHandler = (message, resetTimeout) => this.emit('boot status', message, resetTimeout);
+            const bootedHandler = (success, resetTimeout) => this.emit('boot status booted', success, resetTimeout);
             const statusHandler = (status) => {
                 if (!__classPrivateFieldGet(this, _Instance_status, "f") || status.timestamp > __classPrivateFieldGet(this, _Instance_status, "f").timestamp) {
                     __classPrivateFieldSet(this, _Instance_status, status, "f");

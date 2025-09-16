@@ -157,8 +157,8 @@ class Instance {
             return !awaitStartPermission || (yield this.socket.awaitStartPermission());
         });
     }
-    sendBootStatus(messageOrBooted) {
-        this.socket.sendBootStatus(messageOrBooted);
+    sendBootStatus(messageOrBooted, resetTimeout = true) {
+        this.socket.sendBootStatus(messageOrBooted, resetTimeout);
     }
     setSocketHostname(hostname) {
         return __awaiter(this, void 0, void 0, function* () {

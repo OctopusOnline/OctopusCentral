@@ -144,30 +144,46 @@ class Controller extends node_events_1.default {
     startInstance(instance_2, mode_1) {
         return __awaiter(this, arguments, void 0, function* (instance, mode, timeout = 6e4) {
             let bootResult, dockerResult;
-            yield Promise.all([
-                Promise.race([
-                    new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                        if (yield instance.sendStartPermission(timeout)) {
-                            instance.once('boot status booted', success => resolve(bootResult = success));
-                        }
-                        else
-                            resolve(bootResult = false);
-                    })),
+            const resetTimeout = () => {
+                clearTimeout(timeoutId);
+                return timeoutId = setTimeout(() => timeoutController.abort(), timeout);
+            };
+            const timeoutController = new AbortController();
+            let timeoutId = resetTimeout();
+            const bootStatusListener = (_, reset) => reset && resetTimeout();
+            instance.on('boot status', bootStatusListener);
+            instance.on('boot status booted', bootStatusListener);
+            try {
+                yield Promise.all([
+                    Promise.race([
+                        new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                            if (yield instance.sendStartPermission(timeout)) {
+                                instance.once('boot status booted', success => resolve(bootResult = success));
+                            }
+                            else
+                                resolve(bootResult = false);
+                        })),
+                        (() => __awaiter(this, void 0, void 0, function* () {
+                            yield new Promise(resolve => timeoutController.signal.addEventListener('abort', resolve));
+                            if (!(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () {
+                                return bootResult !== undefined ||
+                                    dockerResult !== undefined ||
+                                    (yield this.docker.instanceRunning(instance));
+                            }))))
+                                dockerResult = false;
+                        }))()
+                    ]),
                     (() => __awaiter(this, void 0, void 0, function* () {
-                        yield (0, helper_1.sleep)(timeout);
-                        if (!(yield (0, helper_1.waitFor)(() => __awaiter(this, void 0, void 0, function* () {
-                            return bootResult !== undefined ||
-                                dockerResult !== undefined ||
-                                (yield this.docker.instanceRunning(instance));
-                        }))))
-                            dockerResult = false;
+                        dockerResult = yield this.docker.startInstance(instance, mode);
+                        yield instance.connect();
                     }))()
-                ]),
-                (() => __awaiter(this, void 0, void 0, function* () {
-                    dockerResult = yield this.docker.startInstance(instance, mode);
-                    yield instance.connect();
-                }))()
-            ]);
+                ]);
+            }
+            finally {
+                instance.off('boot status', bootStatusListener);
+                instance.off('boot status booted', bootStatusListener);
+                clearTimeout(timeoutId);
+            }
             return bootResult;
         });
     }
