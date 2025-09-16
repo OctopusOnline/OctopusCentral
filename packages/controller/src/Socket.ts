@@ -31,11 +31,19 @@ export class Socket {
   }
 
   async start(): Promise<void> {
+    await this.controller.fetchSyncInstances();
+
+    for (const instance of this.controller.instances)
+      await instance.connect().finally();
+
     await new Promise(resolve =>
       this.server.listen(this.port, () => resolve(this)));
   }
 
   async stop(): Promise<void> {
+    for (const instance of this.controller.instances)
+      instance.disconnect();
+
     await new Promise(resolve =>
       this.server.close(() => resolve(this)));
   }
@@ -57,6 +65,7 @@ export class Socket {
               ...(values === true || values.includes('socketProtocol') ? { socketProtocol : instance.socketProtocol } : {}),
               ...(values === true || values.includes('socketHostname') ? { socketHostname : instance.socketHostname } : {}),
               ...(values === true || values.includes('socketPort'    ) ? { socketPort     : instance.socketPort     } : {}),
+              ...(values === true || values.includes('status'        ) ? { status         : instance.status         } : {}),
             })) as any);
             break;
 

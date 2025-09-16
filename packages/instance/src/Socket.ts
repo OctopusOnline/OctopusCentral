@@ -1,4 +1,5 @@
 import { waitFor } from './helper';
+import { InstanceStatus, InstanceStatusParam } from '@octopuscentral/types';
 import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
@@ -12,6 +13,7 @@ export class Socket {
   #port: number;
 
   #startPermission: boolean = false;
+  #status?: InstanceStatus;
 
   get port(): number { return this.#port }
   get running(): boolean { return this.server.listening }
@@ -54,6 +56,16 @@ export class Socket {
       messageOrBooted);
   }
 
+  sendStatus(status: InstanceStatusParam = this.#status): void {
+    if (status) {
+      this.#status = {
+        ...status,
+        timestamp: Date.now()
+      };
+      this.io.emit('status', this.#status);
+    }
+  }
+
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
 
@@ -87,6 +99,8 @@ export class Socket {
       socket.on('disconnect', () => {
         socket.removeAllListeners();
       });
+
+      this.sendStatus();
     });
   }
 }

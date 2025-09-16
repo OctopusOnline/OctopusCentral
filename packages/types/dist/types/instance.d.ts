@@ -10,3 +10,10 @@ export interface PortBinding {
         port: number;
     };
 }
+export interface Status {
+    timestamp: number;
+    healthy: boolean;
+    message: string;
+    data?: object;
+}
+export type StatusParam = Omit<Status, 'timestamp'> | undefined;

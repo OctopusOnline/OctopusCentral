@@ -152,6 +152,23 @@ class CLIServer {
             });
         }));
         this.express.get([
+            '/instance/:id/status',
+            '/i/:id/status',
+            '/instance/:id/ss',
+            '/i/:id/ss'
+        ], (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const status = req.instance.status;
+            res.json({
+                type: 'value',
+                data: status
+                    ? `timestamp: ${new Intl.DateTimeFormat('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(status.timestamp)}\n`
+                        + `healthy: ${status.healthy ? 'yes' : 'no'}\n`
+                        + `message: ${status.message}`
+                        + (status.data ? `data: ${Object.entries(status.data).map(([key, value]) => `- ${key}: ${typeof value === 'string' ? `'${value}'` : value}`).join('\n')}` : '')
+                    : 'no status available'
+            });
+        }));
+        this.express.get([
             '/instance/:id/settings',
             '/instance/:id/s/ls',
             '/i/:id/settings',

@@ -50,11 +50,16 @@ class Socket {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.controller.fetchSyncInstances();
+            for (const instance of this.controller.instances)
+                yield instance.connect().finally();
             yield new Promise(resolve => this.server.listen(this.port, () => resolve(this)));
         });
     }
     stop() {
         return __awaiter(this, void 0, void 0, function* () {
+            for (const instance of this.controller.instances)
+                instance.disconnect();
             yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }
@@ -68,7 +73,7 @@ class Socket {
                         break;
                     case 'get instances':
                         const values = (args === null || args === void 0 ? void 0 : args.values) === true || (args === null || args === void 0 ? void 0 : args.values) || ['id'];
-                        socket.emit('response controller', 200, sessionId, this.controller.instances.map(instance => (Object.assign(Object.assign(Object.assign(Object.assign({}, (values === true || values.includes('id') ? { id: instance.id } : {})), (values === true || values.includes('socketProtocol') ? { socketProtocol: instance.socketProtocol } : {})), (values === true || values.includes('socketHostname') ? { socketHostname: instance.socketHostname } : {})), (values === true || values.includes('socketPort') ? { socketPort: instance.socketPort } : {})))));
+                        socket.emit('response controller', 200, sessionId, this.controller.instances.map(instance => (Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (values === true || values.includes('id') ? { id: instance.id } : {})), (values === true || values.includes('socketProtocol') ? { socketProtocol: instance.socketProtocol } : {})), (values === true || values.includes('socketHostname') ? { socketHostname: instance.socketHostname } : {})), (values === true || values.includes('socketPort') ? { socketPort: instance.socketPort } : {})), (values === true || values.includes('status') ? { status: instance.status } : {})))));
                         break;
                     case 'fetch instances':
                         yield this.controller.fetchSyncInstances();

@@ -1,6 +1,7 @@
 import EventEmitter from 'node:events';
 import { io, Socket as IOSocket } from 'socket.io-client';
 import { sleep, waitFor } from './helper';
+import { InstanceStatus } from '@octopuscentral/types';
 
 export class Instance extends EventEmitter {
   readonly id: number;
@@ -10,10 +11,13 @@ export class Instance extends EventEmitter {
   socketPort: number;
 
   #socket?: IOSocket;
+  #status?: InstanceStatus;
 
   get socket(): IOSocket | undefined { return this.#socket }
 
   get connected(): boolean { return !!this.#socket }
+
+  get status(): InstanceStatus | undefined { return this.#status }
 
   constructor(id: number, socketHostname?: string, socketPort: number = 1777) {
     super();
@@ -52,13 +56,21 @@ export class Instance extends EventEmitter {
 
     const bootHandler   = (message: string ) => this.emit('boot status',        message);
     const bootedHandler = (success: boolean) => this.emit('boot status booted', success);
+    const statusHandler = (status: InstanceStatus) => {
+      if (!this.#status || status.timestamp > this.#status.timestamp) {
+        this.#status = status;
+        this.emit('status update', this.#status);
+      }
+    }
 
     this.#socket!.on('boot status',          bootHandler);
     this.#socket!.on('boot status booted', bootedHandler);
+    this.#socket!.on('status',             statusHandler);
 
     this.#socket!.on('disconnect', () => {
       this.#socket!.off('boot status',          bootHandler);
       this.#socket!.off('boot status booted', bootedHandler);
+      this.#socket!.off('status',             statusHandler);
     });
 
     return true;

@@ -1,3 +1,4 @@
+import { InstanceStatusParam } from '@octopuscentral/types';
 import { Instance } from '.';
 import { Server as HttpServer } from 'http';
 export declare class Socket {
@@ -13,5 +14,6 @@ export declare class Socket {
     stop(): Promise<void>;
     awaitStartPermission(timeout?: number): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean): void;
+    sendStatus(status?: InstanceStatusParam): void;
     private setupSocketHandlers;
 }

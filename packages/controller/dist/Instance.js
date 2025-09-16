@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_socket;
+var _Instance_socket, _Instance_status;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -31,10 +31,12 @@ const helper_1 = require("./helper");
 class Instance extends node_events_1.default {
     get socket() { return __classPrivateFieldGet(this, _Instance_socket, "f"); }
     get connected() { return !!__classPrivateFieldGet(this, _Instance_socket, "f"); }
+    get status() { return __classPrivateFieldGet(this, _Instance_status, "f"); }
     constructor(id, socketHostname, socketPort = 1777) {
         super();
         this.socketProtocol = 'http';
         _Instance_socket.set(this, void 0);
+        _Instance_status.set(this, void 0);
         this.id = id;
         this.socketHostname = socketHostname;
         this.socketPort = socketPort;
@@ -66,11 +68,19 @@ class Instance extends node_events_1.default {
             }
             const bootHandler = (message) => this.emit('boot status', message);
             const bootedHandler = (success) => this.emit('boot status booted', success);
+            const statusHandler = (status) => {
+                if (!__classPrivateFieldGet(this, _Instance_status, "f") || status.timestamp > __classPrivateFieldGet(this, _Instance_status, "f").timestamp) {
+                    __classPrivateFieldSet(this, _Instance_status, status, "f");
+                    this.emit('status update', __classPrivateFieldGet(this, _Instance_status, "f"));
+                }
+            };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('status', statusHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('disconnect', () => {
                 __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status', bootHandler);
                 __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status booted', bootedHandler);
+                __classPrivateFieldGet(this, _Instance_socket, "f").off('status', statusHandler);
             });
             return true;
         });
@@ -111,5 +121,5 @@ class Instance extends node_events_1.default {
     }
 }
 exports.Instance = Instance;
-_Instance_socket = new WeakMap();
+_Instance_socket = new WeakMap(), _Instance_status = new WeakMap();
 //# sourceMappingURL=Instance.js.map

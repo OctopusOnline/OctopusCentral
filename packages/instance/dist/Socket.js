@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Socket_port, _Socket_startPermission;
+var _Socket_port, _Socket_startPermission, _Socket_status;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
 const helper_1 = require("./helper");
@@ -44,6 +44,7 @@ class Socket {
     constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
         _Socket_port.set(this, void 0);
         _Socket_startPermission.set(this, false);
+        _Socket_status.set(this, void 0);
         this.instance = instance;
         this.server = server;
         this.io = new socket_io_1.Server(this.server);
@@ -70,6 +71,12 @@ class Socket {
             ? 'boot status booted'
             : 'boot status', messageOrBooted);
     }
+    sendStatus(status = __classPrivateFieldGet(this, _Socket_status, "f")) {
+        if (status) {
+            __classPrivateFieldSet(this, _Socket_status, Object.assign(Object.assign({}, status), { timestamp: Date.now() }), "f");
+            this.io.emit('status', __classPrivateFieldGet(this, _Socket_status, "f"));
+        }
+    }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('start permission', () => {
@@ -95,9 +102,10 @@ class Socket {
             socket.on('disconnect', () => {
                 socket.removeAllListeners();
             });
+            this.sendStatus();
         });
     }
 }
 exports.Socket = Socket;
-_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap();
+_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_status = new WeakMap();
 //# sourceMappingURL=Socket.js.map
