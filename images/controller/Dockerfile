@@ -5,7 +5,7 @@ WORKDIR /home/node
 ENV DEBUG=false
 
 COPY src/package*.json ./
-RUN npm i -g --no-update-notifier
+RUN npm i --no-update-notifier
 
 COPY src/ ./
 
