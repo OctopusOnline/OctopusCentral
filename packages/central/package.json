@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/central",
-  "version": "1.20.0",
+  "version": "1.21.2",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -15,7 +15,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@octopuscentral/types": "^1.20.0",
+    "@octopuscentral/types": "^1.21.2",
     "mariadb": "^3.4.5",
     "socket.io-client": "^4.8.1"
   },
