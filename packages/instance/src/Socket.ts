@@ -1,9 +1,11 @@
 import { waitFor } from './helper';
-import { InstanceStatus, InstanceStatusParam } from '@octopuscentral/types';
+import { InstanceStatus } from '@octopuscentral/types';
 import { Instance } from '.';
 import express from 'express';
 import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
+
+export type InstanceStatusParam = Omit<InstanceStatus, 'timestamp'>;
 
 export class Socket {
   private readonly instance: Instance;

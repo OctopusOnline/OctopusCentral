@@ -1,8 +1,8 @@
-import { DockerInstanceMode, InstancePortBinding, InstanceStatusParam } from '@octopuscentral/types';
+import { DockerInstanceMode, InstancePortBinding } from '@octopuscentral/types';
 import { Database } from './Database';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
-import { Socket } from './Socket';
+import { Socket, InstanceStatusParam } from './Socket';
 export { Settings, Setting, Socket };
 export declare class Instance {
     #private;

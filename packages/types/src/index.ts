@@ -2,8 +2,7 @@ import {
   tableName as instancesTableName,
   labelPrefix as instanceLabelPrefix,
   PortBinding as InstancePortBinding,
-  Status as InstanceStatus,
-  StatusParam as InstanceStatusParam
+  Status as InstanceStatus
 } from './types/instance';
 
 import {
@@ -53,7 +52,6 @@ export {
   instanceLabelPrefix,
   InstancePortBinding,
   InstanceStatus,
-  InstanceStatusParam,
   instanceSettingsTableName,
   instanceIdEnvVarName,
   instanceServiceNameEnvVarName,

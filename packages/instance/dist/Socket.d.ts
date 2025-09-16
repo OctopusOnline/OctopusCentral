@@ -1,6 +1,7 @@
-import { InstanceStatusParam } from '@octopuscentral/types';
+import { InstanceStatus } from '@octopuscentral/types';
 import { Instance } from '.';
 import { Server as HttpServer } from 'http';
+export type InstanceStatusParam = Omit<InstanceStatus, 'timestamp'>;
 export declare class Socket {
     #private;
     private readonly instance;

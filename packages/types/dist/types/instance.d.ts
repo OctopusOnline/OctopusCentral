@@ -16,4 +16,3 @@ export interface Status {
     message: string;
     data?: object;
 }
-export type StatusParam = Omit<Status, 'timestamp'>;

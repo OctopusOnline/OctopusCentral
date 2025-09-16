@@ -6,14 +6,13 @@ import {
   instanceModeEnvVarName,
   instancePortBindingsEnvVarName,
   DockerInstanceMode,
-  InstancePortBinding,
-  InstanceStatusParam
+  InstancePortBinding
 } from '@octopuscentral/types';
 import process from 'node:process';
 import { Database } from './Database';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
-import { Socket } from './Socket';
+import { Socket, InstanceStatusParam } from './Socket';
 
 export { Settings, Setting, Socket };
 
