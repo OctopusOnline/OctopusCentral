@@ -73,6 +73,7 @@ export class Instance extends EventEmitter {
     const bootHandler   = (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout);
     const bootedHandler = (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout);
     const statusHandler = (status: InstanceStatus[]) => {
+      console.log('on status', status);
       const newStatus = status.filter(status => {
         if (!this.getStatus(status.timestamp)) {
           this.#queueStatus(status);
@@ -80,7 +81,7 @@ export class Instance extends EventEmitter {
           return true;
         }
       });
-      if (newStatus.length)
+      if (newStatus.length > 0)
         this.#socket!.emit('status received', newStatus.map(status => status.timestamp));
     }
 

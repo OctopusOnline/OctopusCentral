@@ -77,6 +77,7 @@ class Instance extends node_events_1.default {
             const bootHandler = (message, resetTimeout) => this.emit('boot status', message, resetTimeout);
             const bootedHandler = (success, resetTimeout) => this.emit('boot status booted', success, resetTimeout);
             const statusHandler = (status) => {
+                console.log('on status', status);
                 const newStatus = status.filter(status => {
                     if (!this.getStatus(status.timestamp)) {
                         __classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status);
@@ -84,7 +85,7 @@ class Instance extends node_events_1.default {
                         return true;
                     }
                 });
-                if (newStatus.length)
+                if (newStatus.length > 0)
                     __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', newStatus.map(status => status.timestamp));
             };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
