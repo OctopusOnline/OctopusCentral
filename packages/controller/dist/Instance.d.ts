@@ -9,8 +9,10 @@ export declare class Instance extends EventEmitter {
     socketPort: number;
     get socket(): IOSocket | undefined;
     get connected(): boolean;
-    get status(): InstanceStatus | undefined;
+    get statusQueue(): InstanceStatus[];
     constructor(id: number, socketHostname?: string, socketPort?: number);
+    getStatus(timestamp: number): InstanceStatus | undefined;
+    getLastStatus(): InstanceStatus | undefined;
     connect(reconnect?: boolean): Promise<boolean | Error>;
     sendStartPermission(timeout?: number): Promise<boolean>;
     disconnect(): void;

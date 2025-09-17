@@ -11,19 +11,35 @@ export class Instance extends EventEmitter {
   socketPort: number;
 
   #socket?: IOSocket;
-  #status?: InstanceStatus;
+
+  #statusQueue: InstanceStatus[] = [];
+  #statusQueueLimit: number = 100;
 
   get socket(): IOSocket | undefined { return this.#socket }
 
   get connected(): boolean { return !!this.#socket }
 
-  get status(): InstanceStatus | undefined { return this.#status }
+  get statusQueue(): InstanceStatus[] { return this.#statusQueue }
 
   constructor(id: number, socketHostname?: string, socketPort: number = 1777) {
     super();
     this.id = id;
     this.socketHostname = socketHostname;
     this.socketPort = socketPort;
+  }
+
+  getStatus(timestamp: number): InstanceStatus | undefined {
+    return this.#statusQueue.find(status => status.timestamp === timestamp);
+  }
+
+  getLastStatus(): InstanceStatus | undefined {
+    return this.#statusQueue.reduce((prev, current) => (prev.timestamp > current.timestamp) ? prev : current);
+  }
+
+  #queueStatus(status: InstanceStatus): void {
+    this.#statusQueue.unshift(status);
+    if (this.#statusQueue.length > this.#statusQueueLimit)
+      this.#statusQueue.pop();
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
@@ -56,11 +72,16 @@ export class Instance extends EventEmitter {
 
     const bootHandler   = (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout);
     const bootedHandler = (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout);
-    const statusHandler = (status: InstanceStatus) => {
-      if (!this.#status || status.timestamp > this.#status.timestamp) {
-        this.#status = status;
-        this.emit('status update', this.#status);
-      }
+    const statusHandler = (status: InstanceStatus[]) => {
+      const newStatus = status.filter(status => {
+        if (!this.getStatus(status.timestamp)) {
+          this.#queueStatus(status);
+          this.emit('status received', status);
+          return true;
+        }
+      });
+      if (newStatus.length)
+        this.#socket!.emit('status received', newStatus.map(status => status.timestamp));
     }
 
     this.#socket!.on('boot status',          bootHandler);

@@ -15,6 +15,7 @@ export declare class Socket {
     stop(): Promise<void>;
     awaitStartPermission(timeout?: number): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
-    sendStatus(status?: InstanceStatusParam | undefined): void;
+    getStatus(timestamp: number): InstanceStatus | undefined;
+    sendStatus(status: InstanceStatusParam): void;
     private setupSocketHandlers;
 }

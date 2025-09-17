@@ -65,7 +65,7 @@ export class Socket {
               ...(values === true || values.includes('socketProtocol') ? { socketProtocol : instance.socketProtocol } : {}),
               ...(values === true || values.includes('socketHostname') ? { socketHostname : instance.socketHostname } : {}),
               ...(values === true || values.includes('socketPort'    ) ? { socketPort     : instance.socketPort     } : {}),
-              ...(values === true || values.includes('status'        ) ? { status         : instance.status         } : {}),
+              ...(values === true || values.includes('statusQueue'   ) ? { statusQueue    : instance.statusQueue    } : {}),
             })) as any);
             break;
 

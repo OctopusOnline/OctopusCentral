@@ -175,7 +175,7 @@ export class CLIServer {
       '/instance/:id/ss',
       '/i/:id/ss'
     ], async (req: RequestWithInstance, res: Response) => {
-      const status = req.instance.status;
+      const status = req.instance.getLastStatus();
       res.json({
         type: 'value',
         data: status

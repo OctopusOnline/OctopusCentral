@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_socket, _Instance_status;
+var _Instance_instances, _Instance_socket, _Instance_statusQueue, _Instance_statusQueueLimit, _Instance_queueStatus;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -31,15 +31,23 @@ const helper_1 = require("./helper");
 class Instance extends node_events_1.default {
     get socket() { return __classPrivateFieldGet(this, _Instance_socket, "f"); }
     get connected() { return !!__classPrivateFieldGet(this, _Instance_socket, "f"); }
-    get status() { return __classPrivateFieldGet(this, _Instance_status, "f"); }
+    get statusQueue() { return __classPrivateFieldGet(this, _Instance_statusQueue, "f"); }
     constructor(id, socketHostname, socketPort = 1777) {
         super();
+        _Instance_instances.add(this);
         this.socketProtocol = 'http';
         _Instance_socket.set(this, void 0);
-        _Instance_status.set(this, void 0);
+        _Instance_statusQueue.set(this, []);
+        _Instance_statusQueueLimit.set(this, 100);
         this.id = id;
         this.socketHostname = socketHostname;
         this.socketPort = socketPort;
+    }
+    getStatus(timestamp) {
+        return __classPrivateFieldGet(this, _Instance_statusQueue, "f").find(status => status.timestamp === timestamp);
+    }
+    getLastStatus() {
+        return __classPrivateFieldGet(this, _Instance_statusQueue, "f").reduce((prev, current) => (prev.timestamp > current.timestamp) ? prev : current);
     }
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
@@ -69,10 +77,15 @@ class Instance extends node_events_1.default {
             const bootHandler = (message, resetTimeout) => this.emit('boot status', message, resetTimeout);
             const bootedHandler = (success, resetTimeout) => this.emit('boot status booted', success, resetTimeout);
             const statusHandler = (status) => {
-                if (!__classPrivateFieldGet(this, _Instance_status, "f") || status.timestamp > __classPrivateFieldGet(this, _Instance_status, "f").timestamp) {
-                    __classPrivateFieldSet(this, _Instance_status, status, "f");
-                    this.emit('status update', __classPrivateFieldGet(this, _Instance_status, "f"));
-                }
+                const newStatus = status.filter(status => {
+                    if (!this.getStatus(status.timestamp)) {
+                        __classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status);
+                        this.emit('status received', status);
+                        return true;
+                    }
+                });
+                if (newStatus.length)
+                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', newStatus.map(status => status.timestamp));
             };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
@@ -121,5 +134,9 @@ class Instance extends node_events_1.default {
     }
 }
 exports.Instance = Instance;
-_Instance_socket = new WeakMap(), _Instance_status = new WeakMap();
+_Instance_socket = new WeakMap(), _Instance_statusQueue = new WeakMap(), _Instance_statusQueueLimit = new WeakMap(), _Instance_instances = new WeakSet(), _Instance_queueStatus = function _Instance_queueStatus(status) {
+    __classPrivateFieldGet(this, _Instance_statusQueue, "f").unshift(status);
+    if (__classPrivateFieldGet(this, _Instance_statusQueue, "f").length > __classPrivateFieldGet(this, _Instance_statusQueueLimit, "f"))
+        __classPrivateFieldGet(this, _Instance_statusQueue, "f").pop();
+};
 //# sourceMappingURL=Instance.js.map

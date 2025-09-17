@@ -157,7 +157,7 @@ class CLIServer {
             '/instance/:id/ss',
             '/i/:id/ss'
         ], (req, res) => __awaiter(this, void 0, void 0, function* () {
-            const status = req.instance.status;
+            const status = req.instance.getLastStatus();
             res.json({
                 type: 'value',
                 data: status

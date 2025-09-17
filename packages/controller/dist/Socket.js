@@ -73,7 +73,7 @@ class Socket {
                         break;
                     case 'get instances':
                         const values = (args === null || args === void 0 ? void 0 : args.values) === true || (args === null || args === void 0 ? void 0 : args.values) || ['id'];
-                        socket.emit('response controller', 200, sessionId, this.controller.instances.map(instance => (Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (values === true || values.includes('id') ? { id: instance.id } : {})), (values === true || values.includes('socketProtocol') ? { socketProtocol: instance.socketProtocol } : {})), (values === true || values.includes('socketHostname') ? { socketHostname: instance.socketHostname } : {})), (values === true || values.includes('socketPort') ? { socketPort: instance.socketPort } : {})), (values === true || values.includes('status') ? { status: instance.status } : {})))));
+                        socket.emit('response controller', 200, sessionId, this.controller.instances.map(instance => (Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, (values === true || values.includes('id') ? { id: instance.id } : {})), (values === true || values.includes('socketProtocol') ? { socketProtocol: instance.socketProtocol } : {})), (values === true || values.includes('socketHostname') ? { socketHostname: instance.socketHostname } : {})), (values === true || values.includes('socketPort') ? { socketPort: instance.socketPort } : {})), (values === true || values.includes('statusQueue') ? { statusQueue: instance.statusQueue } : {})))));
                         break;
                     case 'fetch instances':
                         yield this.controller.fetchSyncInstances();

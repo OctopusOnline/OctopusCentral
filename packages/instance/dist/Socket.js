@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Socket_port, _Socket_startPermission, _Socket_status;
+var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_sendStatusQueue;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
 const helper_1 = require("./helper");
@@ -42,9 +42,10 @@ class Socket {
         __classPrivateFieldSet(this, _Socket_port, port, "f");
     }
     constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
+        _Socket_instances.add(this);
         _Socket_port.set(this, void 0);
         _Socket_startPermission.set(this, false);
-        _Socket_status.set(this, void 0);
+        _Socket_statusQueue.set(this, []);
         this.instance = instance;
         this.server = server;
         this.io = new socket_io_1.Server(this.server);
@@ -71,17 +72,25 @@ class Socket {
             ? 'boot status booted'
             : 'boot status', messageOrBooted, resetTimeout);
     }
-    sendStatus(status = __classPrivateFieldGet(this, _Socket_status, "f")) {
-        if (status) {
-            __classPrivateFieldSet(this, _Socket_status, Object.assign(Object.assign({}, status), { timestamp: Date.now() }), "f");
-            this.io.emit('status', __classPrivateFieldGet(this, _Socket_status, "f"));
-        }
+    getStatus(timestamp) {
+        return __classPrivateFieldGet(this, _Socket_statusQueue, "f").find(status => status.timestamp === timestamp);
+    }
+    sendStatus(status) {
+        __classPrivateFieldGet(this, _Socket_statusQueue, "f").push(Object.assign(Object.assign({}, status), { timestamp: Date.now() }));
+        __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
     }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('start permission', () => {
                 __classPrivateFieldSet(this, _Socket_startPermission, true, "f");
                 this.io.emit('start permission received');
+            });
+            socket.on('status received', (timestamps) => {
+                for (const timestamp of timestamps) {
+                    const index = __classPrivateFieldGet(this, _Socket_statusQueue, "f").findIndex(status => status.timestamp === timestamp);
+                    if (index > -1)
+                        __classPrivateFieldGet(this, _Socket_statusQueue, "f").splice(index, 1);
+                }
             });
             socket.on('request', (sessionId, command, args) => __awaiter(this, void 0, void 0, function* () {
                 switch (command) {
@@ -102,10 +111,13 @@ class Socket {
             socket.on('disconnect', () => {
                 socket.removeAllListeners();
             });
-            this.sendStatus();
+            __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
         });
     }
 }
 exports.Socket = Socket;
-_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_status = new WeakMap();
+_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_statusQueue = new WeakMap(), _Socket_instances = new WeakSet(), _Socket_sendStatusQueue = function _Socket_sendStatusQueue() {
+    if (__classPrivateFieldGet(this, _Socket_statusQueue, "f").length > 0)
+        this.io.emit('status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
+};
 //# sourceMappingURL=Socket.js.map

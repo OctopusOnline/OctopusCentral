@@ -15,7 +15,7 @@ export class Socket {
   #port: number;
 
   #startPermission: boolean = false;
-  #status?: InstanceStatus;
+  #statusQueue: InstanceStatus[] = [];
 
   get port(): number { return this.#port }
   get running(): boolean { return this.server.listening }
@@ -59,14 +59,21 @@ export class Socket {
       resetTimeout);
   }
 
-  sendStatus(status: InstanceStatusParam | undefined = this.#status): void {
-    if (status) {
-      this.#status = {
-        ...status,
-        timestamp: Date.now()
-      };
-      this.io.emit('status', this.#status);
-    }
+  getStatus(timestamp: number): InstanceStatus | undefined {
+    return this.#statusQueue.find(status => status.timestamp === timestamp);
+  }
+
+  sendStatus(status: InstanceStatusParam): void {
+    this.#statusQueue.push({
+      ...status,
+      timestamp: Date.now()
+    } as InstanceStatus);
+    this.#sendStatusQueue();
+  }
+
+  #sendStatusQueue(): void {
+    if (this.#statusQueue.length > 0)
+      this.io.emit('status', this.#statusQueue);
   }
 
   private setupSocketHandlers() {
@@ -75,6 +82,13 @@ export class Socket {
       socket.on('start permission', () => {
         this.#startPermission = true;
         this.io.emit('start permission received');
+      });
+
+      socket.on('status received', (timestamps: number[]) => {
+        for (const timestamp of timestamps) {
+          const index = this.#statusQueue.findIndex(status => status.timestamp === timestamp);
+          if (index > -1) this.#statusQueue.splice(index, 1);
+        }
       });
 
       socket.on('request', async (sessionId: string, command: string, args: any) => {
@@ -103,7 +117,7 @@ export class Socket {
         socket.removeAllListeners();
       });
 
-      this.sendStatus();
+      this.#sendStatusQueue();
     });
   }
 }
