@@ -77,16 +77,12 @@ class Instance extends node_events_1.default {
             const bootHandler = (message, resetTimeout) => this.emit('boot status', message, resetTimeout);
             const bootedHandler = (success, resetTimeout) => this.emit('boot status booted', success, resetTimeout);
             const statusHandler = (status) => {
-                console.log('on status', status);
-                const newStatus = status.filter(status => {
-                    if (!this.getStatus(status.timestamp)) {
-                        __classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status);
-                        this.emit('status received', status);
-                        return true;
-                    }
-                });
-                if (newStatus.length > 0)
-                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', newStatus.map(status => status.timestamp));
+                if (Array.isArray(status))
+                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', status.map(status => {
+                        if (__classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status))
+                            this.emit('status received', status);
+                        return status.timestamp;
+                    }));
             };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
@@ -136,8 +132,11 @@ class Instance extends node_events_1.default {
 }
 exports.Instance = Instance;
 _Instance_socket = new WeakMap(), _Instance_statusQueue = new WeakMap(), _Instance_statusQueueLimit = new WeakMap(), _Instance_instances = new WeakSet(), _Instance_queueStatus = function _Instance_queueStatus(status) {
+    if (this.getStatus(status.timestamp))
+        return false;
     __classPrivateFieldGet(this, _Instance_statusQueue, "f").unshift(status);
     if (__classPrivateFieldGet(this, _Instance_statusQueue, "f").length > __classPrivateFieldGet(this, _Instance_statusQueueLimit, "f"))
         __classPrivateFieldGet(this, _Instance_statusQueue, "f").pop();
+    return true;
 };
 //# sourceMappingURL=Instance.js.map

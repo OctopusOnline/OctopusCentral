@@ -117,7 +117,6 @@ class Socket {
 }
 exports.Socket = Socket;
 _Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_statusQueue = new WeakMap(), _Socket_instances = new WeakSet(), _Socket_sendStatusQueue = function _Socket_sendStatusQueue() {
-    console.log('emit status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
     if (__classPrivateFieldGet(this, _Socket_statusQueue, "f").length > 0)
         this.io.emit('status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
 };

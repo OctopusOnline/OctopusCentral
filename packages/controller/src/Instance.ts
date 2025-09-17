@@ -36,10 +36,12 @@ export class Instance extends EventEmitter {
     return this.#statusQueue.reduce((prev, current) => (prev.timestamp > current.timestamp) ? prev : current);
   }
 
-  #queueStatus(status: InstanceStatus): void {
+  #queueStatus(status: InstanceStatus): boolean {
+    if (this.getStatus(status.timestamp)) return false;
     this.#statusQueue.unshift(status);
     if (this.#statusQueue.length > this.#statusQueueLimit)
       this.#statusQueue.pop();
+    return true;
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
@@ -72,17 +74,13 @@ export class Instance extends EventEmitter {
 
     const bootHandler   = (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout);
     const bootedHandler = (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout);
-    const statusHandler = (status: InstanceStatus[]) => {
-      console.log('on status', status);
-      const newStatus = status.filter(status => {
-        if (!this.getStatus(status.timestamp)) {
-          this.#queueStatus(status);
-          this.emit('status received', status);
-          return true;
-        }
-      });
-      if (newStatus.length > 0)
-        this.#socket!.emit('status received', newStatus.map(status => status.timestamp));
+    const statusHandler = (status: InstanceStatus[] | unknown) => {
+      if (Array.isArray(status))
+        this.#socket!.emit('status received', status.map(status => {
+          if (this.#queueStatus(status))
+            this.emit('status received', status);
+          return status.timestamp;
+        }));
     }
 
     this.#socket!.on('boot status',          bootHandler);

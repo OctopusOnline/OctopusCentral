@@ -72,7 +72,6 @@ export class Socket {
   }
 
   #sendStatusQueue(): void {
-    console.log('emit status', this.#statusQueue);
     if (this.#statusQueue.length > 0)
       this.io.emit('status', this.#statusQueue);
   }
