@@ -13,6 +13,7 @@ export class CLIClient extends EventEmitter {
   private readonly rl: ReadlineInterface;
 
   private running: boolean = false;
+  private abortController?: AbortController;
 
   private getServerUrl(path: string): string {
     return `http://0.0.0.0:${cliServerPort}/${path}`;
@@ -24,7 +25,15 @@ export class CLIClient extends EventEmitter {
   ) {
     super();
     this.rl = readline.createInterface(input as any, output as any);
-    this.rl.on('close', () => this.stop())
+    this.rl.on('close', () => this.stop());
+    this.rl.on('SIGINT', () => {
+      if (this.abortController) {
+        this.abortController.abort();
+      } else {
+        this.rl.write('');
+        this.rl.prompt(true);
+      }
+    });
   }
 
   start(): void {
@@ -37,9 +46,18 @@ export class CLIClient extends EventEmitter {
 
   private async request(command: string): Promise<void> {
     const requestPath: string = path.normalize(command.split(' ').join('/'));
-    let response: AxiosResponse;
-    try { response = await axios.get(this.getServerUrl(requestPath)) }
-    catch (error: any) { response = error.response }
+    let response: AxiosResponse | undefined;
+    try {
+      response = await axios.get(this.getServerUrl(requestPath), {
+        signal: this.abortController?.signal,
+      });
+    } catch (error: any) {
+      if (axios.isCancel(error)) {
+        this.emit('warning', cliWarningCode.command_cancelled);
+        return;
+      }
+      response = error.response;
+    }
     if (response) {
       if (response.status === 404) this.emit('warning', cliWarningCode.invalid_command);
       else if (response.status === 200) {
@@ -54,29 +72,35 @@ export class CLIClient extends EventEmitter {
     const requestPath: string = path.normalize(command.split(' ').join('/'));
     await sleep(200);
     await new Promise<void>(async resolve => {
-      const response = await axios({
-        url: this.getServerUrl('stream/' + requestPath),
-        responseType: 'stream',
-        validateStatus: status => status < 500
-      });
-      const self = this;
-      response.data.pipe(new Writable({
-        write(chunk, encoding, callback) {
-          self.emit('response', 'streamChunk', chunk, encoding);
-          callback();
-        }
-      }));
-      response.data.on('end', () => resolve());
-      response.data.on('error', () => resolve());
+      try {
+        const response = await axios({
+          url: this.getServerUrl('stream/' + requestPath),
+          responseType: 'stream',
+          validateStatus: status => status < 500,
+          signal: this.abortController?.signal
+        });
+        const self = this;
+        response.data.pipe(new Writable({
+          write(chunk, encoding, callback) {
+            self.emit('response', 'streamChunk', chunk, encoding);
+            callback();
+          }
+        }));
+        response.data.on('end', () => resolve());
+        response.data.on('error', () => resolve());
+      }
+      catch { resolve() }
     });
   }
 
   async handleCommand(args: string | string[]): Promise<void> {
+    this.abortController = new AbortController();
     const command: string = typeof args === 'string' ? args : args.join(' ');
     await Promise.all([
       this.request(command),
       this.requestTextStream(command)
     ]);
+    delete this.abortController;
   }
 
   private async inputLoop(): Promise<void> {

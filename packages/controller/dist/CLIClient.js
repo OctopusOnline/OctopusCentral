@@ -31,6 +31,15 @@ class CLIClient extends node_events_1.default {
         this.running = false;
         this.rl = promises_1.default.createInterface(input, output);
         this.rl.on('close', () => this.stop());
+        this.rl.on('SIGINT', () => {
+            if (this.abortController) {
+                this.abortController.abort();
+            }
+            else {
+                this.rl.write('');
+                this.rl.prompt(true);
+            }
+        });
     }
     start() {
         if (this.running)
@@ -42,20 +51,26 @@ class CLIClient extends node_events_1.default {
     }
     request(command) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
+            var _a, _b;
             const requestPath = node_path_1.default.normalize(command.split(' ').join('/'));
             let response;
             try {
-                response = yield axios_1.default.get(this.getServerUrl(requestPath));
+                response = yield axios_1.default.get(this.getServerUrl(requestPath), {
+                    signal: (_a = this.abortController) === null || _a === void 0 ? void 0 : _a.signal,
+                });
             }
             catch (error) {
+                if (axios_1.default.isCancel(error)) {
+                    this.emit('warning', types_1.cliWarningCode.command_cancelled);
+                    return;
+                }
                 response = error.response;
             }
             if (response) {
                 if (response.status === 404)
                     this.emit('warning', types_1.cliWarningCode.invalid_command);
                 else if (response.status === 200) {
-                    if ((_a = response.data) === null || _a === void 0 ? void 0 : _a.type)
+                    if ((_b = response.data) === null || _b === void 0 ? void 0 : _b.type)
                         this.emit('response', response.data.type, response.data.data);
                     else
                         this.emit('warning', types_1.cliWarningCode.empty_response);
@@ -70,30 +85,39 @@ class CLIClient extends node_events_1.default {
             const requestPath = node_path_1.default.normalize(command.split(' ').join('/'));
             yield (0, helper_1.sleep)(200);
             yield new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                const response = yield (0, axios_1.default)({
-                    url: this.getServerUrl('stream/' + requestPath),
-                    responseType: 'stream',
-                    validateStatus: status => status < 500
-                });
-                const self = this;
-                response.data.pipe(new node_stream_1.Writable({
-                    write(chunk, encoding, callback) {
-                        self.emit('response', 'streamChunk', chunk, encoding);
-                        callback();
-                    }
-                }));
-                response.data.on('end', () => resolve());
-                response.data.on('error', () => resolve());
+                var _a;
+                try {
+                    const response = yield (0, axios_1.default)({
+                        url: this.getServerUrl('stream/' + requestPath),
+                        responseType: 'stream',
+                        validateStatus: status => status < 500,
+                        signal: (_a = this.abortController) === null || _a === void 0 ? void 0 : _a.signal
+                    });
+                    const self = this;
+                    response.data.pipe(new node_stream_1.Writable({
+                        write(chunk, encoding, callback) {
+                            self.emit('response', 'streamChunk', chunk, encoding);
+                            callback();
+                        }
+                    }));
+                    response.data.on('end', () => resolve());
+                    response.data.on('error', () => resolve());
+                }
+                catch (_b) {
+                    resolve();
+                }
             }));
         });
     }
     handleCommand(args) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.abortController = new AbortController();
             const command = typeof args === 'string' ? args : args.join(' ');
             yield Promise.all([
                 this.request(command),
                 this.requestTextStream(command)
             ]);
+            delete this.abortController;
         });
     }
     inputLoop() {

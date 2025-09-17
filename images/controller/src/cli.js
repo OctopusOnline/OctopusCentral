@@ -28,16 +28,18 @@ cli.on('response', (type, data) => {
   }
 });
 
-cli.on('warning', (code, data) =>
-  console.warn('[!]', (code => {
-    switch (code) {
-      case cliWarningCode.invalid_command:       return 'invalid command';
-      case cliWarningCode.empty_response:        return 'empty response';
-      case cliWarningCode.unknown_response_code: return `unknown response code: ${data}`;
-    }
+cli.on('warning', (code, data) => {
+  if (code !== cliWarningCode.command_cancelled)
+    console.warn('[!]', (code => {
+      switch (code) {
+        case cliWarningCode.invalid_command:       return 'invalid command';
+        case cliWarningCode.empty_response:        return 'empty response';
+        case cliWarningCode.unknown_response_code: return `unknown response code: ${data}`;
+      }
+    })(code));
 
-    if (batching) process.exit(1);
-  })(code)));
+  if (batching) process.exit(1);
+});
 
 cli.on('clear', () => {
   console.clear();

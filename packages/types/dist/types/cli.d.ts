@@ -23,6 +23,7 @@ export interface ResponseTableData extends ResponseData {
     data: ResponseTableDataType;
 }
 export declare const warningCode: {
+    command_cancelled: number;
     invalid_command: number;
     empty_response: number;
     unknown_response_code: number;

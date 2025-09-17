@@ -29,6 +29,7 @@ export interface ResponseTableData extends ResponseData {
 }
 
 export const warningCode = {
+  command_cancelled: 0,
   invalid_command: 1,
   empty_response: 2,
   unknown_response_code: 3
