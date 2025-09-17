@@ -100,7 +100,7 @@ export class CLIServer {
       }
       this.eventBuffer.instance[req.instance.id].start.booted = true;
 
-      if (result !== true)
+      if (res.writableEnded || result !== true)
         await this.controller.stopInstance(req.instance);
 
       res.json({
