@@ -102,6 +102,7 @@ class Docker {
     }
     startInstanceContainer(instance_1, networks_1, mode_1) {
         return __awaiter(this, arguments, void 0, function* (instance, networks, mode, forceRestart = true, autoReconnect = false) {
+            var _a;
             if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
             const containerName = this.getContainerName(instance);
@@ -121,6 +122,8 @@ class Docker {
                 exposedPorts = Object.assign(Object.assign({}, exposedPorts), { [`${portMapping}/tcp`]: {} });
                 portBindings = Object.assign(Object.assign({}, portBindings), { [`${portMapping}/tcp`]: [{ HostPort: String(portMappings[portMapping]) }] });
             }
+            const capaddString = (_a = yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.capadd`)) !== null && _a !== void 0 ? _a : '';
+            const capadd = this.parseCapaddString(capaddString);
             const container = (yield this.client.container.create({
                 Image: this.instanceProps.image,
                 Tty: true,
@@ -143,6 +146,7 @@ class Docker {
                     Binds: binds,
                     NetworkMode: 'bridge',
                     PortBindings: portBindings,
+                    CapAdd: capadd,
                     RestartPolicy: { Name: 'no' },
                 },
                 Hostname: containerName,
@@ -190,6 +194,9 @@ class Docker {
             portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
             return portMappings;
         }, {});
+    }
+    parseCapaddString(capaddString) {
+        return capaddString.split(';');
     }
     createInstanceVolumes(volumesString, instance) {
         return __awaiter(this, void 0, void 0, function* () {

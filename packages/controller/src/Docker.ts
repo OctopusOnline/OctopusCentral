@@ -163,6 +163,9 @@ export class Docker {
       };
     }
 
+    const capaddString = await this.getSelfContainerLabel(`${labelPrefix}.${instanceLabelPrefix}.capadd`) ?? ''
+    const capadd = this.parseCapaddString(capaddString)
+
     const container: DockerContainer = (await this.client.container.create({
       Image: this.instanceProps.image,
       Tty: true,
@@ -185,6 +188,7 @@ export class Docker {
         Binds: binds,
         NetworkMode: 'bridge',
         PortBindings: portBindings,
+        CapAdd: capadd,
         RestartPolicy: { Name: 'no' },
       },
       Hostname: containerName,
@@ -240,6 +244,10 @@ export class Docker {
       portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
       return portMappings;
     }, {} as { [key: number]: number });
+  }
+
+  private parseCapaddString(capaddString: string): string[] {
+    return capaddString.split(';');
   }
 
   private async createInstanceVolumes(volumesString: string, instance: Instance): Promise<{ [key: string]: string }> {
