@@ -247,7 +247,7 @@ export class Docker {
   }
 
   private parseCapaddString(capaddString: string): string[] {
-    return capaddString.split(';');
+    return capaddString.split(';').filter(Boolean);
   }
 
   private async createInstanceVolumes(volumesString: string, instance: Instance): Promise<{ [key: string]: string }> {

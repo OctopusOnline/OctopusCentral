@@ -196,7 +196,7 @@ class Docker {
         }, {});
     }
     parseCapaddString(capaddString) {
-        return capaddString.split(';');
+        return capaddString.split(';').filter(Boolean);
     }
     createInstanceVolumes(volumesString, instance) {
         return __awaiter(this, void 0, void 0, function* () {
