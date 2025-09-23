@@ -73,6 +73,7 @@ export class Controller extends EventEmitter {
         resolve(true);
       });
       socket.once('connect_error', error => {
+        console.log("CONNECT_ERROR", error);
         this.emit('socket connect_error', error);
         resolve(false);
       });
