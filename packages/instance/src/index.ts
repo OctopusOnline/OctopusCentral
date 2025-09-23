@@ -157,7 +157,7 @@ export class Instance {
     this.socket.sendStatus(status);
   }
 
-  restartMe(timeout: number = 3e3): Promise<boolean> {
+  public restartMe(timeout: number = 3e3): Promise<boolean> {
     return this.socket.sendRestartMe(timeout);
   }
 
