@@ -1,6 +1,6 @@
 import { controllersTableName, CentralInstanceFilter } from '@octopuscentral/types';
 import { InstanceSettings } from './InstanceSettings';
-import { Connection } from 'mariadb';
+import { Database } from "./Database";
 import EventEmitter from 'node:events';
 import { promisify } from 'node:util';
 import { Controller } from './Controller';
@@ -9,23 +9,21 @@ import { Instance } from './Instance';
 export { Controller, Instance, InstanceSettings };
 
 export class Central extends EventEmitter {
-  readonly _connection: Connection;
-
   controllersFetchInterval: number = 10000;
 
-  #controllers: Controller[] = [];
+  readonly database: Database;
+  readonly controllers: Controller[] = [];
   #running: boolean = false;
 
-  get controllers(): Controller[] { return this.#controllers }
   get running(): boolean { return this.#running }
 
-  constructor(connection: Connection) {
+  constructor(databaseUrl: string) {
     super();
-    this._connection = connection;
+    this.database = new Database(databaseUrl);
   }
 
   async init(): Promise<void> {
-    await this._connection.query(`
+    await this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHost VARCHAR(255)     NULL
@@ -41,14 +39,14 @@ export class Central extends EventEmitter {
 
     if (!this.getController(controller.id)) {
       await this.insertController(controller);
-      this.#controllers.push(controller);
+      this.controllers.push(controller);
       return controller;
     }
   }
 
   private async insertNewController(socketHost?: string): Promise<Controller> {
     return new Controller(
-      Number((await this._connection.query(`
+      Number((await this.database.connection.query(`
           INSERT INTO ${controllersTableName} (socketHost)
           VALUES (?)`,
         [socketHost]) as unknown as {insertId:any}).insertId),
@@ -57,34 +55,34 @@ export class Central extends EventEmitter {
 
   private async insertController(controller: Controller): Promise<void> {
     if (!await this.loadController(controller.id))
-      await this._connection.execute(`
+      await this.database.connection.execute(`
           INSERT INTO ${controllersTableName} (id, socketHost)
           VALUES (?, ?)`,
         [controller.id, controller.socketHost]);
   }
 
   getController(id: number): Controller | undefined {
-    return this.#controllers.find(_controller => _controller.id === id);
+    return this.controllers.find(_controller => _controller.id === id);
   }
 
   async removeController(controller: Controller): Promise<void> {
-    for (const _controller of this.#controllers)
+    for (const _controller of this.controllers)
       if (_controller.id === controller.id) {
         await this.deleteController(controller);
-        this.#controllers.splice(this.#controllers.findIndex(({ id }) => id === _controller.id), 1);
+        this.controllers.splice(this.controllers.findIndex(({ id }) => id === _controller.id), 1);
         controller.disconnect();
         return;
       }
   }
 
   private async deleteController(controller: Controller): Promise<void> {
-    await this._connection.execute(`DELETE FROM ${controllersTableName} WHERE id = ?`, [controller.id])
+    await this.database.connection.execute(`DELETE FROM ${controllersTableName} WHERE id = ?`, [controller.id])
   }
 
   async fetchSyncControllers(): Promise<Controller[]> {
     const controllers = await this.loadControllers();
 
-    for (const controller of this.#controllers)
+    for (const controller of this.controllers)
       if (!controllers.some(_controller => _controller.id === controller.id))
         await this.removeController(controller);
 
@@ -94,27 +92,33 @@ export class Central extends EventEmitter {
       controller.socketHost = newController.socketHost;
     }
 
-    return this.#controllers;
+    return this.controllers;
   }
 
   private async loadController(id: number): Promise<Controller | undefined> {
-    return (await this._connection.query(`SELECT id, socketHost FROM ${controllersTableName} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
+    return (await this.database.connection.query(`SELECT id, socketHost FROM ${controllersTableName} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined))[0];
   }
 
   private async loadControllers(): Promise<Controller[]> {
-    return (await this._connection.query(`SELECT id, socketHost FROM ${controllersTableName}`) as unknown as {id: number, socketHost: string|null}[])
+    return (await this.database.connection.query(`SELECT id, socketHost FROM ${controllersTableName}`) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined));
   }
 
   async connectControllers(): Promise<void> {
-    for (const controller of this.#controllers)
+    for (const controller of this.controllers)
       if (!controller.connected) await controller.connect();
   }
 
   async start(): Promise<void> {
     this.#running = true;
     this.runInterval().then();
+  }
+
+  async stop(): Promise<void> {
+    this.#running = false;
+    for (const controller of this.controllers)
+      controller.disconnect();
   }
 
   private async runInterval(): Promise<void> {
@@ -127,7 +131,7 @@ export class Central extends EventEmitter {
 
   async getInstances(filter: CentralInstanceFilter = []): Promise<Instance[]> {
     let instances: Instance[] = [];
-    for (const controller of this.#controllers) {
+    for (const controller of this.controllers) {
       const serviceName: string | undefined = filter.some(_filter => _filter.serviceName)
         ? await controller.getServiceName() : undefined;
       if (!serviceName || filter.some(_filter => _filter.serviceName === serviceName))

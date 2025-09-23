@@ -22,12 +22,13 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Central_controllers, _Central_running;
+var _Central_running;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Central = exports.InstanceSettings = exports.Instance = exports.Controller = void 0;
 const types_1 = require("@octopuscentral/types");
 const InstanceSettings_1 = require("./InstanceSettings");
 Object.defineProperty(exports, "InstanceSettings", { enumerable: true, get: function () { return InstanceSettings_1.InstanceSettings; } });
+const Database_1 = require("./Database");
 const node_events_1 = __importDefault(require("node:events"));
 const node_util_1 = require("node:util");
 const Controller_1 = require("./Controller");
@@ -35,18 +36,17 @@ Object.defineProperty(exports, "Controller", { enumerable: true, get: function (
 const Instance_1 = require("./Instance");
 Object.defineProperty(exports, "Instance", { enumerable: true, get: function () { return Instance_1.Instance; } });
 class Central extends node_events_1.default {
-    get controllers() { return __classPrivateFieldGet(this, _Central_controllers, "f"); }
     get running() { return __classPrivateFieldGet(this, _Central_running, "f"); }
-    constructor(connection) {
+    constructor(databaseUrl) {
         super();
         this.controllersFetchInterval = 10000;
-        _Central_controllers.set(this, []);
+        this.controllers = [];
         _Central_running.set(this, false);
-        this._connection = connection;
+        this.database = new Database_1.Database(databaseUrl);
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._connection.query(`
+            yield this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${types_1.controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHost VARCHAR(255)     NULL
@@ -63,14 +63,14 @@ class Central extends node_events_1.default {
             }
             if (!this.getController(controller.id)) {
                 yield this.insertController(controller);
-                __classPrivateFieldGet(this, _Central_controllers, "f").push(controller);
+                this.controllers.push(controller);
                 return controller;
             }
         });
     }
     insertNewController(socketHost) {
         return __awaiter(this, void 0, void 0, function* () {
-            return new Controller_1.Controller(Number((yield this._connection.query(`
+            return new Controller_1.Controller(Number((yield this.database.connection.query(`
           INSERT INTO ${types_1.controllersTableName} (socketHost)
           VALUES (?)`, [socketHost])).insertId), socketHost);
         });
@@ -78,20 +78,20 @@ class Central extends node_events_1.default {
     insertController(controller) {
         return __awaiter(this, void 0, void 0, function* () {
             if (!(yield this.loadController(controller.id)))
-                yield this._connection.execute(`
+                yield this.database.connection.execute(`
           INSERT INTO ${types_1.controllersTableName} (id, socketHost)
           VALUES (?, ?)`, [controller.id, controller.socketHost]);
         });
     }
     getController(id) {
-        return __classPrivateFieldGet(this, _Central_controllers, "f").find(_controller => _controller.id === id);
+        return this.controllers.find(_controller => _controller.id === id);
     }
     removeController(controller) {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const _controller of __classPrivateFieldGet(this, _Central_controllers, "f"))
+            for (const _controller of this.controllers)
                 if (_controller.id === controller.id) {
                     yield this.deleteController(controller);
-                    __classPrivateFieldGet(this, _Central_controllers, "f").splice(__classPrivateFieldGet(this, _Central_controllers, "f").findIndex(({ id }) => id === _controller.id), 1);
+                    this.controllers.splice(this.controllers.findIndex(({ id }) => id === _controller.id), 1);
                     controller.disconnect();
                     return;
                 }
@@ -99,13 +99,13 @@ class Central extends node_events_1.default {
     }
     deleteController(controller) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this._connection.execute(`DELETE FROM ${types_1.controllersTableName} WHERE id = ?`, [controller.id]);
+            yield this.database.connection.execute(`DELETE FROM ${types_1.controllersTableName} WHERE id = ?`, [controller.id]);
         });
     }
     fetchSyncControllers() {
         return __awaiter(this, void 0, void 0, function* () {
             const controllers = yield this.loadControllers();
-            for (const controller of __classPrivateFieldGet(this, _Central_controllers, "f"))
+            for (const controller of this.controllers)
                 if (!controllers.some(_controller => _controller.id === controller.id))
                     yield this.removeController(controller);
             for (const newController of controllers) {
@@ -113,24 +113,24 @@ class Central extends node_events_1.default {
                 const controller = this.getController(newController.id);
                 controller.socketHost = newController.socketHost;
             }
-            return __classPrivateFieldGet(this, _Central_controllers, "f");
+            return this.controllers;
         });
     }
     loadController(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this._connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName} WHERE id = ?`, [id]))
+            return (yield this.database.connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName} WHERE id = ?`, [id]))
                 .map(({ id, socketHost }) => new Controller_1.Controller(id, socketHost || undefined))[0];
         });
     }
     loadControllers() {
         return __awaiter(this, void 0, void 0, function* () {
-            return (yield this._connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName}`))
+            return (yield this.database.connection.query(`SELECT id, socketHost FROM ${types_1.controllersTableName}`))
                 .map(({ id, socketHost }) => new Controller_1.Controller(id, socketHost || undefined));
         });
     }
     connectControllers() {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const controller of __classPrivateFieldGet(this, _Central_controllers, "f"))
+            for (const controller of this.controllers)
                 if (!controller.connected)
                     yield controller.connect();
         });
@@ -139,6 +139,13 @@ class Central extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Central_running, true, "f");
             this.runInterval().then();
+        });
+    }
+    stop() {
+        return __awaiter(this, void 0, void 0, function* () {
+            __classPrivateFieldSet(this, _Central_running, false, "f");
+            for (const controller of this.controllers)
+                controller.disconnect();
         });
     }
     runInterval() {
@@ -153,7 +160,7 @@ class Central extends node_events_1.default {
     getInstances() {
         return __awaiter(this, arguments, void 0, function* (filter = []) {
             let instances = [];
-            for (const controller of __classPrivateFieldGet(this, _Central_controllers, "f")) {
+            for (const controller of this.controllers) {
                 const serviceName = filter.some(_filter => _filter.serviceName)
                     ? yield controller.getServiceName() : undefined;
                 if (!serviceName || filter.some(_filter => _filter.serviceName === serviceName))
@@ -164,5 +171,5 @@ class Central extends node_events_1.default {
     }
 }
 exports.Central = Central;
-_Central_controllers = new WeakMap(), _Central_running = new WeakMap();
+_Central_running = new WeakMap();
 //# sourceMappingURL=index.js.map

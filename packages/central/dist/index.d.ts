@@ -1,17 +1,17 @@
 import { CentralInstanceFilter } from '@octopuscentral/types';
 import { InstanceSettings } from './InstanceSettings';
-import { Connection } from 'mariadb';
+import { Database } from "./Database";
 import EventEmitter from 'node:events';
 import { Controller } from './Controller';
 import { Instance } from './Instance';
 export { Controller, Instance, InstanceSettings };
 export declare class Central extends EventEmitter {
     #private;
-    readonly _connection: Connection;
     controllersFetchInterval: number;
-    get controllers(): Controller[];
+    readonly database: Database;
+    readonly controllers: Controller[];
     get running(): boolean;
-    constructor(connection: Connection);
+    constructor(databaseUrl: string);
     init(): Promise<void>;
     addController(controller: Controller | number | undefined, socketHost?: string): Promise<Controller | undefined>;
     private insertNewController;
@@ -24,6 +24,7 @@ export declare class Central extends EventEmitter {
     private loadControllers;
     connectControllers(): Promise<void>;
     start(): Promise<void>;
+    stop(): Promise<void>;
     private runInterval;
     getInstances(filter?: CentralInstanceFilter): Promise<Instance[]>;
 }
