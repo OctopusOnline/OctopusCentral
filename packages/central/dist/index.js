@@ -46,6 +46,7 @@ class Central extends node_events_1.default {
     }
     init() {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.database.connect();
             yield this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${types_1.controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -137,6 +138,7 @@ class Central extends node_events_1.default {
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.init();
             __classPrivateFieldSet(this, _Central_running, true, "f");
             this.runInterval().then();
         });

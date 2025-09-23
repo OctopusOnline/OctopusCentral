@@ -23,6 +23,7 @@ export class Central extends EventEmitter {
   }
 
   async init(): Promise<void> {
+    await this.database.connect();
     await this.database.connection.query(`
       CREATE TABLE IF NOT EXISTS ${controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -111,6 +112,8 @@ export class Central extends EventEmitter {
   }
 
   async start(): Promise<void> {
+    await this.init();
+
     this.#running = true;
     this.runInterval().then();
   }
