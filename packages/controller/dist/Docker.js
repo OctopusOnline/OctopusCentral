@@ -170,7 +170,15 @@ class Docker {
         });
     }
     evalLabelString(labelString, instance) {
-        return labelString.replace(/{([^}]+)}/g, (_, expression) => eval(expression.trim().replace(/id/g, () => instance.id.toString())));
+        return labelString.replace(/{([^}]+)}/g, (substring, expression) => {
+            switch (expression) {
+                default: return substring;
+                case 'id': return String(instance.id);
+                case 'socketProtocol': return String(instance.socketPort);
+                case 'socketHostname': return String(instance.socketHostname);
+                case 'socketPort': return String(instance.socketPort);
+            }
+        });
     }
     parseVolumesString(volumesString, instance) {
         return volumesString

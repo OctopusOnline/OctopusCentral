@@ -216,8 +216,15 @@ export class Docker {
   }
 
   private evalLabelString(labelString: string, instance: Instance): string {
-    return labelString.replace(/{([^}]+)}/g, (_, expression: string) =>
-      eval(expression.trim().replace(/id/g, () => instance.id.toString())));
+    return labelString.replace(/{([^}]+)}/g, (substring: string, expression: string): string => {
+      switch (expression) {
+        default: return substring;
+        case 'id':             return String(instance.id);
+        case 'socketProtocol': return String(instance.socketPort);
+        case 'socketHostname': return String(instance.socketHostname);
+        case 'socketPort':     return String(instance.socketPort);
+      }
+    });
   }
 
   private parseVolumesString(volumesString: string, instance: Instance): { [key: string]: string } {
