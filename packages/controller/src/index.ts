@@ -70,12 +70,18 @@ export class Controller extends EventEmitter {
       this.socket.sendStatus(instance.id, status);
     }
     instanceWithHandlers._restartMeHandler    = async (deadPromise?: Promise<void>) => {
+      console.log('controller index _restartMeHandler')
       const virtualDeadInstance = new Instance(instance.id);
       await deadPromise;
+      console.log('controller index post deadPromise')
       await sleep(1e4);
+      console.log('controller index stopInstance')
       await this.stopInstance(virtualDeadInstance);
+      console.log('controller index post stopInstance')
       await sleep(3e4);
+      console.log('controller index startInstance')
       await this.startInstance(virtualDeadInstance);
+      console.log('controller index start startInstance')
     }
 
     instanceWithHandlers.on('socket connected',    instanceWithHandlers._connectedHandler);
