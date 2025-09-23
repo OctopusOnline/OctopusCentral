@@ -72,18 +72,12 @@ class Controller extends node_events_1.default {
             this.socket.sendStatus(instance.id, status);
         };
         instanceWithHandlers._restartMeHandler = (deadPromise) => __awaiter(this, void 0, void 0, function* () {
-            console.log('controller index _restartMeHandler');
             const virtualDeadInstance = new Instance_1.Instance(instance.id);
             yield deadPromise;
-            console.log('controller index post deadPromise');
             yield (0, helper_1.sleep)(1e4);
-            console.log('controller index stopInstance');
             yield this.stopInstance(virtualDeadInstance);
-            console.log('controller index post stopInstance');
-            yield (0, helper_1.sleep)(3e4);
-            console.log('controller index startInstance');
-            yield this.startInstance(virtualDeadInstance);
-            console.log('controller index start startInstance');
+            yield (0, helper_1.sleep)(1e4);
+            yield this.startInstance(virtualDeadInstance, undefined, 12e4);
         });
         instanceWithHandlers.on('socket connected', instanceWithHandlers._connectedHandler);
         instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
