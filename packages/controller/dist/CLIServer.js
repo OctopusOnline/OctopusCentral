@@ -88,7 +88,7 @@ class CLIServer {
                 }
             }
             this.eventBuffer.instance[req.instance.id].start.booted = true;
-            if (res.writableEnded || result !== true)
+            if (!res.writableEnded && result !== true)
                 yield this.controller.stopInstance(req.instance);
             res.json({
                 type: 'value',
