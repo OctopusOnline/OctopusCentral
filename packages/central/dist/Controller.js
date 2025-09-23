@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Controller_socket;
+var _Controller_instances, _Controller_socket, _Controller_statusQueue, _Controller_statusQueueLimit, _Controller_queueStatus;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Controller = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -34,9 +34,15 @@ class Controller extends node_events_1.default {
     get connected() { return !!__classPrivateFieldGet(this, _Controller_socket, "f"); }
     constructor(id, socketHost) {
         super();
+        _Controller_instances.add(this);
         _Controller_socket.set(this, void 0);
+        _Controller_statusQueue.set(this, []);
+        _Controller_statusQueueLimit.set(this, 100);
         this.id = id;
         this.socketHost = socketHost;
+    }
+    getStatus(instanceId, timestamp) {
+        return __classPrivateFieldGet(this, _Controller_statusQueue, "f").find(status => status.instanceId === instanceId && status.status.timestamp === timestamp);
     }
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
@@ -52,6 +58,14 @@ class Controller extends node_events_1.default {
             if (!(yield new Promise((resolve => {
                 socket.once('connect', () => {
                     this.emit('socket connect');
+                    socket.on('instance status', (status) => {
+                        if (Array.isArray(status))
+                            __classPrivateFieldGet(this, _Controller_socket, "f").emit('instance status received', status.map(status => {
+                                if (__classPrivateFieldGet(this, _Controller_instances, "m", _Controller_queueStatus).call(this, status))
+                                    this.emit('instance status received', status);
+                                return { instanceId: status.instanceId, timestamp: status.status.timestamp };
+                            }));
+                    });
                     resolve(true);
                 });
                 socket.once('connect_error', error => {
@@ -164,5 +178,12 @@ class Controller extends node_events_1.default {
     }
 }
 exports.Controller = Controller;
-_Controller_socket = new WeakMap();
+_Controller_socket = new WeakMap(), _Controller_statusQueue = new WeakMap(), _Controller_statusQueueLimit = new WeakMap(), _Controller_instances = new WeakSet(), _Controller_queueStatus = function _Controller_queueStatus(status) {
+    if (this.getStatus(status.instanceId, status.status.timestamp))
+        return false;
+    __classPrivateFieldGet(this, _Controller_statusQueue, "f").unshift(status);
+    if (__classPrivateFieldGet(this, _Controller_statusQueue, "f").length > __classPrivateFieldGet(this, _Controller_statusQueueLimit, "f"))
+        __classPrivateFieldGet(this, _Controller_statusQueue, "f").pop();
+    return true;
+};
 //# sourceMappingURL=Controller.js.map

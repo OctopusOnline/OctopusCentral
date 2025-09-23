@@ -2,7 +2,12 @@ import EventEmitter from 'node:events';
 import crypto from 'node:crypto';
 import { io, Socket as IOSocket } from 'socket.io-client';
 import { Instance } from './Instance';
-import { DockerClientProps, DockerInstanceProps, Setting } from '@octopuscentral/types';
+import {
+  ControllerInstanceStatus,
+  DockerClientProps,
+  DockerInstanceProps,
+  Setting,
+} from '@octopuscentral/types';
 
 export class Controller extends EventEmitter {
   readonly id: number;
@@ -13,12 +18,28 @@ export class Controller extends EventEmitter {
 
   get socket(): IOSocket | undefined { return this.#socket }
 
+  #statusQueue: ControllerInstanceStatus[] = [];
+  #statusQueueLimit: number = 100;
+
   get connected(): boolean { return !!this.#socket }
 
   constructor(id: number, socketHost?: string) {
     super();
     this.id = id;
     this.socketHost = socketHost;
+  }
+
+  getStatus(instanceId: number, timestamp: number): ControllerInstanceStatus | undefined {
+    return this.#statusQueue.find(status =>
+        status.instanceId === instanceId && status.status.timestamp === timestamp);
+  }
+
+  #queueStatus(status: ControllerInstanceStatus): boolean {
+    if (this.getStatus(status.instanceId, status.status.timestamp)) return false;
+    this.#statusQueue.unshift(status);
+    if (this.#statusQueue.length > this.#statusQueueLimit)
+      this.#statusQueue.pop();
+    return true;
   }
 
   async connect(reconnect: boolean = false): Promise<boolean> {
@@ -36,6 +57,14 @@ export class Controller extends EventEmitter {
     if (!await new Promise<boolean>((resolve => {
       socket.once('connect', () => {
         this.emit('socket connect');
+        socket.on('instance status', (status: ControllerInstanceStatus[]) => {
+          if (Array.isArray(status))
+            this.#socket!.emit('instance status received', status.map(status => {
+              if (this.#queueStatus(status))
+                this.emit('instance status received', status);
+              return { instanceId: status.instanceId, timestamp: status.status.timestamp };
+            }));
+        });
         resolve(true);
       });
       socket.once('connect_error', error => {

@@ -15,7 +15,8 @@ import {
 
 import {
   tableName as controllersTableName,
-  labelPrefix as controllerLabelPrefix
+  labelPrefix as controllerLabelPrefix,
+  InstanceStatus as ControllerInstanceStatus
 } from './types/controller';
 
 import {
@@ -64,6 +65,7 @@ export {
   SettingsObjectType,
   controllersTableName,
   controllerLabelPrefix,
+  ControllerInstanceStatus,
   cliServerPort,
   CLIResponseValueDataType,
   CLIResponseListDataType,

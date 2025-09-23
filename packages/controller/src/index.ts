@@ -1,4 +1,10 @@
-import { instancesTableName, DockerInstanceProps, DockerInstanceMode, Setting } from '@octopuscentral/types';
+import {
+  instancesTableName,
+  DockerInstanceProps,
+  DockerInstanceMode,
+  Setting,
+  InstanceStatus
+} from '@octopuscentral/types';
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
@@ -14,6 +20,7 @@ export { Docker, Socket, Instance, CLIClient };
 interface InstanceWithHandlers extends Instance {
   _connectedHandler: (error?: Error) => void
   _disconnectedHandler: () => void
+  _statusHandler: (status: InstanceStatus) => void
 }
 
 export class Controller extends EventEmitter {
@@ -57,9 +64,14 @@ export class Controller extends EventEmitter {
 
     instanceWithHandlers._connectedHandler    = (error?: Error) => this.emit('instance socket connected', instance, error);
     instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
+    instanceWithHandlers._statusHandler       = (status: InstanceStatus) => {
+      this.emit('instance status', instance, status);
+      this.socket.sendStatus(instance.id, status);
+    }
 
     instance.on('socket connected',    instanceWithHandlers._connectedHandler);
     instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
+    instance.on('status received',     instanceWithHandlers._statusHandler);
   }
 
   private get lastInstanceId(): number {
@@ -100,8 +112,9 @@ export class Controller extends EventEmitter {
     if (index !== -1) {
       const instanceWithHandlers = this.#instances[index];
       instanceWithHandlers.disconnect();
-      instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
+      instanceWithHandlers.off('socket connected',    instanceWithHandlers._connectedHandler);
       instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
+      instanceWithHandlers.off('status received',     instanceWithHandlers._statusHandler);
       this.#instances.splice(index, 1);
     }
   }

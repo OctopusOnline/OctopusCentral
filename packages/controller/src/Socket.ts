@@ -4,6 +4,7 @@ import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
 import { sleep } from './helper';
 import { Instance } from './Instance';
+import { InstanceStatus, ControllerInstanceStatus } from '@octopuscentral/types';
 
 export class Socket {
   private readonly controller: Controller;
@@ -11,6 +12,9 @@ export class Socket {
   private readonly io: IOServer;
 
   #port: number;
+
+  #statusQueue: ControllerInstanceStatus[] = [];
+  #statusQueueLimit: number = 100;
 
   get port(): number { return this.#port }
 
@@ -48,9 +52,40 @@ export class Socket {
       this.server.close(() => resolve(this)));
   }
 
+  getStatus(instanceId: number, timestamp: number): ControllerInstanceStatus | undefined {
+    return this.#statusQueue.find(status =>
+        status.instanceId === instanceId && status.status.timestamp === timestamp);
+  }
+
+  sendStatus(instanceId: number, status: InstanceStatus): void {
+    this.#queueStatus({ instanceId, status })
+    this.#sendStatusQueue();
+  }
+
+  #queueStatus(status: ControllerInstanceStatus): boolean {
+    if (this.getStatus(status.instanceId, status.status.timestamp)) return false;
+    this.#statusQueue.unshift(status);
+    if (this.#statusQueue.length > this.#statusQueueLimit)
+      this.#statusQueue.pop();
+    return true;
+  }
+
+  #sendStatusQueue(): void {
+    if (this.#statusQueue.length > 0)
+      this.io.emit('instance status', this.#statusQueue);
+  }
+
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) =>
     {
+      socket.on('instance status received', (status: { instanceId: number, timestamp: number }[]) => {
+        for (const _status of status) {
+          const index = this.#statusQueue.findIndex(status =>
+              status.instanceId === _status.instanceId && status.status.timestamp === _status.timestamp);
+          if (index > -1) this.#statusQueue.splice(index, 1);
+        }
+      });
+
       socket.on('request controller', async (sessionId: string, command: string, args: any) => {
         let instance: Instance | undefined;
         switch (command) {
@@ -176,6 +211,8 @@ export class Socket {
       socket.on('disconnect', () => {
         socket.removeAllListeners();
       });
+
+      this.#sendStatusQueue();
     });
   }
 

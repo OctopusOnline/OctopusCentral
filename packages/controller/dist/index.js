@@ -67,8 +67,13 @@ class Controller extends node_events_1.default {
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
         instanceWithHandlers._connectedHandler = (error) => this.emit('instance socket connected', instance, error);
         instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
+        instanceWithHandlers._statusHandler = (status) => {
+            this.emit('instance status', instance, status);
+            this.socket.sendStatus(instance.id, status);
+        };
         instance.on('socket connected', instanceWithHandlers._connectedHandler);
         instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
+        instance.on('status received', instanceWithHandlers._statusHandler);
     }
     get lastInstanceId() {
         return Math.max(0, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
@@ -103,6 +108,7 @@ class Controller extends node_events_1.default {
             instanceWithHandlers.disconnect();
             instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
             instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
+            instanceWithHandlers.off('status received', instanceWithHandlers._statusHandler);
             __classPrivateFieldGet(this, _Controller_instances, "f").splice(index, 1);
         }
     }
