@@ -15,7 +15,7 @@ export declare class Socket extends EventEmitter {
     start(): Promise<void>;
     stop(): Promise<void>;
     awaitStartPermission(timeout?: number): Promise<boolean>;
-    sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
+    sendBootStatus(messageOrBooted: string | null | boolean, resetTimeout?: boolean): void;
     getStatus(timestamp: number): InstanceStatus | undefined;
     sendStatus(status: InstanceStatusParam): void;
     sendRestartMe(timeout?: number): Promise<boolean>;

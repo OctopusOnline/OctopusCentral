@@ -122,7 +122,7 @@ export class CLIServer {
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
-      const bootStatusEvent = (message: string) => res.write(message);
+      const bootStatusEvent = (message: string | null) => message !== null && res.write(message);
       const connectEvent = async (error?: Error) => {
         if (!this.eventBuffer.instance[req.instance.id]?.start) {
           req.instance.off('socket connected', connectEvent);

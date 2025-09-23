@@ -106,7 +106,7 @@ class CLIServer {
         ], (req, res) => __awaiter(this, void 0, void 0, function* () {
             if (!(yield (0, helper_1.waitFor)(() => { var _a, _b; return (_b = (_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start) === null || _b === void 0 ? void 0 : _b.waitingForStream; })))
                 return res.destroy(new Error('no waitingForStream'));
-            const bootStatusEvent = (message) => res.write(message);
+            const bootStatusEvent = (message) => message !== null && res.write(message);
             const connectEvent = (error) => __awaiter(this, void 0, void 0, function* () {
                 var _a;
                 if (!((_a = this.eventBuffer.instance[req.instance.id]) === null || _a === void 0 ? void 0 : _a.start)) {

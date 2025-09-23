@@ -136,7 +136,7 @@ export class Socket {
             if (instance) {
               let result: boolean | Error;
 
-              const bootStatusEvent = (message: string) =>
+              const bootStatusEvent = (message: string | null) =>
                 socket.emit('response controller instance boot status', sessionId, message);
 
               const connectEvent = async (error?: Error) => {

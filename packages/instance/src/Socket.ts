@@ -52,7 +52,7 @@ export class Socket extends EventEmitter {
     return await waitFor(() => this.#startPermission, timeout / 200);
   }
 
-  sendBootStatus(messageOrBooted: string | boolean, resetTimeout: boolean = true): void {
+  sendBootStatus(messageOrBooted: string | null | boolean, resetTimeout: boolean = true): void {
     this.io.emit(
       typeof messageOrBooted === 'boolean'
         ? 'boot status booted'
