@@ -5,6 +5,8 @@ import EventEmitter from 'node:events';
 import { promisify } from 'node:util';
 import { Controller } from './Controller';
 import { Instance } from './Instance';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export { Controller, Instance, InstanceSettings };
 
@@ -14,6 +16,10 @@ export class Central extends EventEmitter {
   readonly database: Database;
   readonly controllers: Controller[] = [];
   #running: boolean = false;
+
+  get version(): string {
+    return JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')).version;
+  }
 
   get running(): boolean { return this.#running }
 

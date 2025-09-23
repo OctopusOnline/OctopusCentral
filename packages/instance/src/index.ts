@@ -13,6 +13,8 @@ import { Database } from './Database';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
 import { Socket, InstanceStatusParam } from './Socket';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export { Settings, Setting, Socket };
 
@@ -26,6 +28,10 @@ export class Instance {
 
   readonly socket: Socket;
   readonly settings: Settings;
+
+  get version(): string {
+    return JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')).version;
+  }
 
   get id(): number {
     if (this.#id === undefined) throw new Error('instance.id is not set\nmaybe run init() first?');

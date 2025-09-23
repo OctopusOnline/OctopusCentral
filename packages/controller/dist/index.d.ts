@@ -17,6 +17,7 @@ export declare class Controller extends EventEmitter {
     readonly cli: CLIServer;
     get instances(): Instance[];
     get running(): boolean;
+    get version(): string;
     constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps);
     addInstance(instance: Instance, overwrite?: boolean): void;
     private addAndSetupInstance;

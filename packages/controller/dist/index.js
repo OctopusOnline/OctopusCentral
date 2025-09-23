@@ -39,9 +39,14 @@ const Instance_1 = require("./Instance");
 Object.defineProperty(exports, "Instance", { enumerable: true, get: function () { return Instance_1.Instance; } });
 const CLIClient_1 = require("./CLIClient");
 Object.defineProperty(exports, "CLIClient", { enumerable: true, get: function () { return CLIClient_1.CLIClient; } });
+const fs_1 = require("fs");
+const path_1 = require("path");
 class Controller extends node_events_1.default {
     get instances() { return __classPrivateFieldGet(this, _Controller_instances, "f"); }
     get running() { return __classPrivateFieldGet(this, _Controller_running, "f"); }
+    get version() {
+        return JSON.parse((0, fs_1.readFileSync)((0, path_1.join)(__dirname, '../package.json'), 'utf-8')).version;
+    }
     constructor(serviceName, databaseUrl, instanceDockerProps) {
         super();
         this.instancesFetchInterval = 5000;

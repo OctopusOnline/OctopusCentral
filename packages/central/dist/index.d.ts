@@ -10,6 +10,7 @@ export declare class Central extends EventEmitter {
     controllersFetchInterval: number;
     readonly database: Database;
     readonly controllers: Controller[];
+    get version(): string;
     get running(): boolean;
     constructor(databaseUrl: string);
     init(): Promise<void>;

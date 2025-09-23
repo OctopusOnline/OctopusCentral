@@ -14,6 +14,8 @@ import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Instance } from './Instance';
 import { CLIClient } from './CLIClient';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 export { Docker, Socket, Instance, CLIClient };
 
@@ -39,6 +41,10 @@ export class Controller extends EventEmitter {
 
   get instances(): Instance[] { return this.#instances }
   get running(): boolean { return this.#running }
+
+  get version(): string {
+    return JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8')).version;
+  }
 
   constructor(serviceName: string, databaseUrl: string, instanceDockerProps: DockerInstanceProps) {
     super();

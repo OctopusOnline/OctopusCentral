@@ -2,6 +2,7 @@ import { Central } from '@octopuscentral/central';
 
 
 const central = new Central(process.env.DATABASE_URL);
+console.info('version:', central.version);
 
 
 process.on('SIGTERM', async () => {

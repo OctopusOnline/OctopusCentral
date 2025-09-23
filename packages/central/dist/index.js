@@ -35,7 +35,12 @@ const Controller_1 = require("./Controller");
 Object.defineProperty(exports, "Controller", { enumerable: true, get: function () { return Controller_1.Controller; } });
 const Instance_1 = require("./Instance");
 Object.defineProperty(exports, "Instance", { enumerable: true, get: function () { return Instance_1.Instance; } });
+const fs_1 = require("fs");
+const path_1 = require("path");
 class Central extends node_events_1.default {
+    get version() {
+        return JSON.parse((0, fs_1.readFileSync)((0, path_1.join)(__dirname, '../package.json'), 'utf-8')).version;
+    }
     get running() { return __classPrivateFieldGet(this, _Central_running, "f"); }
     constructor(databaseUrl) {
         super();

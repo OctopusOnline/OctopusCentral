@@ -34,7 +34,12 @@ const Settings_1 = require("./Settings");
 Object.defineProperty(exports, "Settings", { enumerable: true, get: function () { return Settings_1.Settings; } });
 const Socket_1 = require("./Socket");
 Object.defineProperty(exports, "Socket", { enumerable: true, get: function () { return Socket_1.Socket; } });
+const node_fs_1 = require("node:fs");
+const node_path_1 = require("node:path");
 class Instance {
+    get version() {
+        return JSON.parse((0, node_fs_1.readFileSync)((0, node_path_1.join)(__dirname, '../package.json'), 'utf-8')).version;
+    }
     get id() {
         if (__classPrivateFieldGet(this, _Instance_id, "f") === undefined)
             throw new Error('instance.id is not set\nmaybe run init() first?');

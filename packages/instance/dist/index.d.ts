@@ -8,6 +8,7 @@ export declare class Instance {
     #private;
     readonly socket: Socket;
     readonly settings: Settings;
+    get version(): string;
     get id(): number;
     get serviceName(): string;
     get mode(): DockerInstanceMode;

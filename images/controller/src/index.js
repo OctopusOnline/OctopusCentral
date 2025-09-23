@@ -8,6 +8,7 @@ const controller = new Controller(
     image: process.env.INSTANCE_DOCKER_IMAGE
   }
 );
+console.info('version:', controller.version);
 
 const instancesFetchInterval = Number(process.env.INSTANCES_FETCH_INTERVAL);
 if (!isNaN(instancesFetchInterval)) controller.instancesFetchInterval = instancesFetchInterval;
