@@ -217,12 +217,17 @@ export class Docker {
 
   private evalLabelString(labelString: string, instance: Instance): string {
     return labelString.replace(/{([^}]+)}/g, (substring: string, expression: string): string => {
-      switch (expression) {
-        default: return substring;
-        case 'id':             return String(instance.id);
-        case 'socketProtocol': return String(instance.socketPort);
-        case 'socketHostname': return String(instance.socketHostname);
-        case 'socketPort':     return String(instance.socketPort);
+      try {
+        return eval(expression.trim()
+          .replace(/id/g, () => String(instance.id))
+          .replace(/socketPort/g, () => String(instance.socketPort))
+        )
+      } catch {
+        switch (expression) {
+          default: return substring;
+          case 'socketProtocol': return String(instance.socketPort);
+          case 'socketHostname': return String(instance.socketHostname);
+        }
       }
     });
   }

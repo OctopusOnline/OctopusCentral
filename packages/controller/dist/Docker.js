@@ -171,12 +171,17 @@ class Docker {
     }
     evalLabelString(labelString, instance) {
         return labelString.replace(/{([^}]+)}/g, (substring, expression) => {
-            switch (expression) {
-                default: return substring;
-                case 'id': return String(instance.id);
-                case 'socketProtocol': return String(instance.socketPort);
-                case 'socketHostname': return String(instance.socketHostname);
-                case 'socketPort': return String(instance.socketPort);
+            try {
+                return eval(expression.trim()
+                    .replace(/id/g, () => String(instance.id))
+                    .replace(/socketPort/g, () => String(instance.socketPort)));
+            }
+            catch (_a) {
+                switch (expression) {
+                    default: return substring;
+                    case 'socketProtocol': return String(instance.socketPort);
+                    case 'socketHostname': return String(instance.socketHostname);
+                }
             }
         });
     }
