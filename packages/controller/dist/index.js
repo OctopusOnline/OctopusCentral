@@ -71,9 +71,18 @@ class Controller extends node_events_1.default {
             this.emit('instance status', instance, status);
             this.socket.sendStatus(instance.id, status);
         };
-        instance.on('socket connected', instanceWithHandlers._connectedHandler);
-        instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
-        instance.on('status received', instanceWithHandlers._statusHandler);
+        instanceWithHandlers._restartMeHandler = (deadPromise) => __awaiter(this, void 0, void 0, function* () {
+            const virtualDeadInstance = new Instance_1.Instance(instance.id);
+            yield deadPromise;
+            yield (0, helper_1.sleep)(1e4);
+            yield this.stopInstance(virtualDeadInstance);
+            yield (0, helper_1.sleep)(3e4);
+            yield this.startInstance(virtualDeadInstance);
+        });
+        instanceWithHandlers.on('socket connected', instanceWithHandlers._connectedHandler);
+        instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
+        instanceWithHandlers.on('status received', instanceWithHandlers._statusHandler);
+        instanceWithHandlers.on('restartMe', instanceWithHandlers._restartMeHandler);
     }
     get lastInstanceId() {
         return Math.max(0, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
@@ -109,6 +118,7 @@ class Controller extends node_events_1.default {
             instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
             instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
             instanceWithHandlers.off('status received', instanceWithHandlers._statusHandler);
+            instanceWithHandlers.off('restartMe', instanceWithHandlers._restartMeHandler);
             __classPrivateFieldGet(this, _Controller_instances, "f").splice(index, 1);
         }
     }

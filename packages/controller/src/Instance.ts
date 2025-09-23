@@ -82,15 +82,25 @@ export class Instance extends EventEmitter {
           return status.timestamp;
         }));
     }
+    const restartMeHandler = () => {
+      this.emit('restartMe', Promise.race([
+        new Promise(resolve => this.once('dead', resolve)),
+        sleep(3e4)
+      ]));
+      this.#socket!.emit('restartMe received');
+    }
 
     this.#socket!.on('boot status',          bootHandler);
     this.#socket!.on('boot status booted', bootedHandler);
     this.#socket!.on('status',             statusHandler);
+    this.#socket!.on('restartMe',       restartMeHandler);
 
     this.#socket!.on('disconnect', () => {
       this.#socket!.off('boot status',          bootHandler);
       this.#socket!.off('boot status booted', bootedHandler);
       this.#socket!.off('status',             statusHandler);
+      this.#socket!.off('restartMe',       restartMeHandler);
+      this.emit('dead');
     });
 
     return true;

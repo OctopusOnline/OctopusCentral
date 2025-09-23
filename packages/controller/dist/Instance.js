@@ -84,13 +84,23 @@ class Instance extends node_events_1.default {
                         return status.timestamp;
                     }));
             };
+            const restartMeHandler = () => {
+                this.emit('restartMe', Promise.race([
+                    new Promise(resolve => this.once('dead', resolve)),
+                    (0, helper_1.sleep)(3e4)
+                ]));
+                __classPrivateFieldGet(this, _Instance_socket, "f").emit('restartMe received');
+            };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('status', statusHandler);
+            __classPrivateFieldGet(this, _Instance_socket, "f").on('restartMe', restartMeHandler);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('disconnect', () => {
                 __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status', bootHandler);
                 __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status booted', bootedHandler);
                 __classPrivateFieldGet(this, _Instance_socket, "f").off('status', statusHandler);
+                __classPrivateFieldGet(this, _Instance_socket, "f").off('restartMe', restartMeHandler);
+                this.emit('dead');
             });
             return true;
         });

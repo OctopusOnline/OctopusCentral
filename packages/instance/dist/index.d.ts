@@ -21,5 +21,6 @@ export declare class Instance {
     start(awaitStartPermission?: boolean): Promise<boolean>;
     sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
     sendStatus(status: InstanceStatusParam): void;
+    restartMe(timeout?: number): Promise<boolean>;
     setSocketHostname(hostname: string): Promise<void>;
 }

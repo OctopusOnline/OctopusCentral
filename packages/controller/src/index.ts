@@ -21,6 +21,7 @@ interface InstanceWithHandlers extends Instance {
   _connectedHandler: (error?: Error) => void
   _disconnectedHandler: () => void
   _statusHandler: (status: InstanceStatus) => void
+  _restartMeHandler: () => void
 }
 
 export class Controller extends EventEmitter {
@@ -68,10 +69,19 @@ export class Controller extends EventEmitter {
       this.emit('instance status', instance, status);
       this.socket.sendStatus(instance.id, status);
     }
+    instanceWithHandlers._restartMeHandler    = async (deadPromise?: Promise<void>) => {
+      const virtualDeadInstance = new Instance(instance.id);
+      await deadPromise;
+      await sleep(1e4);
+      await this.stopInstance(virtualDeadInstance);
+      await sleep(3e4);
+      await this.startInstance(virtualDeadInstance);
+    }
 
-    instance.on('socket connected',    instanceWithHandlers._connectedHandler);
-    instance.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
-    instance.on('status received',     instanceWithHandlers._statusHandler);
+    instanceWithHandlers.on('socket connected',    instanceWithHandlers._connectedHandler);
+    instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
+    instanceWithHandlers.on('status received',     instanceWithHandlers._statusHandler);
+    instanceWithHandlers.on('restartMe',           instanceWithHandlers._restartMeHandler);
   }
 
   private get lastInstanceId(): number {
@@ -115,6 +125,7 @@ export class Controller extends EventEmitter {
       instanceWithHandlers.off('socket connected',    instanceWithHandlers._connectedHandler);
       instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
       instanceWithHandlers.off('status received',     instanceWithHandlers._statusHandler);
+      instanceWithHandlers.off('restartMe',           instanceWithHandlers._restartMeHandler);
       this.#instances.splice(index, 1);
     }
   }

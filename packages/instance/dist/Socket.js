@@ -25,11 +25,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_sendStatusQueue;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
+const node_events_1 = __importDefault(require("node:events"));
 const helper_1 = require("./helper");
 const express_1 = __importDefault(require("express"));
 const http_1 = __importDefault(require("http"));
 const socket_io_1 = require("socket.io");
-class Socket {
+class Socket extends node_events_1.default {
     get port() { return __classPrivateFieldGet(this, _Socket_port, "f"); }
     get running() { return this.server.listening; }
     set port(port) {
@@ -42,6 +43,7 @@ class Socket {
         __classPrivateFieldSet(this, _Socket_port, port, "f");
     }
     constructor(instance, server = http_1.default.createServer((0, express_1.default)()), port = 1777) {
+        super();
         _Socket_instances.add(this);
         _Socket_port.set(this, void 0);
         _Socket_startPermission.set(this, false);
@@ -79,6 +81,16 @@ class Socket {
         __classPrivateFieldGet(this, _Socket_statusQueue, "f").push(Object.assign(Object.assign({}, status), { timestamp: Date.now() }));
         __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
     }
+    sendRestartMe() {
+        return __awaiter(this, arguments, void 0, function* (timeout = 3e3) {
+            const restartMeReceivedPromise = new Promise(resolve => this.once('restartMe received', resolve));
+            this.io.emit('restartMe');
+            return yield Promise.race([
+                restartMeReceivedPromise.then(() => true),
+                (0, helper_1.sleep)(timeout).then(() => false)
+            ]);
+        });
+    }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
             socket.on('start permission', () => {
@@ -110,6 +122,9 @@ class Socket {
             }));
             socket.on('disconnect', () => {
                 socket.removeAllListeners();
+            });
+            socket.on('restartMe received', () => {
+                this.emit('restartMe received');
             });
             __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
         });

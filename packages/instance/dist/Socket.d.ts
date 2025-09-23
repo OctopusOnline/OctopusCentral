@@ -1,8 +1,9 @@
+import EventEmitter from "node:events";
 import { InstanceStatus } from '@octopuscentral/types';
 import { Instance } from '.';
 import { Server as HttpServer } from 'http';
 export type InstanceStatusParam = Omit<InstanceStatus, 'timestamp'>;
-export declare class Socket {
+export declare class Socket extends EventEmitter {
     #private;
     private readonly instance;
     private readonly server;
@@ -17,5 +18,6 @@ export declare class Socket {
     sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
     getStatus(timestamp: number): InstanceStatus | undefined;
     sendStatus(status: InstanceStatusParam): void;
+    sendRestartMe(timeout?: number): Promise<boolean>;
     private setupSocketHandlers;
 }

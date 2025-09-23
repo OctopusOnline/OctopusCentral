@@ -163,6 +163,9 @@ class Instance {
     sendStatus(status) {
         this.socket.sendStatus(status);
     }
+    restartMe(timeout = 3e3) {
+        return this.socket.sendRestartMe(timeout);
+    }
     setSocketHostname(hostname) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.database.connection.execute(`UPDATE ${types_1.instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, __classPrivateFieldGet(this, _Instance_id, "f")]);

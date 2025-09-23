@@ -1,4 +1,5 @@
-import { waitFor } from './helper';
+import EventEmitter from "node:events";
+import { sleep, waitFor } from './helper';
 import { InstanceStatus } from '@octopuscentral/types';
 import { Instance } from '.';
 import express from 'express';
@@ -7,7 +8,7 @@ import { Server as IOServer, Socket as IOSocket } from 'socket.io';
 
 export type InstanceStatusParam = Omit<InstanceStatus, 'timestamp'>;
 
-export class Socket {
+export class Socket extends EventEmitter {
   private readonly instance: Instance;
   private readonly server: HttpServer;
   private readonly io: IOServer;
@@ -28,6 +29,7 @@ export class Socket {
   }
 
   constructor(instance: Instance, server: HttpServer = http.createServer(express()), port: number = 1777) {
+    super();
     this.instance = instance;
     this.server = server;
     this.io = new IOServer(this.server);
@@ -76,6 +78,16 @@ export class Socket {
       this.io.emit('status', this.#statusQueue);
   }
 
+  async sendRestartMe(timeout = 3e3): Promise<boolean> {
+    const restartMeReceivedPromise = new Promise<void>(resolve =>
+      this.once('restartMe received', resolve));
+    this.io.emit('restartMe');
+    return await Promise.race([
+      restartMeReceivedPromise.then(() => true),
+      sleep(timeout).then(() => false)
+    ]);
+  }
+
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
 
@@ -115,6 +127,10 @@ export class Socket {
 
       socket.on('disconnect', () => {
         socket.removeAllListeners();
+      });
+
+      socket.on('restartMe received', () => {
+        this.emit('restartMe received');
       });
 
       this.#sendStatusQueue();
