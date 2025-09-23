@@ -173,12 +173,13 @@ class Docker {
         return labelString.replace(/{([^}]+)}/g, (_, expression) => eval(expression.trim().replace(/id/g, () => instance.id.toString())));
     }
     parseVolumesString(volumesString, instance) {
-        return volumesString.split(';').reduce((volumes, volume) => {
-            const [name, mountPath] = volume.split(':');
-            if (!name.includes('/'))
-                volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
-            return volumes;
-        }, {});
+        return volumesString
+            ? volumesString.split(';').reduce((volumes, volume) => {
+                const [name, mountPath] = volume.split(':');
+                if (!name.includes('/'))
+                    volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
+                return volumes;
+            }, {}) : {};
     }
     parseBindsString(volumesString) {
         return volumesString.split(';').reduce((volumes, volume) => {
@@ -189,11 +190,12 @@ class Docker {
         }, {});
     }
     parsePortsString(portsString, instance) {
-        return portsString.split(';').reduce((portMappings, portMapping) => {
-            const [hstPort, srcPort] = portMapping.split(':');
-            portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
-            return portMappings;
-        }, {});
+        return portsString
+            ? portsString.split(';').reduce((portMappings, portMapping) => {
+                const [hstPort, srcPort] = portMapping.split(':');
+                portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort !== null && hstPort !== void 0 ? hstPort : srcPort, instance));
+                return portMappings;
+            }, {}) : {};
     }
     parseCapaddString(capaddString) {
         return capaddString.split(';').filter(Boolean);

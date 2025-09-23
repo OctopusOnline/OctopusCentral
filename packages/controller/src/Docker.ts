@@ -221,12 +221,13 @@ export class Docker {
   }
 
   private parseVolumesString(volumesString: string, instance: Instance): { [key: string]: string } {
-    return volumesString.split(';').reduce((volumes, volume) => {
-      const [name, mountPath] = volume.split(':');
-      if (!name.includes('/'))
-        volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
-      return volumes;
-    }, {} as { [key: string]: string });
+    return volumesString
+      ? volumesString.split(';').reduce((volumes, volume) => {
+        const [name, mountPath] = volume.split(':');
+        if (!name.includes('/'))
+          volumes[this.evalLabelString(name, instance)] = this.evalLabelString(mountPath, instance);
+        return volumes;
+      }, {} as { [key: string]: string }) : {};
   }
 
   private parseBindsString(volumesString: string): { [key: string]: string } {
@@ -239,11 +240,12 @@ export class Docker {
   }
 
   private parsePortsString(portsString: string, instance: Instance): { [key: number]: number } {
-    return portsString.split(';').reduce((portMappings, portMapping) => {
-      const [hstPort, srcPort] = portMapping.split(':');
-      portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
-      return portMappings;
-    }, {} as { [key: number]: number });
+    return portsString
+      ? portsString.split(';').reduce((portMappings, portMapping) => {
+        const [hstPort, srcPort] = portMapping.split(':');
+        portMappings[Number(this.evalLabelString(srcPort, instance))] = Number(this.evalLabelString(hstPort ?? srcPort, instance));
+        return portMappings;
+      }, {} as { [key: number]: number }) : {};
   }
 
   private parseCapaddString(capaddString: string): string[] {
