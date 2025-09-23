@@ -38,10 +38,8 @@ export class Central extends EventEmitter {
       else controller = new Controller(controller, socketHost);
     }
 
-    console.log("ADD_CONTROLLER", controller.id);
-    controller.on('instance status received', status => console.log("INSTANCE_STATUS_RECEIVED", status));
-
     if (!this.getController(controller.id)) {
+      console.log("ADD_CONTROLLER", controller.id);
       await this.insertController(controller);
       this.controllers.push(controller);
       return controller;

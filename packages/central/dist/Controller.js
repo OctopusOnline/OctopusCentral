@@ -46,10 +46,12 @@ class Controller extends node_events_1.default {
     }
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
+            console.log("CONTROLLER_CONNECT_START");
             if (!this.socketHost)
                 return false;
             if (this.connected && reconnect)
                 this.disconnect();
+            console.log('CONTROLLER_CONNECT_SOCKET');
             const socket = (0, socket_io_client_1.io)(this.socketHost, {
                 reconnection: true,
                 reconnectionAttempts: Infinity
@@ -59,10 +61,13 @@ class Controller extends node_events_1.default {
                 socket.once('connect', () => {
                     this.emit('socket connect');
                     socket.on('instance status', (status) => {
+                        console.log("ON_INSTANCE_STATUS DIRECT", status);
                         if (Array.isArray(status))
                             __classPrivateFieldGet(this, _Controller_socket, "f").emit('instance status received', status.map(status => {
-                                if (__classPrivateFieldGet(this, _Controller_instances, "m", _Controller_queueStatus).call(this, status))
+                                if (__classPrivateFieldGet(this, _Controller_instances, "m", _Controller_queueStatus).call(this, status)) {
+                                    console.log("ON_INSTANCE_STATUS RECEIVED NEW", status);
                                     this.emit('instance status received', status);
+                                }
                                 return { instanceId: status.instanceId, timestamp: status.status.timestamp };
                             }));
                     });
@@ -73,9 +78,12 @@ class Controller extends node_events_1.default {
                     resolve(false);
                 });
             })))) {
+                console.log("CONTROLLER_CONNECT_ERROR");
                 this.disconnect();
                 return false;
             }
+            console.log("CONTROLLER_CONNECTED");
+            socket.on('instance status received', status => console.log("INSTANCE_STATUS_RECEIVED EVENT", status));
             return true;
         });
     }
