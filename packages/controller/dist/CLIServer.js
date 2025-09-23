@@ -148,7 +148,7 @@ class CLIServer {
                 data: result instanceof Error
                     ? result.message : (result
                     ? `instance ${req.instance.id} stopped`
-                    : `instance ${req.instance.id} could not be stopped`)
+                    : `instance ${req.instance.id} already stopped`)
             });
         }));
         this.express.get([
