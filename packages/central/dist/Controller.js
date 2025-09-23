@@ -68,6 +68,7 @@ class Controller extends node_events_1.default {
     disconnect() {
         if (__classPrivateFieldGet(this, _Controller_socket, "f")) {
             __classPrivateFieldGet(this, _Controller_socket, "f").close();
+            __classPrivateFieldGet(this, _Controller_socket, "f").removeAllListeners();
             __classPrivateFieldSet(this, _Controller_socket, undefined, "f");
         }
     }

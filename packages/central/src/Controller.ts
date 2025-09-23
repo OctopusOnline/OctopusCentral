@@ -52,6 +52,7 @@ export class Controller extends EventEmitter {
   disconnect(): void {
     if (this.#socket) {
       this.#socket.close();
+      this.#socket.removeAllListeners();
       this.#socket = undefined;
     }
   }
