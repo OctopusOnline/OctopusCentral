@@ -50,7 +50,7 @@ class Controller extends node_events_1.default {
                 return false;
             if (this.connected && reconnect)
                 this.disconnect();
-            const socket = (0, socket_io_client_1.io)(this.socketHost, {
+            const socket = (0, socket_io_client_1.io)(`ws://${this.socketHost}`, {
                 reconnection: true,
                 reconnectionAttempts: Infinity
             });

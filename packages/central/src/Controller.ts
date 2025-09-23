@@ -48,7 +48,7 @@ export class Controller extends EventEmitter {
     if (this.connected && reconnect)
       this.disconnect();
 
-    const socket = io(this.socketHost, {
+    const socket = io(`ws://${this.socketHost}`, {
       reconnection: true,
       reconnectionAttempts: Infinity
     });
