@@ -111,7 +111,7 @@ class Docker {
             const volumes = yield this.createInstanceVolumes(volumesString, instance);
             const binds = [
                 ...Object.entries(volumes),
-                ...Object.entries(this.parseBindsString(volumesString))
+                ...Object.entries(this.parseBindsString(volumesString, instance))
             ].map(([name, mountPath]) => `${name}:${mountPath}`);
             let portBindings = {};
             let exposedPorts = { [`${instance.socketPort}/tcp`]: {} };
@@ -194,11 +194,11 @@ class Docker {
                 return volumes;
             }, {}) : {};
     }
-    parseBindsString(volumesString) {
+    parseBindsString(volumesString, instance) {
         return volumesString.split(';').reduce((volumes, volume) => {
             const [path, mountPath] = volume.split(':');
             if (path.includes('/'))
-                volumes[path] = mountPath;
+                volumes[this.evalLabelString(path, instance)] = this.evalLabelString(mountPath, instance);
             return volumes;
         }, {});
     }

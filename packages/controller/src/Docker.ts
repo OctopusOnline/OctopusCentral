@@ -143,7 +143,7 @@ export class Docker {
     const volumes: { [key: string]: string } = await this.createInstanceVolumes(volumesString, instance);
     const binds: string[] = [
       ...Object.entries(volumes),
-      ...Object.entries(this.parseBindsString(volumesString))
+      ...Object.entries(this.parseBindsString(volumesString, instance))
     ].map(([name, mountPath]) => `${name}:${mountPath}`);
 
     let portBindings: { [key: string]: { HostPort: string }[] } = {};
@@ -242,11 +242,11 @@ export class Docker {
       }, {} as { [key: string]: string }) : {};
   }
 
-  private parseBindsString(volumesString: string): { [key: string]: string } {
+  private parseBindsString(volumesString: string, instance: Instance): { [key: string]: string } {
     return volumesString.split(';').reduce((volumes, volume) => {
       const [path, mountPath] = volume.split(':');
       if (path.includes('/'))
-        volumes[path] = mountPath;
+        volumes[this.evalLabelString(path, instance)] = this.evalLabelString(mountPath, instance);
       return volumes;
     }, {} as { [key: string]: string });
   }
