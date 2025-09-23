@@ -1,6 +1,6 @@
 {
   "type": "module",
   "dependencies": {
-    "@octopuscentral/central": "1.26.1"
+    "@octopuscentral/central": "1.27.0"
   }
 }
