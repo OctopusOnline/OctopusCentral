@@ -63,7 +63,6 @@ class Central extends node_events_1.default {
                     controller = new Controller_1.Controller(controller, socketHost);
             }
             if (!this.getController(controller.id)) {
-                console.log("ADD_CONTROLLER", controller.id);
                 yield this.insertController(controller);
                 this.controllers.push(controller);
                 return controller;

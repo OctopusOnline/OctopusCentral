@@ -39,7 +39,6 @@ export class Central extends EventEmitter {
     }
 
     if (!this.getController(controller.id)) {
-      console.log("ADD_CONTROLLER", controller.id);
       await this.insertController(controller);
       this.controllers.push(controller);
       return controller;

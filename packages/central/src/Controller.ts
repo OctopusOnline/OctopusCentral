@@ -43,13 +43,11 @@ export class Controller extends EventEmitter {
   }
 
   async connect(reconnect: boolean = false): Promise<boolean> {
-    console.log("CONTROLLER_CONNECT_START")
     if (!this.socketHost)
       return false;
     if (this.connected && reconnect)
       this.disconnect();
 
-    console.log('CONTROLLER_CONNECT_SOCKET')
     const socket = io(this.socketHost, {
       reconnection: true,
       reconnectionAttempts: Infinity
@@ -60,31 +58,23 @@ export class Controller extends EventEmitter {
       socket.once('connect', () => {
         this.emit('socket connect');
         socket.on('instance status', (status: ControllerInstanceStatus[]) => {
-          console.log("ON_INSTANCE_STATUS DIRECT", status);
           if (Array.isArray(status))
             this.#socket!.emit('instance status received', status.map(status => {
-              if (this.#queueStatus(status)) {
-                console.log("ON_INSTANCE_STATUS RECEIVED NEW", status);
+              if (this.#queueStatus(status))
                 this.emit('instance status received', status);
-              }
               return { instanceId: status.instanceId, timestamp: status.status.timestamp };
             }));
         });
         resolve(true);
       });
       socket.once('connect_error', error => {
-        console.log("CONNECT_ERROR", error);
         this.emit('socket connect_error', error);
         resolve(false);
       });
     }))) {
-      console.log("CONTROLLER_CONNECT_ERROR");
       this.disconnect();
       return false;
     }
-
-    console.log("CONTROLLER_CONNECTED");
-    socket.on('instance status received', status => console.log("INSTANCE_STATUS_RECEIVED EVENT", status));
     return true;
   }
 
