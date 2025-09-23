@@ -4,7 +4,7 @@
     "controller-cli": "./cli.js"
   },
   "dependencies": {
-    "@octopuscentral/controller": "1.29.3",
+    "@octopuscentral/controller": "1.29.4",
     "cli-table3": "^0.6.5"
   }
 }
