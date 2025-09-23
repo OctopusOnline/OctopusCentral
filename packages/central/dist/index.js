@@ -62,6 +62,8 @@ class Central extends node_events_1.default {
                 else
                     controller = new Controller_1.Controller(controller, socketHost);
             }
+            console.log("ADD_CONTROLLER", controller.id);
+            controller.on('instance status received', status => console.log("INSTANCE_STATUS_RECEIVED", status));
             if (!this.getController(controller.id)) {
                 yield this.insertController(controller);
                 this.controllers.push(controller);
