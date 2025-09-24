@@ -117,7 +117,8 @@ class Instance extends node_events_1.default {
                     resolve(true);
                 };
                 const timeoutTimer = setTimeout(() => {
-                    this.socket.off('start permission received', listener);
+                    var _a;
+                    (_a = this.socket) === null || _a === void 0 ? void 0 : _a.off('start permission received', listener);
                     clearInterval(permissionInterval);
                     resolve(false);
                 }, timeout);

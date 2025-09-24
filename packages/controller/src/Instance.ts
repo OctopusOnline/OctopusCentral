@@ -118,7 +118,7 @@ export class Instance extends EventEmitter {
       };
 
       const timeoutTimer = setTimeout(() => {
-        this.socket!.off('start permission received', listener);
+        this.socket?.off('start permission received', listener);
         clearInterval(permissionInterval);
         resolve(false);
       }, timeout);
