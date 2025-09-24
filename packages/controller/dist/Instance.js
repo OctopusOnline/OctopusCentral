@@ -107,29 +107,23 @@ class Instance extends node_events_1.default {
     }
     sendStartPermission() {
         return __awaiter(this, arguments, void 0, function* (timeout = 6e4) {
-            let startPermissionReceived = undefined;
-            const self = this;
-            yield Promise.all([
-                (0, helper_1.waitFor)(() => {
-                    var _a;
-                    if (startPermissionReceived)
-                        return true;
-                    (_a = self.socket) === null || _a === void 0 ? void 0 : _a.emit('start permission');
-                    return false;
-                }, timeout / 200),
-                Promise.race([
-                    (0, helper_1.waitFor)(() => {
-                        var _a;
-                        (_a = self.socket) === null || _a === void 0 ? void 0 : _a.once('start permission received', () => startPermissionReceived = true);
-                        return startPermissionReceived;
-                    }, timeout / 60),
-                    (0, helper_1.sleep)(timeout).then(() => {
-                        if (startPermissionReceived === undefined)
-                            startPermissionReceived = false;
-                    })
-                ])
-            ]);
-            return startPermissionReceived;
+            yield (0, helper_1.waitFor)(() => this.connected);
+            if (!this.connected)
+                return false;
+            return yield new Promise(resolve => {
+                const listener = () => {
+                    clearTimeout(timeoutTimer);
+                    clearInterval(permissionInterval);
+                    resolve(true);
+                };
+                const timeoutTimer = setTimeout(() => {
+                    this.socket.off('start permission received', listener);
+                    clearInterval(permissionInterval);
+                    resolve(false);
+                }, timeout);
+                this.socket.once('start permission received', listener);
+                const permissionInterval = setInterval(() => this.socket.emit('start permission'), timeout / 60);
+            });
         });
     }
     disconnect() {
