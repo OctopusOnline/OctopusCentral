@@ -126,7 +126,7 @@ export class Instance extends EventEmitter {
       this.socket!.once('start permission received', listener);
 
       const permissionInterval = setInterval(() =>
-        this.socket!.emit('start permission'), timeout / 60);
+        this.socket?.emit('start permission'), timeout / 60);
     });
   }
 
