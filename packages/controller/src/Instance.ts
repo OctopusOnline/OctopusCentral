@@ -107,33 +107,27 @@ export class Instance extends EventEmitter {
   }
 
   async sendStartPermission(timeout: number = 6e4): Promise<boolean> {
-    let startPermissionReceived: boolean | undefined = undefined;
+    await waitFor(() => this.connected)
+    if (!this.connected) return false;
 
-    const self = this;
-    await Promise.all([
-      waitFor(() => {
-        if (startPermissionReceived)
-          return true;
+    return await new Promise(resolve => {
+      const listener = () => {
+        clearTimeout(timeoutTimer);
+        clearInterval(permissionInterval);
+        resolve(true);
+      };
 
-        self.socket?.emit('start permission');
-        return false;
-      }, timeout / 200),
+      const timeoutTimer = setTimeout(() => {
+        this.socket!.off('start permission received', listener);
+        clearInterval(permissionInterval);
+        resolve(false);
+      }, timeout);
 
-      Promise.race([
-        waitFor(() => {
-          self.socket?.once('start permission received', () =>
-            startPermissionReceived = true);
-          return startPermissionReceived;
-        }, timeout / 60),
+      this.socket!.once('start permission received', listener);
 
-        sleep(timeout).then(() => {
-          if (startPermissionReceived === undefined)
-            startPermissionReceived = false;
-        })
-      ])
-    ]);
-
-    return startPermissionReceived!;
+      const permissionInterval = setInterval(() =>
+        this.socket!.emit('start permission'), timeout / 60);
+    });
   }
 
   disconnect(): void {
