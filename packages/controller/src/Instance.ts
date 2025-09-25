@@ -83,10 +83,14 @@ export class Instance extends EventEmitter {
         }));
     }
     const restartMeHandler = () => {
+      let deadListener: (value: unknown) => void;
       this.emit('restartMe', Promise.race([
-        new Promise(resolve => this.once('dead', resolve)),
+        new Promise(resolve => {
+          deadListener = resolve;
+          this.once('dead', deadListener);
+        }),
         sleep(3e4)
-      ]));
+      ]).finally(() => this.off('dead', deadListener)));
       this.#socket!.emit('restartMe received');
     }
 

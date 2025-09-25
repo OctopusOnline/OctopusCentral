@@ -85,10 +85,14 @@ class Instance extends node_events_1.default {
                     }));
             };
             const restartMeHandler = () => {
+                let deadListener;
                 this.emit('restartMe', Promise.race([
-                    new Promise(resolve => this.once('dead', resolve)),
+                    new Promise(resolve => {
+                        deadListener = resolve;
+                        this.once('dead', deadListener);
+                    }),
                     (0, helper_1.sleep)(3e4)
-                ]));
+                ]).finally(() => this.off('dead', deadListener)));
                 __classPrivateFieldGet(this, _Instance_socket, "f").emit('restartMe received');
             };
             __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
