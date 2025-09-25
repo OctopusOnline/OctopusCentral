@@ -79,7 +79,7 @@ export class Controller extends EventEmitter {
       const virtualDeadInstance = new Instance(instance.id);
       await deadPromise;
       await sleep(1e4);
-      await this.stopInstance(virtualDeadInstance);
+      await this.stopInstance(virtualDeadInstance).catch();
       await sleep(1e4);
       await this.startInstance(virtualDeadInstance, undefined, 12e4);
     }

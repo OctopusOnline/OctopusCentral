@@ -80,7 +80,7 @@ class Controller extends node_events_1.default {
             const virtualDeadInstance = new Instance_1.Instance(instance.id);
             yield deadPromise;
             yield (0, helper_1.sleep)(1e4);
-            yield this.stopInstance(virtualDeadInstance);
+            yield this.stopInstance(virtualDeadInstance).catch();
             yield (0, helper_1.sleep)(1e4);
             yield this.startInstance(virtualDeadInstance, undefined, 12e4);
         });
