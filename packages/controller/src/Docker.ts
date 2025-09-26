@@ -311,7 +311,8 @@ export class Docker {
   async stopInstance(instance: Instance): Promise<boolean> {
     const container = await this.getContainer(instance);
     if (container) {
-      await container.delete({ force: true });
+      try { await container.delete({ force: true }) }
+      catch {}
       return true;
     }
     return false;
