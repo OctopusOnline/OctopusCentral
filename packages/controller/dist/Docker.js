@@ -263,10 +263,7 @@ class Docker {
         return __awaiter(this, void 0, void 0, function* () {
             const container = yield this.getContainer(instance);
             if (container) {
-                try {
-                    yield container.delete({ force: true });
-                }
-                catch (_a) { }
+                yield container.delete({ force: true }).catch();
                 return true;
             }
             return false;
