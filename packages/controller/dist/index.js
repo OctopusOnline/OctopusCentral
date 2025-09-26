@@ -178,11 +178,13 @@ class Controller extends node_events_1.default {
                 yield Promise.all([
                     Promise.race([
                         new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
-                            if (yield instance.sendStartPermission(timeout)) {
-                                instance.once('boot status booted', success => resolve(bootResult = success));
-                            }
-                            else
-                                resolve(bootResult = false);
+                            instance.once('boot status booted', success => {
+                                clearTimeout(timeoutId);
+                                resolve(bootResult = success);
+                            });
+                            if (!(yield instance.sendStartPermission(timeout)))
+                                if (bootResult === undefined)
+                                    resolve(bootResult = false);
                         })),
                         (() => __awaiter(this, void 0, void 0, function* () {
                             yield new Promise(resolve => timeoutController.signal.addEventListener('abort', resolve));
@@ -190,7 +192,7 @@ class Controller extends node_events_1.default {
                                 return bootResult !== undefined ||
                                     dockerResult !== undefined ||
                                     (yield this.docker.instanceRunning(instance));
-                            }))))
+                            }), timeout / 500, 500)))
                                 dockerResult = false;
                         }))()
                     ]),
@@ -205,7 +207,7 @@ class Controller extends node_events_1.default {
                 instance.off('boot status booted', bootStatusListener);
                 clearTimeout(timeoutId);
             }
-            return bootResult;
+            return !!bootResult;
         });
     }
     stopInstance(instance) {
