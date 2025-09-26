@@ -77,10 +77,11 @@ class Controller extends node_events_1.default {
             this.socket.sendStatus(instance.id, status);
         };
         instanceWithHandlers._restartMeHandler = (deadPromise) => __awaiter(this, void 0, void 0, function* () {
+            this.emit('instance restartMe', instance);
             const virtualDeadInstance = new Instance_1.Instance(instance.id);
             yield deadPromise;
             yield (0, helper_1.sleep)(1e4);
-            yield this.stopInstance(virtualDeadInstance).catch();
+            yield this.stopInstance(virtualDeadInstance);
             yield (0, helper_1.sleep)(1e4);
             yield this.startInstance(virtualDeadInstance, undefined, 12e4);
         });
@@ -94,11 +95,14 @@ class Controller extends node_events_1.default {
     }
     createInstance() {
         return __awaiter(this, void 0, void 0, function* () {
+            this.emit('instance creating');
             yield this.fetchSyncInstances();
             const virtualInstance = new instance_1.Instance(this.database.url, this.lastInstanceId + 1);
             yield virtualInstance._initVirtual(this.serviceName, 'init');
             yield this.fetchSyncInstances();
-            return this.getInstance(virtualInstance.id);
+            const instance = this.getInstance(virtualInstance.id);
+            this.emit('instance created', instance);
+            return instance;
         });
     }
     updateInstanceSettings(instance, settings) {
@@ -164,6 +168,7 @@ class Controller extends node_events_1.default {
     }
     startInstance(instance_2, mode_1) {
         return __awaiter(this, arguments, void 0, function* (instance, mode, timeout = 6e4) {
+            this.emit('instance starting', instance);
             let bootResult, dockerResult, timeoutId;
             const resetTimeout = () => {
                 clearTimeout(timeoutId);
@@ -207,12 +212,17 @@ class Controller extends node_events_1.default {
                 instance.off('boot status booted', bootStatusListener);
                 clearTimeout(timeoutId);
             }
-            return !!bootResult;
+            const success = !!bootResult;
+            this.emit('instance started', instance, success);
+            return success;
         });
     }
     stopInstance(instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.docker.stopInstance(instance);
+            this.emit('instance stopping', instance);
+            const result = yield this.docker.stopInstance(instance);
+            this.emit('instance stopped', instance, result);
+            return result;
         });
     }
     init() {

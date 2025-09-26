@@ -76,10 +76,11 @@ export class Controller extends EventEmitter {
       this.socket.sendStatus(instance.id, status);
     }
     instanceWithHandlers._restartMeHandler    = async (deadPromise?: Promise<void>) => {
+      this.emit('instance restartMe', instance);
       const virtualDeadInstance = new Instance(instance.id);
       await deadPromise;
       await sleep(1e4);
-      await this.stopInstance(virtualDeadInstance).catch();
+      await this.stopInstance(virtualDeadInstance);
       await sleep(1e4);
       await this.startInstance(virtualDeadInstance, undefined, 12e4);
     }
@@ -95,12 +96,17 @@ export class Controller extends EventEmitter {
   }
 
   async createInstance(): Promise<Instance> {
+    this.emit('instance creating');
+
     await this.fetchSyncInstances();
     const virtualInstance = new VirtualInstance(this.database.url, this.lastInstanceId + 1);
     await virtualInstance._initVirtual(this.serviceName, 'init');
 
     await this.fetchSyncInstances();
-    return this.getInstance(virtualInstance.id)!;
+    const instance = this.getInstance(virtualInstance.id)!;
+
+    this.emit('instance created', instance);
+    return instance;
   }
 
   async updateInstanceSettings(instance: Instance, settings: Setting[]): Promise<void> {
@@ -173,6 +179,8 @@ export class Controller extends EventEmitter {
   }
 
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {
+    this.emit('instance starting', instance);
+
     let bootResult: boolean | undefined,
       dockerResult: boolean | undefined,
          timeoutId: NodeJS.Timeout;
@@ -223,11 +231,17 @@ export class Controller extends EventEmitter {
       clearTimeout(timeoutId!);
     }
 
-    return !!bootResult;
+    const success: boolean = !!bootResult;
+    this.emit('instance started', instance, success);
+    return success;
   }
 
   async stopInstance(instance: Instance): Promise<boolean> {
-    return await this.docker.stopInstance(instance);
+    this.emit('instance stopping', instance);
+    const result = await this.docker.stopInstance(instance);
+
+    this.emit('instance stopped', instance, result);
+    return result;
   }
 
   async init(): Promise<void> {
