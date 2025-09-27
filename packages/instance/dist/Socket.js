@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_sendStatusQueue;
+var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_restartMeSent, _Socket_sendStatusQueue;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -48,6 +48,7 @@ class Socket extends node_events_1.default {
         _Socket_port.set(this, void 0);
         _Socket_startPermission.set(this, false);
         _Socket_statusQueue.set(this, []);
+        _Socket_restartMeSent.set(this, false);
         this.instance = instance;
         this.server = server;
         this.io = new socket_io_1.Server(this.server);
@@ -83,6 +84,9 @@ class Socket extends node_events_1.default {
     }
     sendRestartMe() {
         return __awaiter(this, arguments, void 0, function* (timeout = 3e3) {
+            if (__classPrivateFieldGet(this, _Socket_restartMeSent, "f"))
+                return false;
+            __classPrivateFieldSet(this, _Socket_restartMeSent, true, "f");
             const restartMeReceivedPromise = new Promise(resolve => this.once('restartMe received', resolve));
             this.io.emit('restartMe');
             return yield Promise.race([
@@ -131,7 +135,7 @@ class Socket extends node_events_1.default {
     }
 }
 exports.Socket = Socket;
-_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_statusQueue = new WeakMap(), _Socket_instances = new WeakSet(), _Socket_sendStatusQueue = function _Socket_sendStatusQueue() {
+_Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_statusQueue = new WeakMap(), _Socket_restartMeSent = new WeakMap(), _Socket_instances = new WeakSet(), _Socket_sendStatusQueue = function _Socket_sendStatusQueue() {
     if (__classPrivateFieldGet(this, _Socket_statusQueue, "f").length > 0)
         this.io.emit('status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
 };

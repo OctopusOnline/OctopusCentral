@@ -18,6 +18,8 @@ export class Socket extends EventEmitter {
   #startPermission: boolean = false;
   #statusQueue: InstanceStatus[] = [];
 
+  #restartMeSent: boolean = false;
+
   get port(): number { return this.#port }
   get running(): boolean { return this.server.listening }
 
@@ -79,6 +81,9 @@ export class Socket extends EventEmitter {
   }
 
   async sendRestartMe(timeout = 3e3): Promise<boolean> {
+    if (this.#restartMeSent) return false;
+    this.#restartMeSent = true;
+
     const restartMeReceivedPromise = new Promise<void>(resolve =>
       this.once('restartMe received', resolve));
     this.io.emit('restartMe');
