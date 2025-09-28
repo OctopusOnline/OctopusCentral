@@ -81,35 +81,23 @@ export class Socket extends EventEmitter {
   }
 
   #sendAwaitReceived(event: string, params: unknown[] = [], timeout = 1e4): Promise<boolean> {
-    console.log(`[Instance-Socket] Sending event '${event}' and awaiting response.`);
     const sendReceivedPromise = new Promise<void>(resolve =>
         this.once(`${event} received`, resolve));
     this.io.emit(event, ...params);
     return Promise.race([
-      sendReceivedPromise.then(() => {
-        console.log(`[Instance-Socket] Received response for event '${event}'.`);
-        return true;
-      }),
-      sleep(timeout).then(() => {
-        console.log(`[Instance-Socket] Timed out waiting for response for event '${event}'.`);
-        return false;
-      })
+      sendReceivedPromise.then(() => true),
+      sleep(timeout).then(() => false)
     ]);
   }
 
   async sendRestartMe(timeout = 3e3): Promise<boolean> {
-    if (this.#restartMeSent) {
-      console.log('[Instance-Socket] sendRestartMe already sent, returning false.');
-      return false;
-    }
-    console.log('[Instance-Socket] Setting restartMeSent to true.');
+    if (this.#restartMeSent) return false;
     this.#restartMeSent = true;
 
     return await this.#sendAwaitReceived('restartMe', [], timeout);
   }
 
   updateAutoRestart(enabled: boolean, timeout = 1e4): Promise<boolean> {
-    console.log(`[Instance-Socket] Sending autoRestart update with enabled: ${enabled}.`);
     return this.#sendAwaitReceived('autoRestart update', [enabled], timeout);
   }
 
@@ -155,12 +143,10 @@ export class Socket extends EventEmitter {
       });
 
       socket.on('restartMe received', () => {
-        console.log('[Instance-Socket] Received "restartMe received" event.');
         this.emit('restartMe received');
       });
 
       socket.on('autoRestart update received', () => {
-        console.log('[Instance-Socket] Received "autoRestart update received" event.');
         this.emit('autoRestart update received');
       });
 

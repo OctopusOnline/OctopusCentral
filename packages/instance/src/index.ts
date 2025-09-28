@@ -169,19 +169,12 @@ export class Instance {
   }
 
   restartMe(timeout: number = 3e3): Promise<boolean> {
-    console.log(`[Instance] restartMe called.`);
     return this.socket.sendRestartMe(timeout);
   }
 
   async updateAutoRestart(enabled: boolean, timeout: number = 1e4): Promise<boolean> {
-    console.log(`[Instance] updateAutoRestart called with enabled: ${enabled}.`);
     const success = await this.socket.updateAutoRestart(enabled, timeout);
-    if (success) {
-      console.log(`[Instance] updateAutoRestart successful, updating environment variable.`);
-      process.env[instanceAutoRestartEnvVarName] = String(enabled);
-    } else {
-      console.log(`[Instance] updateAutoRestart failed.`);
-    }
+    if (success) process.env[instanceAutoRestartEnvVarName] = String(enabled);
     return success;
   }
 

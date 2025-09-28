@@ -70,16 +70,13 @@ class Controller extends node_events_1.default {
         });
     }
     addAndSetupInstance(instance) {
-        console.log('[Controller] addAndSetupInstance', instance.id);
         const instanceWithHandlers = instance;
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
         instanceWithHandlers._connectedHandler = (error) => {
-            console.log(`[Controller] Instance ${instance.id} connected handler called.`);
             clearTimeout(instanceWithHandlers._autoRestartTimeout);
             this.emit('instance socket connected', instance, error);
         };
         instanceWithHandlers._disconnectedHandler = () => {
-            console.log(`[Controller] Instance ${instance.id} disconnected handler called.`);
             this.emit('instance socket disconnected', instance);
         };
         instanceWithHandlers._statusHandler = (status) => {
@@ -87,33 +84,23 @@ class Controller extends node_events_1.default {
             this.socket.sendStatus(instance.id, status);
         };
         instanceWithHandlers._restartMeHandler = (deadPromise) => __awaiter(this, void 0, void 0, function* () {
-            console.log(`[Controller] Instance ${instance.id} restartMe handler called.`);
             this.emit('instance restartMe', instance);
             const virtualDeadInstance = new Instance_1.Instance(instance.id);
             yield deadPromise;
             yield (0, helper_1.sleep)(1e4);
-            console.log(`[Controller] Instance ${instance.id} stopping for restartMe.`);
             yield this.stopInstance(virtualDeadInstance);
             yield (0, helper_1.sleep)(1e4);
-            console.log(`[Controller] Instance ${instance.id} starting for restartMe.`);
             yield this.startInstance(virtualDeadInstance, undefined, 12e4);
         });
         instanceWithHandlers._deadHandler = () => {
-            console.log(`[Controller] Instance ${instance.id} dead handler called.`);
-            this.emit('instance dead', instance, instance.autoRestart, instance.restartMe);
+            this.emit('instance dead', instance);
             if (instance.autoRestart && !instance.restartMe) {
-                console.log(`[Controller] Instance ${instance.id} dead handler: starting _autoRestartTimeout 60s...`);
                 instanceWithHandlers._autoRestartTimeout = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restarting.`);
                     this.emit('instance autoRestart', instance);
                     const virtualDeadInstance = new Instance_1.Instance(instance.id);
-                    console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart stopping...`);
                     yield this.stopInstance(virtualDeadInstance);
-                    console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart pre start timeout 10s...`);
                     yield (0, helper_1.sleep)(1e4);
-                    console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart pre starting...`);
                     yield this.startInstance(virtualDeadInstance, undefined, 12e4);
-                    console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: done`);
                 }), 6e4);
             }
         };
@@ -154,10 +141,8 @@ class Controller extends node_events_1.default {
     }
     removeInstance(instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('[Controller] removeInstance', instance.id);
             const index = __classPrivateFieldGet(this, _Controller_instances, "f").findIndex(_instance => _instance.id === instance.id);
             if (index !== -1) {
-                console.log('[Controller] removeInstance: disconnecting and removing', instance.id);
                 const instanceWithHandlers = __classPrivateFieldGet(this, _Controller_instances, "f")[index];
                 instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
                 instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
@@ -206,7 +191,6 @@ class Controller extends node_events_1.default {
     }
     startInstance(instance_2, mode_1) {
         return __awaiter(this, arguments, void 0, function* (instance, mode, timeout = 6e4) {
-            console.log('[Controller] startInstance', instance.id, mode || 'production');
             this.emit('instance starting', instance);
             let bootResult, dockerResult, timeoutId;
             const resetTimeout = () => {
@@ -259,19 +243,12 @@ class Controller extends node_events_1.default {
     stopInstance(instance_2) {
         return __awaiter(this, arguments, void 0, function* (instance, preventAutoRestart = true) {
             this.emit('instance stopping', instance);
-            console.log(`[Controller] Stopping instance ${instance.id}. preventAutoRestart: ${preventAutoRestart}`);
             const autoRestart = instance.autoRestart;
-            if (preventAutoRestart) {
-                console.log(`[Controller] Instance ${instance.id} preventAutoRestart autoRestart disabled.`);
+            if (preventAutoRestart)
                 instance.autoRestart = false;
-            }
-            console.log(`[Controller] Instance ${instance.id} docker.stopInstance...`);
             const result = yield this.docker.stopInstance(instance);
-            console.log(`[Controller] Instance ${instance.id} docker.stopInstance result:`, result);
-            if (preventAutoRestart) {
-                console.log(`[Controller] Instance ${instance.id} autoRestart restored to ${autoRestart}.`);
+            if (preventAutoRestart)
                 instance.autoRestart = autoRestart;
-            }
             this.emit('instance stopped', instance, result);
             return result;
         });

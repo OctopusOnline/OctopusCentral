@@ -55,13 +55,11 @@ class Instance extends node_events_1.default {
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
             if (!this.socketProtocol || !this.socketHostname || !this.socketPort) {
-                console.log(`[Controller-Instance ${this.id}] connect: no socket config, setting restartMe to false.`);
                 __classPrivateFieldSet(this, _Instance_restartMe, false, "f");
                 return false;
             }
             if (this.connected && reconnect)
                 yield this.disconnect();
-            console.log(`[Controller-Instance ${this.id}] connect: setting restartMe to false.`);
             __classPrivateFieldSet(this, _Instance_restartMe, false, "f");
             const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
                 reconnection: true,
@@ -95,7 +93,6 @@ class Instance extends node_events_1.default {
                 }),
                 'restartMe': (() => {
                     if (!__classPrivateFieldGet(this, _Instance_restartMe, "f")) {
-                        console.log(`[Controller-Instance ${this.id}] restartMe received.`);
                         __classPrivateFieldSet(this, _Instance_restartMe, true, "f");
                         let deadListener;
                         this.emit('restartMe', Promise.race([
@@ -109,7 +106,6 @@ class Instance extends node_events_1.default {
                     __classPrivateFieldGet(this, _Instance_socket, "f").emit('restartMe received');
                 }),
                 'autoRestart update': ((enabled) => {
-                    console.log(`[Controller-Instance ${this.id}] autoRestart update received: ${enabled}.`);
                     this.emit('autoRestart update', enabled);
                     this.autoRestart = enabled;
                     __classPrivateFieldGet(this, _Instance_socket, "f").emit('autoRestart update received');
@@ -153,10 +149,8 @@ class Instance extends node_events_1.default {
             if (!__classPrivateFieldGet(this, _Instance_socket, "f"))
                 return success;
             if (__classPrivateFieldGet(this, _Instance_socket, "f").connected) {
-                if (disableAutoRestart) {
-                    console.log(`[Controller-Instance ${this.id}] disconnect: disabling autoRestart.`);
+                if (disableAutoRestart)
                     this.autoRestart = false;
-                }
                 const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
                 __classPrivateFieldGet(this, _Instance_socket, "f").disconnect();
                 success = yield Promise.race([
