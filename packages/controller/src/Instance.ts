@@ -51,6 +51,7 @@ export class Instance extends EventEmitter {
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
     if (!this.socketProtocol || !this.socketHostname || !this.socketPort) {
+      console.log(`[Controller-Instance ${this.id}] connect: no socket config, setting restartMe to false.`);
       this.#restartMe = false;
       return false;
     }
@@ -58,6 +59,7 @@ export class Instance extends EventEmitter {
     if (this.connected && reconnect)
       await this.disconnect();
 
+    console.log(`[Controller-Instance ${this.id}] connect: setting restartMe to false.`);
     this.#restartMe = false;
 
     const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
@@ -102,6 +104,7 @@ export class Instance extends EventEmitter {
       'restartMe': (
         () => {
           if (!this.#restartMe) {
+            console.log(`[Controller-Instance ${this.id}] restartMe received.`);
             this.#restartMe = true;
             let deadListener: (value: unknown) => void;
             this.emit('restartMe', Promise.race([
@@ -117,6 +120,7 @@ export class Instance extends EventEmitter {
       ),
       'autoRestart update': (
         (enabled: boolean) => {
+          console.log(`[Controller-Instance ${this.id}] autoRestart update received: ${enabled}.`);
           this.emit('autoRestart update', enabled);
           this.autoRestart = enabled;
           this.#socket!.emit('autoRestart update received');
@@ -166,7 +170,10 @@ export class Instance extends EventEmitter {
     if (!this.#socket) return success;
 
     if (this.#socket.connected) {
-      if (disableAutoRestart) this.autoRestart = false;
+      if (disableAutoRestart) {
+        console.log(`[Controller-Instance ${this.id}] disconnect: disabling autoRestart.`);
+        this.autoRestart = false;
+      }
 
       const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
       this.#socket.disconnect();

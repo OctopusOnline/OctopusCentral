@@ -172,13 +172,20 @@ class Instance {
         this.socket.sendStatus(status);
     }
     restartMe(timeout = 3e3) {
+        console.log(`[Instance] restartMe called.`);
         return this.socket.sendRestartMe(timeout);
     }
     updateAutoRestart(enabled_1) {
         return __awaiter(this, arguments, void 0, function* (enabled, timeout = 1e4) {
+            console.log(`[Instance] updateAutoRestart called with enabled: ${enabled}.`);
             const success = yield this.socket.updateAutoRestart(enabled, timeout);
-            if (success)
+            if (success) {
+                console.log(`[Instance] updateAutoRestart successful, updating environment variable.`);
                 node_process_1.default.env[types_1.instanceAutoRestartEnvVarName] = String(enabled);
+            }
+            else {
+                console.log(`[Instance] updateAutoRestart failed.`);
+            }
             return success;
         });
     }

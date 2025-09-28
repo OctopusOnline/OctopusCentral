@@ -69,15 +69,19 @@ export class Controller extends EventEmitter {
   }
 
   private addAndSetupInstance(instance: Instance): void {
+    console.log('[Controller] addAndSetupInstance', instance.id);
+
     const instanceWithHandlers = instance as InstanceWithHandlers;
     this.#instances.push(instanceWithHandlers);
 
     instanceWithHandlers._connectedHandler = (error?: Error) => {
+      console.log(`[Controller] Instance ${instance.id} connected handler called.`);
       clearTimeout(instanceWithHandlers._autoRestartTimeout);
       this.emit('instance socket connected', instance, error);
     }
 
     instanceWithHandlers._disconnectedHandler = () => {
+      console.log(`[Controller] Instance ${instance.id} disconnected handler called.`);
       this.emit('instance socket disconnected', instance);
     }
 
@@ -87,24 +91,34 @@ export class Controller extends EventEmitter {
     }
 
     instanceWithHandlers._restartMeHandler = async (deadPromise?: Promise<void>) => {
+      console.log(`[Controller] Instance ${instance.id} restartMe handler called.`);
       this.emit('instance restartMe', instance);
       const virtualDeadInstance = new Instance(instance.id);
       await deadPromise;
       await sleep(1e4);
+      console.log(`[Controller] Instance ${instance.id} stopping for restartMe.`);
       await this.stopInstance(virtualDeadInstance);
       await sleep(1e4);
+      console.log(`[Controller] Instance ${instance.id} starting for restartMe.`);
       await this.startInstance(virtualDeadInstance, undefined, 12e4);
     }
 
     instanceWithHandlers._deadHandler = () => {
-      this.emit('instance dead', instance);
+      console.log(`[Controller] Instance ${instance.id} dead handler called.`);
+      this.emit('instance dead', instance, instance.autoRestart, instance.restartMe);
       if (instance.autoRestart && !instance.restartMe) {
+        console.log(`[Controller] Instance ${instance.id} dead handler: starting _autoRestartTimeout 60s...`);
         instanceWithHandlers._autoRestartTimeout = setTimeout(async () => {
+          console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restarting.`);
           this.emit('instance autoRestart', instance);
           const virtualDeadInstance = new Instance(instance.id);
+          console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart stopping...`);
           await this.stopInstance(virtualDeadInstance);
+          console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart pre start timeout 10s...`);
           await sleep(1e4);
+          console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: auto-restart pre starting...`);
           await this.startInstance(virtualDeadInstance, undefined, 12e4);
+          console.log(`[Controller] Instance ${instance.id} _autoRestartTimeout callback: done`);
         }, 6e4);
       }
     }
@@ -155,8 +169,10 @@ export class Controller extends EventEmitter {
   }
 
   async removeInstance(instance: Instance): Promise<void> {
+    console.log('[Controller] removeInstance', instance.id);
     const index = this.#instances.findIndex(_instance => _instance.id === instance.id);
     if (index !== -1) {
+      console.log('[Controller] removeInstance: disconnecting and removing', instance.id);
       const instanceWithHandlers = this.#instances[index];
       instanceWithHandlers.off('socket connected',    instanceWithHandlers._connectedHandler);
       instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
@@ -205,6 +221,7 @@ export class Controller extends EventEmitter {
   }
 
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {
+    console.log('[Controller] startInstance', instance.id, mode || 'production')
     this.emit('instance starting', instance);
 
     let bootResult: boolean | undefined,
@@ -264,15 +281,22 @@ export class Controller extends EventEmitter {
 
   async stopInstance(instance: Instance, preventAutoRestart: boolean = true): Promise<boolean> {
     this.emit('instance stopping', instance);
+    console.log(`[Controller] Stopping instance ${instance.id}. preventAutoRestart: ${preventAutoRestart}`);
 
     const autoRestart: boolean = instance.autoRestart;
-    if (preventAutoRestart)
+    if (preventAutoRestart) {
+      console.log(`[Controller] Instance ${instance.id} preventAutoRestart autoRestart disabled.`);
       instance.autoRestart = false;
+    }
 
+    console.log(`[Controller] Instance ${instance.id} docker.stopInstance...`);
     const result: boolean = await this.docker.stopInstance(instance);
+    console.log(`[Controller] Instance ${instance.id} docker.stopInstance result:`, result);
 
-    if (preventAutoRestart)
+    if (preventAutoRestart) {
+      console.log(`[Controller] Instance ${instance.id} autoRestart restored to ${autoRestart}.`);
       instance.autoRestart = autoRestart;
+    }
 
     this.emit('instance stopped', instance, result);
     return result;

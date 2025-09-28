@@ -84,13 +84,17 @@ class Socket extends node_events_1.default {
     }
     sendRestartMe() {
         return __awaiter(this, arguments, void 0, function* (timeout = 3e3) {
-            if (__classPrivateFieldGet(this, _Socket_restartMeSent, "f"))
+            if (__classPrivateFieldGet(this, _Socket_restartMeSent, "f")) {
+                console.log('[Instance-Socket] sendRestartMe already sent, returning false.');
                 return false;
+            }
+            console.log('[Instance-Socket] Setting restartMeSent to true.');
             __classPrivateFieldSet(this, _Socket_restartMeSent, true, "f");
             return yield __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendAwaitReceived).call(this, 'restartMe', [], timeout);
         });
     }
     updateAutoRestart(enabled, timeout = 1e4) {
+        console.log(`[Instance-Socket] Sending autoRestart update with enabled: ${enabled}.`);
         return __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendAwaitReceived).call(this, 'autoRestart update', [enabled], timeout);
     }
     setupSocketHandlers() {
@@ -126,9 +130,11 @@ class Socket extends node_events_1.default {
                 socket.removeAllListeners();
             });
             socket.on('restartMe received', () => {
+                console.log('[Instance-Socket] Received "restartMe received" event.');
                 this.emit('restartMe received');
             });
             socket.on('autoRestart update received', () => {
+                console.log('[Instance-Socket] Received "autoRestart update received" event.');
                 this.emit('autoRestart update received');
             });
             __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
@@ -140,11 +146,18 @@ _Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_s
     if (__classPrivateFieldGet(this, _Socket_statusQueue, "f").length > 0)
         this.io.emit('status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
 }, _Socket_sendAwaitReceived = function _Socket_sendAwaitReceived(event, params = [], timeout = 1e4) {
+    console.log(`[Instance-Socket] Sending event '${event}' and awaiting response.`);
     const sendReceivedPromise = new Promise(resolve => this.once(`${event} received`, resolve));
     this.io.emit(event, ...params);
     return Promise.race([
-        sendReceivedPromise.then(() => true),
-        (0, helper_1.sleep)(timeout).then(() => false)
+        sendReceivedPromise.then(() => {
+            console.log(`[Instance-Socket] Received response for event '${event}'.`);
+            return true;
+        }),
+        (0, helper_1.sleep)(timeout).then(() => {
+            console.log(`[Instance-Socket] Timed out waiting for response for event '${event}'.`);
+            return false;
+        })
     ]);
 };
 //# sourceMappingURL=Socket.js.map
