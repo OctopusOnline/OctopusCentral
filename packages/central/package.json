@@ -10,9 +10,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && git add dist",
     "watch": "tsc --watch",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo"
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+
+    "prebuild": "npm run clean"
   },
   "dependencies": {
     "@octopuscentral/types": "^1.27.0",
