@@ -15,11 +15,16 @@ export class Instance extends EventEmitter {
   #statusQueue: InstanceStatus[] = [];
   #statusQueueLimit: number = 100;
 
+  #restartMe: boolean = false;
+  autoRestart: boolean = false;
+
   get socket(): IOSocket | undefined { return this.#socket }
 
   get connected(): boolean { return !!this.#socket }
 
   get statusQueue(): InstanceStatus[] { return this.#statusQueue }
+
+  get restartMe(): boolean { return this.#restartMe }
 
   constructor(id: number, socketHostname?: string, socketPort: number = 1777) {
     super();
@@ -45,10 +50,15 @@ export class Instance extends EventEmitter {
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
-    if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
+    if (!this.socketProtocol || !this.socketHostname || !this.socketPort) {
+      this.#restartMe = false;
       return false;
+    }
+
     if (this.connected && reconnect)
-      this.disconnect();
+      await this.disconnect();
+
+    this.#restartMe = false;
 
     const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
       reconnection: true,
@@ -72,38 +82,54 @@ export class Instance extends EventEmitter {
       return connectResult;
     }
 
-    const bootHandler   = (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout);
-    const bootedHandler = (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout);
-    const statusHandler = (status: InstanceStatus[] | unknown) => {
-      if (Array.isArray(status))
-        this.#socket!.emit('status received', status.map(status => {
-          if (this.#queueStatus(status))
-            this.emit('status received', status);
-          return status.timestamp;
-        }));
-    }
-    const restartMeHandler = () => {
-      let deadListener: (value: unknown) => void;
-      this.emit('restartMe', Promise.race([
-        new Promise(resolve => {
-          deadListener = resolve;
-          this.once('dead', deadListener);
-        }),
-        sleep(3e4)
-      ]).finally(() => this.off('dead', deadListener)));
-      this.#socket!.emit('restartMe received');
+    const handlers: { [event: string]: (...args: any[]) => void } = {
+      'boot status': (
+        (message: string,  resetTimeout: boolean) => this.emit('boot status',        message, resetTimeout)
+      ),
+      'boot status booted': (
+        (success: boolean, resetTimeout: boolean) => this.emit('boot status booted', success, resetTimeout)
+      ),
+      'status': (
+        (status: InstanceStatus[] | unknown) => {
+          if (Array.isArray(status))
+            this.#socket!.emit('status received', status.map(status => {
+              if (this.#queueStatus(status))
+                this.emit('status received', status);
+              return status.timestamp;
+            }));
+        }
+      ),
+      'restartMe': (
+        () => {
+          if (!this.#restartMe) {
+            this.#restartMe = true;
+            let deadListener: (value: unknown) => void;
+            this.emit('restartMe', Promise.race([
+              new Promise(resolve => {
+                deadListener = resolve;
+                this.once('dead', deadListener);
+              }),
+              sleep(3e4)
+            ]).finally(() => this.off('dead', deadListener)));
+          }
+          this.#socket!.emit('restartMe received');
+        }
+      ),
+      'autoRestart update': (
+        (enabled: boolean) => {
+          this.emit('autoRestart update', enabled);
+          this.autoRestart = enabled;
+          this.#socket!.emit('autoRestart update received');
+        }
+      )
     }
 
-    this.#socket!.on('boot status',          bootHandler);
-    this.#socket!.on('boot status booted', bootedHandler);
-    this.#socket!.on('status',             statusHandler);
-    this.#socket!.on('restartMe',       restartMeHandler);
+    for (const event in handlers)
+      this.#socket!.on(event, handlers[event]);
 
     this.#socket!.on('disconnect', () => {
-      this.#socket!.off('boot status',          bootHandler);
-      this.#socket!.off('boot status booted', bootedHandler);
-      this.#socket!.off('status',             statusHandler);
-      this.#socket!.off('restartMe',       restartMeHandler);
+      for (const event in handlers)
+        this.#socket!.off(event, handlers[event]);
       this.emit('dead');
     });
 
@@ -134,11 +160,25 @@ export class Instance extends EventEmitter {
     });
   }
 
-  disconnect(): void {
-    if (this.#socket) {
-      this.#socket.close();
-      this.#socket = undefined;
-      this.emit('socket disconnected');
+  async disconnect(timeout: number = 1e4, disableAutoRestart: boolean = true): Promise<boolean> {
+    let success: boolean = true;
+
+    if (!this.#socket) return success;
+
+    if (this.#socket.connected) {
+      if (disableAutoRestart) this.autoRestart = false;
+
+      const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
+      this.#socket.disconnect();
+
+      success = await Promise.race<boolean>([
+        disconnectPromise.then(() => true),
+        sleep(timeout).then(() => false)
+      ]);
     }
+
+    this.#socket = undefined;
+    this.emit('socket disconnected', success);
+    return success;
   }
 }

@@ -62,7 +62,7 @@ class Socket {
     stop() {
         return __awaiter(this, void 0, void 0, function* () {
             for (const instance of this.controller.instances)
-                instance.disconnect();
+                yield instance.disconnect();
             yield new Promise(resolve => this.server.close(() => resolve(this)));
         });
     }

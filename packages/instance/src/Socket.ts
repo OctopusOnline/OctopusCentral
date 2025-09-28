@@ -80,17 +80,25 @@ export class Socket extends EventEmitter {
       this.io.emit('status', this.#statusQueue);
   }
 
+  #sendAwaitReceived(event: string, params: unknown[] = [], timeout = 1e4): Promise<boolean> {
+    const sendReceivedPromise = new Promise<void>(resolve =>
+        this.once(`${event} received`, resolve));
+    this.io.emit(event, ...params);
+    return Promise.race([
+      sendReceivedPromise.then(() => true),
+      sleep(timeout).then(() => false)
+    ]);
+  }
+
   async sendRestartMe(timeout = 3e3): Promise<boolean> {
     if (this.#restartMeSent) return false;
     this.#restartMeSent = true;
 
-    const restartMeReceivedPromise = new Promise<void>(resolve =>
-      this.once('restartMe received', resolve));
-    this.io.emit('restartMe');
-    return await Promise.race([
-      restartMeReceivedPromise.then(() => true),
-      sleep(timeout).then(() => false)
-    ]);
+    return await this.#sendAwaitReceived('restartMe', [], timeout);
+  }
+
+  updateAutoRestart(enabled: boolean, timeout = 1e4): Promise<boolean> {
+    return this.#sendAwaitReceived('autoRestart update', [enabled], timeout);
   }
 
   private setupSocketHandlers() {
@@ -136,6 +144,10 @@ export class Socket extends EventEmitter {
 
       socket.on('restartMe received', () => {
         this.emit('restartMe received');
+      });
+
+      socket.on('autoRestart update received', () => {
+        this.emit('autoRestart update received');
       });
 
       this.#sendStatusQueue();

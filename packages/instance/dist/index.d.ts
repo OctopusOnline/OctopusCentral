@@ -14,6 +14,7 @@ export declare class Instance {
     get mode(): DockerInstanceMode;
     get database(): Database;
     get portBindings(): InstancePortBinding[];
+    get autoRestart(): boolean;
     private parsePortBindingString;
     _initVirtual(serviceName: string, mode: DockerInstanceMode, portBindings?: InstancePortBinding[]): Promise<void>;
     constructor(databaseUrl?: string, id?: number | null);
@@ -23,5 +24,6 @@ export declare class Instance {
     sendBootStatus(messageOrBooted: string | boolean, resetTimeout?: boolean): void;
     sendStatus(status: InstanceStatusParam): void;
     restartMe(timeout?: number): Promise<boolean>;
+    updateAutoRestart(enabled: boolean, timeout?: number): Promise<boolean>;
     setSocketHostname(hostname: string): Promise<void>;
 }

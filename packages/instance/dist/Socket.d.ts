@@ -19,5 +19,6 @@ export declare class Socket extends EventEmitter {
     getStatus(timestamp: number): InstanceStatus | undefined;
     sendStatus(status: InstanceStatusParam): void;
     sendRestartMe(timeout?: number): Promise<boolean>;
+    updateAutoRestart(enabled: boolean, timeout?: number): Promise<boolean>;
     private setupSocketHandlers;
 }

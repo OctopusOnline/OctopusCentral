@@ -65,6 +65,9 @@ class Instance {
             throw new Error('instance.portBindings is not set\nmaybe run init() first?');
         return __classPrivateFieldGet(this, _Instance_portBindings, "f");
     }
+    get autoRestart() {
+        return node_process_1.default.env[types_1.instanceAutoRestartEnvVarName] === 'true';
+    }
     parsePortBindingString(bindingString) {
         const binding = bindingString.split(',');
         const bindingSrc = binding[0].split('/');
@@ -170,6 +173,14 @@ class Instance {
     }
     restartMe(timeout = 3e3) {
         return this.socket.sendRestartMe(timeout);
+    }
+    updateAutoRestart(enabled_1) {
+        return __awaiter(this, arguments, void 0, function* (enabled, timeout = 1e4) {
+            const success = yield this.socket.updateAutoRestart(enabled, timeout);
+            if (success)
+                node_process_1.default.env[types_1.instanceAutoRestartEnvVarName] = String(enabled);
+            return success;
+        });
     }
     setSocketHostname(hostname) {
         return __awaiter(this, void 0, void 0, function* () {

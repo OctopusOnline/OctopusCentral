@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_restartMeSent, _Socket_sendStatusQueue;
+var _Socket_instances, _Socket_port, _Socket_startPermission, _Socket_statusQueue, _Socket_restartMeSent, _Socket_sendStatusQueue, _Socket_sendAwaitReceived;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Socket = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -87,13 +87,11 @@ class Socket extends node_events_1.default {
             if (__classPrivateFieldGet(this, _Socket_restartMeSent, "f"))
                 return false;
             __classPrivateFieldSet(this, _Socket_restartMeSent, true, "f");
-            const restartMeReceivedPromise = new Promise(resolve => this.once('restartMe received', resolve));
-            this.io.emit('restartMe');
-            return yield Promise.race([
-                restartMeReceivedPromise.then(() => true),
-                (0, helper_1.sleep)(timeout).then(() => false)
-            ]);
+            return yield __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendAwaitReceived).call(this, 'restartMe', [], timeout);
         });
+    }
+    updateAutoRestart(enabled, timeout = 1e4) {
+        return __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendAwaitReceived).call(this, 'autoRestart update', [enabled], timeout);
     }
     setupSocketHandlers() {
         this.io.on('connection', (socket) => {
@@ -130,6 +128,9 @@ class Socket extends node_events_1.default {
             socket.on('restartMe received', () => {
                 this.emit('restartMe received');
             });
+            socket.on('autoRestart update received', () => {
+                this.emit('autoRestart update received');
+            });
             __classPrivateFieldGet(this, _Socket_instances, "m", _Socket_sendStatusQueue).call(this);
         });
     }
@@ -138,5 +139,12 @@ exports.Socket = Socket;
 _Socket_port = new WeakMap(), _Socket_startPermission = new WeakMap(), _Socket_statusQueue = new WeakMap(), _Socket_restartMeSent = new WeakMap(), _Socket_instances = new WeakSet(), _Socket_sendStatusQueue = function _Socket_sendStatusQueue() {
     if (__classPrivateFieldGet(this, _Socket_statusQueue, "f").length > 0)
         this.io.emit('status', __classPrivateFieldGet(this, _Socket_statusQueue, "f"));
+}, _Socket_sendAwaitReceived = function _Socket_sendAwaitReceived(event, params = [], timeout = 1e4) {
+    const sendReceivedPromise = new Promise(resolve => this.once(`${event} received`, resolve));
+    this.io.emit(event, ...params);
+    return Promise.race([
+        sendReceivedPromise.then(() => true),
+        (0, helper_1.sleep)(timeout).then(() => false)
+    ]);
 };
 //# sourceMappingURL=Socket.js.map

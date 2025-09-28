@@ -22,7 +22,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _Instance_instances, _Instance_socket, _Instance_statusQueue, _Instance_statusQueueLimit, _Instance_queueStatus;
+var _Instance_instances, _Instance_socket, _Instance_statusQueue, _Instance_statusQueueLimit, _Instance_restartMe, _Instance_queueStatus;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Instance = void 0;
 const node_events_1 = __importDefault(require("node:events"));
@@ -32,6 +32,7 @@ class Instance extends node_events_1.default {
     get socket() { return __classPrivateFieldGet(this, _Instance_socket, "f"); }
     get connected() { return !!__classPrivateFieldGet(this, _Instance_socket, "f"); }
     get statusQueue() { return __classPrivateFieldGet(this, _Instance_statusQueue, "f"); }
+    get restartMe() { return __classPrivateFieldGet(this, _Instance_restartMe, "f"); }
     constructor(id, socketHostname, socketPort = 1777) {
         super();
         _Instance_instances.add(this);
@@ -39,6 +40,8 @@ class Instance extends node_events_1.default {
         _Instance_socket.set(this, void 0);
         _Instance_statusQueue.set(this, []);
         _Instance_statusQueueLimit.set(this, 100);
+        _Instance_restartMe.set(this, false);
+        this.autoRestart = false;
         this.id = id;
         this.socketHostname = socketHostname;
         this.socketPort = socketPort;
@@ -51,10 +54,13 @@ class Instance extends node_events_1.default {
     }
     connect() {
         return __awaiter(this, arguments, void 0, function* (reconnect = false) {
-            if (!this.socketProtocol || !this.socketHostname || !this.socketPort)
+            if (!this.socketProtocol || !this.socketHostname || !this.socketPort) {
+                __classPrivateFieldSet(this, _Instance_restartMe, false, "f");
                 return false;
+            }
             if (this.connected && reconnect)
-                this.disconnect();
+                yield this.disconnect();
+            __classPrivateFieldSet(this, _Instance_restartMe, false, "f");
             const socket = (0, socket_io_client_1.io)(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
                 reconnection: true,
                 reconnectionAttempts: Infinity
@@ -74,36 +80,42 @@ class Instance extends node_events_1.default {
                 __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
                 return connectResult;
             }
-            const bootHandler = (message, resetTimeout) => this.emit('boot status', message, resetTimeout);
-            const bootedHandler = (success, resetTimeout) => this.emit('boot status booted', success, resetTimeout);
-            const statusHandler = (status) => {
-                if (Array.isArray(status))
-                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', status.map(status => {
-                        if (__classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status))
-                            this.emit('status received', status);
-                        return status.timestamp;
-                    }));
+            const handlers = {
+                'boot status': ((message, resetTimeout) => this.emit('boot status', message, resetTimeout)),
+                'boot status booted': ((success, resetTimeout) => this.emit('boot status booted', success, resetTimeout)),
+                'status': ((status) => {
+                    if (Array.isArray(status))
+                        __classPrivateFieldGet(this, _Instance_socket, "f").emit('status received', status.map(status => {
+                            if (__classPrivateFieldGet(this, _Instance_instances, "m", _Instance_queueStatus).call(this, status))
+                                this.emit('status received', status);
+                            return status.timestamp;
+                        }));
+                }),
+                'restartMe': (() => {
+                    if (!__classPrivateFieldGet(this, _Instance_restartMe, "f")) {
+                        __classPrivateFieldSet(this, _Instance_restartMe, true, "f");
+                        let deadListener;
+                        this.emit('restartMe', Promise.race([
+                            new Promise(resolve => {
+                                deadListener = resolve;
+                                this.once('dead', deadListener);
+                            }),
+                            (0, helper_1.sleep)(3e4)
+                        ]).finally(() => this.off('dead', deadListener)));
+                    }
+                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('restartMe received');
+                }),
+                'autoRestart update': ((enabled) => {
+                    this.emit('autoRestart update', enabled);
+                    this.autoRestart = enabled;
+                    __classPrivateFieldGet(this, _Instance_socket, "f").emit('autoRestart update received');
+                })
             };
-            const restartMeHandler = () => {
-                let deadListener;
-                this.emit('restartMe', Promise.race([
-                    new Promise(resolve => {
-                        deadListener = resolve;
-                        this.once('dead', deadListener);
-                    }),
-                    (0, helper_1.sleep)(3e4)
-                ]).finally(() => this.off('dead', deadListener)));
-                __classPrivateFieldGet(this, _Instance_socket, "f").emit('restartMe received');
-            };
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status', bootHandler);
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('boot status booted', bootedHandler);
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('status', statusHandler);
-            __classPrivateFieldGet(this, _Instance_socket, "f").on('restartMe', restartMeHandler);
+            for (const event in handlers)
+                __classPrivateFieldGet(this, _Instance_socket, "f").on(event, handlers[event]);
             __classPrivateFieldGet(this, _Instance_socket, "f").on('disconnect', () => {
-                __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status', bootHandler);
-                __classPrivateFieldGet(this, _Instance_socket, "f").off('boot status booted', bootedHandler);
-                __classPrivateFieldGet(this, _Instance_socket, "f").off('status', statusHandler);
-                __classPrivateFieldGet(this, _Instance_socket, "f").off('restartMe', restartMeHandler);
+                for (const event in handlers)
+                    __classPrivateFieldGet(this, _Instance_socket, "f").off(event, handlers[event]);
                 this.emit('dead');
             });
             return true;
@@ -132,15 +144,28 @@ class Instance extends node_events_1.default {
         });
     }
     disconnect() {
-        if (__classPrivateFieldGet(this, _Instance_socket, "f")) {
-            __classPrivateFieldGet(this, _Instance_socket, "f").close();
+        return __awaiter(this, arguments, void 0, function* (timeout = 1e4, disableAutoRestart = true) {
+            let success = true;
+            if (!__classPrivateFieldGet(this, _Instance_socket, "f"))
+                return success;
+            if (__classPrivateFieldGet(this, _Instance_socket, "f").connected) {
+                if (disableAutoRestart)
+                    this.autoRestart = false;
+                const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
+                __classPrivateFieldGet(this, _Instance_socket, "f").disconnect();
+                success = yield Promise.race([
+                    disconnectPromise.then(() => true),
+                    (0, helper_1.sleep)(timeout).then(() => false)
+                ]);
+            }
             __classPrivateFieldSet(this, _Instance_socket, undefined, "f");
-            this.emit('socket disconnected');
-        }
+            this.emit('socket disconnected', success);
+            return success;
+        });
     }
 }
 exports.Instance = Instance;
-_Instance_socket = new WeakMap(), _Instance_statusQueue = new WeakMap(), _Instance_statusQueueLimit = new WeakMap(), _Instance_instances = new WeakSet(), _Instance_queueStatus = function _Instance_queueStatus(status) {
+_Instance_socket = new WeakMap(), _Instance_statusQueue = new WeakMap(), _Instance_statusQueueLimit = new WeakMap(), _Instance_restartMe = new WeakMap(), _Instance_instances = new WeakSet(), _Instance_queueStatus = function _Instance_queueStatus(status) {
     if (this.getStatus(status.timestamp))
         return false;
     __classPrivateFieldGet(this, _Instance_statusQueue, "f").unshift(status);

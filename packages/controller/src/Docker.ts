@@ -1,4 +1,18 @@
-import { instanceDatabaseEnvVarName, DockerClientProps, DockerInstanceProps, labelPrefix, volumeLabelPrefix, instanceLabelPrefix, controllerLabelPrefix, instanceIdEnvVarName, instanceServiceNameEnvVarName, DockerInstanceMode, instanceModeEnvVarName, instancePortBindingsEnvVarName } from '@octopuscentral/types';
+import {
+  instanceDatabaseEnvVarName,
+  DockerClientProps,
+  DockerInstanceProps,
+  labelPrefix,
+  volumeLabelPrefix,
+  instanceLabelPrefix,
+  controllerLabelPrefix,
+  instanceIdEnvVarName,
+  instanceServiceNameEnvVarName,
+  DockerInstanceMode,
+  instanceModeEnvVarName,
+  instancePortBindingsEnvVarName,
+  instanceAutoRestartEnvVarName
+} from '@octopuscentral/types';
 import { Docker as DockerClient } from 'node-docker-api';
 import { Image } from 'node-docker-api/lib/image';
 import { Volume } from 'node-docker-api/lib/volume';
@@ -136,6 +150,8 @@ export class Docker {
     if (forceRestart && await this.getContainer(instance))
       await this.stopInstance(instance);
 
+    instance.autoRestart = await this.getSelfContainerLabel(`${labelPrefix}.${instanceLabelPrefix}.auto-restart`) === 'true';
+
     const containerName: string = this.getContainerName(instance);
 
     const volumesString = await this.getSelfContainerLabel(`${labelPrefix}.${instanceLabelPrefix}.volumes`)
@@ -183,6 +199,7 @@ export class Docker {
         `${instanceDatabaseEnvVarName}=${this.controller.database.url}`,
         `${instanceModeEnvVarName}=${mode || 'production'}`,
         `${instancePortBindingsEnvVarName}=${Object.entries(portBindings).map(([src, hosts]) => `${src},${hosts[0].HostPort}`).join(';')}`,
+        `${instanceAutoRestartEnvVarName}=${instance.autoRestart}`
       ],
       HostConfig: {
         Binds: binds,

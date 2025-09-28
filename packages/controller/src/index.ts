@@ -20,10 +20,13 @@ import { join } from 'path';
 export { Docker, Socket, Instance, CLIClient };
 
 interface InstanceWithHandlers extends Instance {
-  _connectedHandler: (error?: Error) => void
-  _disconnectedHandler: () => void
-  _statusHandler: (status: InstanceStatus) => void
-  _restartMeHandler: () => void
+  _connectedHandler: (error?: Error) => void;
+  _disconnectedHandler: () => void;
+  _statusHandler: (status: InstanceStatus) => void;
+  _restartMeHandler: (deadPromise?: Promise<void>) => void;
+  _deadHandler: () => void;
+
+  _autoRestartTimeout?: NodeJS.Timeout;
 }
 
 export class Controller extends EventEmitter {
@@ -56,26 +59,34 @@ export class Controller extends EventEmitter {
     this.cli = new CLIServer(this);
   }
 
-  addInstance(instance: Instance, overwrite: boolean = false) {
+  async addInstance(instance: Instance, overwrite: boolean = false): Promise<void> {
     if (!this.getInstance(instance.id))
       this.addAndSetupInstance(instance);
     else if (overwrite) {
-      this.removeInstance(instance);
+      await this.removeInstance(instance);
       this.addAndSetupInstance(instance);
     }
   }
 
-  private addAndSetupInstance(instance: Instance) {
+  private addAndSetupInstance(instance: Instance): void {
     const instanceWithHandlers = instance as InstanceWithHandlers;
     this.#instances.push(instanceWithHandlers);
 
-    instanceWithHandlers._connectedHandler    = (error?: Error) => this.emit('instance socket connected', instance, error);
-    instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
-    instanceWithHandlers._statusHandler       = (status: InstanceStatus) => {
+    instanceWithHandlers._connectedHandler = (error?: Error) => {
+      clearTimeout(instanceWithHandlers._autoRestartTimeout);
+      this.emit('instance socket connected', instance, error);
+    }
+
+    instanceWithHandlers._disconnectedHandler = () => {
+      this.emit('instance socket disconnected', instance);
+    }
+
+    instanceWithHandlers._statusHandler = (status: InstanceStatus) => {
       this.emit('instance status', instance, status);
       this.socket.sendStatus(instance.id, status);
     }
-    instanceWithHandlers._restartMeHandler    = async (deadPromise?: Promise<void>) => {
+
+    instanceWithHandlers._restartMeHandler = async (deadPromise?: Promise<void>) => {
       this.emit('instance restartMe', instance);
       const virtualDeadInstance = new Instance(instance.id);
       await deadPromise;
@@ -85,10 +96,24 @@ export class Controller extends EventEmitter {
       await this.startInstance(virtualDeadInstance, undefined, 12e4);
     }
 
+    instanceWithHandlers._deadHandler = () => {
+      this.emit('instance dead', instance);
+      if (instance.autoRestart && !instance.restartMe) {
+        instanceWithHandlers._autoRestartTimeout = setTimeout(async () => {
+          this.emit('instance autoRestart', instance);
+          const virtualDeadInstance = new Instance(instance.id);
+          await this.stopInstance(virtualDeadInstance);
+          await sleep(1e4);
+          await this.startInstance(virtualDeadInstance, undefined, 12e4);
+        }, 6e4);
+      }
+    }
+
     instanceWithHandlers.on('socket connected',    instanceWithHandlers._connectedHandler);
     instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
     instanceWithHandlers.on('status received',     instanceWithHandlers._statusHandler);
     instanceWithHandlers.on('restartMe',           instanceWithHandlers._restartMeHandler);
+    instanceWithHandlers.on('dead',                instanceWithHandlers._deadHandler);
   }
 
   private get lastInstanceId(): number {
@@ -129,15 +154,16 @@ export class Controller extends EventEmitter {
     return this.#instances.find(_instance => _instance.id === id);
   }
 
-  removeInstance(instance: Instance): void {
+  async removeInstance(instance: Instance): Promise<void> {
     const index = this.#instances.findIndex(_instance => _instance.id === instance.id);
     if (index !== -1) {
       const instanceWithHandlers = this.#instances[index];
-      instanceWithHandlers.disconnect();
       instanceWithHandlers.off('socket connected',    instanceWithHandlers._connectedHandler);
       instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
       instanceWithHandlers.off('status received',     instanceWithHandlers._statusHandler);
       instanceWithHandlers.off('restartMe',           instanceWithHandlers._restartMeHandler);
+      instanceWithHandlers.off('dead',                instanceWithHandlers._deadHandler);
+      await instanceWithHandlers.disconnect();
       this.#instances.splice(index, 1);
     }
   }
@@ -152,10 +178,10 @@ export class Controller extends EventEmitter {
 
     for (const instance of this.#instances)
       if (!instances.some(_instance => _instance.id === instance.id))
-        this.removeInstance(instance);
+        await this.removeInstance(instance);
 
     for (const newInstance of instances) {
-      this.addInstance(newInstance);
+      await this.addInstance(newInstance);
       const instance = this.getInstance(newInstance.id)!;
       instance.socketHostname = newInstance.socketHostname;
     }
@@ -236,9 +262,17 @@ export class Controller extends EventEmitter {
     return success;
   }
 
-  async stopInstance(instance: Instance): Promise<boolean> {
+  async stopInstance(instance: Instance, preventAutoRestart: boolean = true): Promise<boolean> {
     this.emit('instance stopping', instance);
-    const result = await this.docker.stopInstance(instance);
+
+    const autoRestart: boolean = instance.autoRestart;
+    if (preventAutoRestart)
+      instance.autoRestart = false;
+
+    const result: boolean = await this.docker.stopInstance(instance);
+
+    if (preventAutoRestart)
+      instance.autoRestart = autoRestart;
 
     this.emit('instance stopped', instance, result);
     return result;
@@ -275,8 +309,11 @@ export class Controller extends EventEmitter {
     this.#running = false;
     clearTimeout(this.#runIntervalTimeout);
 
-    for (const instance of this.#instances)
-      this.removeInstance(instance);
+    await Promise.allSettled(this.#instances.map(
+      instance => {
+        clearTimeout(instance._autoRestartTimeout);
+        return this.removeInstance(instance);
+      }))
 
     await Promise.all([
       this.cli.stop(),

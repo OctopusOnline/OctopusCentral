@@ -46,7 +46,7 @@ export class Socket {
 
   async stop(): Promise<void> {
     for (const instance of this.controller.instances)
-      instance.disconnect();
+      await instance.disconnect();
 
     await new Promise(resolve =>
       this.server.close(() => resolve(this)));

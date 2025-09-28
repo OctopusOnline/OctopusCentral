@@ -43,6 +43,7 @@ import {
   instanceDatabaseEnvVarName,
   instanceModeEnvVarName,
   instancePortBindingsEnvVarName,
+  instanceAutoRestartEnvVarName,
   DockerClientProps,
   DockerInstanceProps,
   InstanceMode as DockerInstanceMode
@@ -59,6 +60,7 @@ export {
   instanceDatabaseEnvVarName,
   instanceModeEnvVarName,
   instancePortBindingsEnvVarName,
+  instanceAutoRestartEnvVarName,
   SettingValueType,
   SettingValueTypeType,
   Setting,

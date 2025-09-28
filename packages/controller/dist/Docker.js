@@ -105,6 +105,7 @@ class Docker {
             var _a;
             if (forceRestart && (yield this.getContainer(instance)))
                 yield this.stopInstance(instance);
+            instance.autoRestart = (yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.auto-restart`)) === 'true';
             const containerName = this.getContainerName(instance);
             const volumesString = (yield this.getSelfContainerLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`))
                 || (yield this.getImageLabel(`${types_1.labelPrefix}.${types_1.instanceLabelPrefix}.volumes`)) || '';
@@ -141,6 +142,7 @@ class Docker {
                     `${types_1.instanceDatabaseEnvVarName}=${this.controller.database.url}`,
                     `${types_1.instanceModeEnvVarName}=${mode || 'production'}`,
                     `${types_1.instancePortBindingsEnvVarName}=${Object.entries(portBindings).map(([src, hosts]) => `${src},${hosts[0].HostPort}`).join(';')}`,
+                    `${types_1.instanceAutoRestartEnvVarName}=${instance.autoRestart}`
                 ],
                 HostConfig: {
                     Binds: binds,

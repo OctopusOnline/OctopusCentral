@@ -59,19 +59,26 @@ class Controller extends node_events_1.default {
         this.socket = new Socket_1.Socket(this);
         this.cli = new CLIServer_1.CLIServer(this);
     }
-    addInstance(instance, overwrite = false) {
-        if (!this.getInstance(instance.id))
-            this.addAndSetupInstance(instance);
-        else if (overwrite) {
-            this.removeInstance(instance);
-            this.addAndSetupInstance(instance);
-        }
+    addInstance(instance_2) {
+        return __awaiter(this, arguments, void 0, function* (instance, overwrite = false) {
+            if (!this.getInstance(instance.id))
+                this.addAndSetupInstance(instance);
+            else if (overwrite) {
+                yield this.removeInstance(instance);
+                this.addAndSetupInstance(instance);
+            }
+        });
     }
     addAndSetupInstance(instance) {
         const instanceWithHandlers = instance;
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
-        instanceWithHandlers._connectedHandler = (error) => this.emit('instance socket connected', instance, error);
-        instanceWithHandlers._disconnectedHandler = () => this.emit('instance socket disconnected', instance);
+        instanceWithHandlers._connectedHandler = (error) => {
+            clearTimeout(instanceWithHandlers._autoRestartTimeout);
+            this.emit('instance socket connected', instance, error);
+        };
+        instanceWithHandlers._disconnectedHandler = () => {
+            this.emit('instance socket disconnected', instance);
+        };
         instanceWithHandlers._statusHandler = (status) => {
             this.emit('instance status', instance, status);
             this.socket.sendStatus(instance.id, status);
@@ -85,10 +92,23 @@ class Controller extends node_events_1.default {
             yield (0, helper_1.sleep)(1e4);
             yield this.startInstance(virtualDeadInstance, undefined, 12e4);
         });
+        instanceWithHandlers._deadHandler = () => {
+            this.emit('instance dead', instance);
+            if (instance.autoRestart && !instance.restartMe) {
+                instanceWithHandlers._autoRestartTimeout = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                    this.emit('instance autoRestart', instance);
+                    const virtualDeadInstance = new Instance_1.Instance(instance.id);
+                    yield this.stopInstance(virtualDeadInstance);
+                    yield (0, helper_1.sleep)(1e4);
+                    yield this.startInstance(virtualDeadInstance, undefined, 12e4);
+                }), 6e4);
+            }
+        };
         instanceWithHandlers.on('socket connected', instanceWithHandlers._connectedHandler);
         instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
         instanceWithHandlers.on('status received', instanceWithHandlers._statusHandler);
         instanceWithHandlers.on('restartMe', instanceWithHandlers._restartMeHandler);
+        instanceWithHandlers.on('dead', instanceWithHandlers._deadHandler);
     }
     get lastInstanceId() {
         return Math.max(0, ...__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => instance.id));
@@ -120,16 +140,19 @@ class Controller extends node_events_1.default {
         return __classPrivateFieldGet(this, _Controller_instances, "f").find(_instance => _instance.id === id);
     }
     removeInstance(instance) {
-        const index = __classPrivateFieldGet(this, _Controller_instances, "f").findIndex(_instance => _instance.id === instance.id);
-        if (index !== -1) {
-            const instanceWithHandlers = __classPrivateFieldGet(this, _Controller_instances, "f")[index];
-            instanceWithHandlers.disconnect();
-            instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
-            instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
-            instanceWithHandlers.off('status received', instanceWithHandlers._statusHandler);
-            instanceWithHandlers.off('restartMe', instanceWithHandlers._restartMeHandler);
-            __classPrivateFieldGet(this, _Controller_instances, "f").splice(index, 1);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            const index = __classPrivateFieldGet(this, _Controller_instances, "f").findIndex(_instance => _instance.id === instance.id);
+            if (index !== -1) {
+                const instanceWithHandlers = __classPrivateFieldGet(this, _Controller_instances, "f")[index];
+                instanceWithHandlers.off('socket connected', instanceWithHandlers._connectedHandler);
+                instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
+                instanceWithHandlers.off('status received', instanceWithHandlers._statusHandler);
+                instanceWithHandlers.off('restartMe', instanceWithHandlers._restartMeHandler);
+                instanceWithHandlers.off('dead', instanceWithHandlers._deadHandler);
+                yield instanceWithHandlers.disconnect();
+                __classPrivateFieldGet(this, _Controller_instances, "f").splice(index, 1);
+            }
+        });
     }
     loadInstances() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -142,9 +165,9 @@ class Controller extends node_events_1.default {
             const instances = yield this.loadInstances();
             for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
                 if (!instances.some(_instance => _instance.id === instance.id))
-                    this.removeInstance(instance);
+                    yield this.removeInstance(instance);
             for (const newInstance of instances) {
-                this.addInstance(newInstance);
+                yield this.addInstance(newInstance);
                 const instance = this.getInstance(newInstance.id);
                 instance.socketHostname = newInstance.socketHostname;
             }
@@ -217,10 +240,15 @@ class Controller extends node_events_1.default {
             return success;
         });
     }
-    stopInstance(instance) {
-        return __awaiter(this, void 0, void 0, function* () {
+    stopInstance(instance_2) {
+        return __awaiter(this, arguments, void 0, function* (instance, preventAutoRestart = true) {
             this.emit('instance stopping', instance);
+            const autoRestart = instance.autoRestart;
+            if (preventAutoRestart)
+                instance.autoRestart = false;
             const result = yield this.docker.stopInstance(instance);
+            if (preventAutoRestart)
+                instance.autoRestart = autoRestart;
             this.emit('instance stopped', instance, result);
             return result;
         });
@@ -257,8 +285,10 @@ class Controller extends node_events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Controller_running, false, "f");
             clearTimeout(__classPrivateFieldGet(this, _Controller_runIntervalTimeout, "f"));
-            for (const instance of __classPrivateFieldGet(this, _Controller_instances, "f"))
-                this.removeInstance(instance);
+            yield Promise.allSettled(__classPrivateFieldGet(this, _Controller_instances, "f").map(instance => {
+                clearTimeout(instance._autoRestartTimeout);
+                return this.removeInstance(instance);
+            }));
             yield Promise.all([
                 this.cli.stop(),
                 this.socket.stop(),

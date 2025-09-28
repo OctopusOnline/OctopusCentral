@@ -3,6 +3,7 @@ export declare const instanceServiceNameEnvVarName: string;
 export declare const instanceDatabaseEnvVarName: string;
 export declare const instanceModeEnvVarName: string;
 export declare const instancePortBindingsEnvVarName: string;
+export declare const instanceAutoRestartEnvVarName: string;
 export declare const labelPrefix: string;
 export declare const volumeLabelPrefix: string;
 export interface DockerClientProps {
