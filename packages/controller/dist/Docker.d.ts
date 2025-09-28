@@ -49,6 +49,13 @@ export interface DockerNetwork extends Network {
         Id: string;
     };
 }
+export interface DockerError extends Error {
+    statusCode?: number;
+    reason?: string;
+    json?: {
+        message: string;
+    };
+}
 export declare class Docker {
     #private;
     private readonly controller;

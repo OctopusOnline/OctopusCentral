@@ -62,6 +62,14 @@ export interface DockerNetwork extends Network {
   };
 }
 
+export interface DockerError extends Error {
+  statusCode?: number;
+  reason?: string;
+  json?: {
+    message: string;
+  };
+}
+
 export class Docker {
   private readonly controller: Controller;
   private readonly client: DockerClient;
@@ -328,7 +336,12 @@ export class Docker {
   async stopInstance(instance: Instance): Promise<boolean> {
     const container = await this.getContainer(instance);
     if (container) {
-      await container.delete({ force: true }).catch();
+      try {
+        await container.delete({ force: true });
+      } catch (error) {
+        if ((error as DockerError).statusCode !== 409)
+          throw error;
+      }
       return true;
     }
     return false;
