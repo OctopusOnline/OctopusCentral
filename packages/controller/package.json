@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/controller",
-  "version": "1.29.17",
+  "version": "1.30.0-alpha.0",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -13,15 +13,14 @@
     "build": "tsc && git add dist",
     "watch": "tsc --watch",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
-
     "prebuild": "npm run clean"
   },
   "devDependencies": {
     "@types/express": "<5.0.0"
   },
   "dependencies": {
-    "@octopuscentral/instance": "^1.29.17",
-    "@octopuscentral/types": "^1.27.0",
+    "@octopuscentral/instance": "^1.30.0-alpha.0",
+    "@octopuscentral/types": "^1.30.0-alpha.0",
     "axios": "^1.12.2",
     "express": "<5.0.0",
     "mariadb": "^3.4.5",
