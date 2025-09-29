@@ -70,7 +70,7 @@ class Controller extends node_events_1.default {
         });
     }
     addAndSetupInstance(instance) {
-        const instanceWithHandlers = instance;
+        const instanceWithHandlers = Object.assign(Object.assign({}, instance), { _restarting: false });
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
         instanceWithHandlers._connectedHandler = (error) => {
             clearTimeout(instanceWithHandlers._autoRestartTimeout);
@@ -84,23 +84,39 @@ class Controller extends node_events_1.default {
             this.socket.sendStatus(instance.id, status);
         };
         instanceWithHandlers._restartMeHandler = (deadPromise) => __awaiter(this, void 0, void 0, function* () {
-            this.emit('instance restartMe', instance);
-            const virtualDeadInstance = new Instance_1.Instance(instance.id);
-            yield deadPromise;
-            yield (0, helper_1.sleep)(1e4);
-            yield this.stopInstance(virtualDeadInstance);
-            yield (0, helper_1.sleep)(1e4);
-            yield this.startInstance(virtualDeadInstance, undefined, 12e4);
+            if (instanceWithHandlers._restarting)
+                return;
+            instanceWithHandlers._restarting = true;
+            try {
+                this.emit('instance restartMe', instance);
+                const virtualDeadInstance = new Instance_1.Instance(instance.id);
+                yield deadPromise;
+                yield (0, helper_1.sleep)(1e4);
+                yield this.stopInstance(virtualDeadInstance);
+                yield (0, helper_1.sleep)(1e4);
+                yield this.startInstance(virtualDeadInstance, undefined, 12e4);
+            }
+            finally {
+                instanceWithHandlers._restarting = false;
+            }
         });
         instanceWithHandlers._deadHandler = () => {
             this.emit('instance dead', instance);
-            if (instance.autoRestart && !instance.restartMe) {
+            if (instance.autoRestart && !instance.restartMe && !instanceWithHandlers._restarting) {
                 instanceWithHandlers._autoRestartTimeout = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    this.emit('instance autoRestart', instance);
-                    const virtualDeadInstance = new Instance_1.Instance(instance.id);
-                    yield this.stopInstance(virtualDeadInstance);
-                    yield (0, helper_1.sleep)(1e4);
-                    yield this.startInstance(virtualDeadInstance, undefined, 12e4);
+                    if (instanceWithHandlers._restarting)
+                        return;
+                    instanceWithHandlers._restarting = true;
+                    try {
+                        this.emit('instance autoRestart', instance);
+                        const virtualDeadInstance = new Instance_1.Instance(instance.id);
+                        yield this.stopInstance(virtualDeadInstance);
+                        yield (0, helper_1.sleep)(1e4);
+                        yield this.startInstance(virtualDeadInstance, undefined, 12e4);
+                    }
+                    finally {
+                        instanceWithHandlers._restarting = false;
+                    }
                 }), 6e4);
             }
         };
@@ -281,6 +297,7 @@ class Controller extends node_events_1.default {
             }, this.instancesFetchInterval), "f");
         });
     }
+    // noinspection JSUnusedGlobalSymbols
     destroy() {
         return __awaiter(this, void 0, void 0, function* () {
             __classPrivateFieldSet(this, _Controller_running, false, "f");

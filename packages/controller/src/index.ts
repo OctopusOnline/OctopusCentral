@@ -27,6 +27,7 @@ interface InstanceWithHandlers extends Instance {
   _deadHandler: () => void;
 
   _autoRestartTimeout?: NodeJS.Timeout;
+  _restarting: boolean;
 }
 
 export class Controller extends EventEmitter {
@@ -69,7 +70,7 @@ export class Controller extends EventEmitter {
   }
 
   private addAndSetupInstance(instance: Instance): void {
-    const instanceWithHandlers = instance as InstanceWithHandlers;
+    const instanceWithHandlers = { ...instance, _restarting: false } as InstanceWithHandlers;
     this.#instances.push(instanceWithHandlers);
 
     instanceWithHandlers._connectedHandler = (error?: Error) => {
@@ -87,24 +88,38 @@ export class Controller extends EventEmitter {
     }
 
     instanceWithHandlers._restartMeHandler = async (deadPromise?: Promise<void>) => {
-      this.emit('instance restartMe', instance);
-      const virtualDeadInstance = new Instance(instance.id);
-      await deadPromise;
-      await sleep(1e4);
-      await this.stopInstance(virtualDeadInstance);
-      await sleep(1e4);
-      await this.startInstance(virtualDeadInstance, undefined, 12e4);
+      if (instanceWithHandlers._restarting) return;
+      instanceWithHandlers._restarting = true;
+
+      try {
+        this.emit('instance restartMe', instance);
+        const virtualDeadInstance = new Instance(instance.id);
+        await deadPromise;
+        await sleep(1e4);
+        await this.stopInstance(virtualDeadInstance);
+        await sleep(1e4);
+        await this.startInstance(virtualDeadInstance, undefined, 12e4);
+      } finally {
+        instanceWithHandlers._restarting = false;
+      }
     }
 
     instanceWithHandlers._deadHandler = () => {
       this.emit('instance dead', instance);
-      if (instance.autoRestart && !instance.restartMe) {
+      if (instance.autoRestart && !instance.restartMe && !instanceWithHandlers._restarting) {
         instanceWithHandlers._autoRestartTimeout = setTimeout(async () => {
-          this.emit('instance autoRestart', instance);
-          const virtualDeadInstance = new Instance(instance.id);
-          await this.stopInstance(virtualDeadInstance);
-          await sleep(1e4);
-          await this.startInstance(virtualDeadInstance, undefined, 12e4);
+          if (instanceWithHandlers._restarting) return;
+          instanceWithHandlers._restarting = true;
+
+          try {
+            this.emit('instance autoRestart', instance);
+            const virtualDeadInstance = new Instance(instance.id);
+            await this.stopInstance(virtualDeadInstance);
+            await sleep(1e4);
+            await this.startInstance(virtualDeadInstance, undefined, 12e4);
+          } finally {
+            instanceWithHandlers._restarting = false;
+          }
         }, 6e4);
       }
     }

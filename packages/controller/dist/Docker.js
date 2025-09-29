@@ -19,7 +19,7 @@ var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
     return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
 };
-var _Docker_selfContainer;
+var _Docker_selfContainer, _Docker_stoppingInstanceIds;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Docker = void 0;
 const types_1 = require("@octopuscentral/types");
@@ -38,6 +38,7 @@ class Docker {
     constructor(controller, instanceProps) {
         this.clientProps = { socketPath: '/var/run/docker.sock' };
         _Docker_selfContainer.set(this, void 0);
+        _Docker_stoppingInstanceIds.set(this, new Set());
         if (!instanceProps)
             throw new Error('no instance properties set!');
         this.controller = controller;
@@ -263,18 +264,27 @@ class Docker {
     }
     stopInstance(instance) {
         return __awaiter(this, void 0, void 0, function* () {
-            const container = yield this.getContainer(instance);
-            if (container) {
-                try {
-                    yield container.delete({ force: true });
-                }
-                catch (error) {
-                    if (error.statusCode !== 409)
-                        throw error;
-                }
+            const virtualStoppingInstance = new Instance_1.Instance(instance.id);
+            if (__classPrivateFieldGet(this, _Docker_stoppingInstanceIds, "f").has(virtualStoppingInstance.id))
                 return true;
+            __classPrivateFieldGet(this, _Docker_stoppingInstanceIds, "f").add(virtualStoppingInstance.id);
+            try {
+                const container = yield this.getContainer(instance);
+                if (container) {
+                    try {
+                        yield container.delete({ force: true });
+                    }
+                    catch (error) {
+                        if (error.statusCode !== 409)
+                            throw error;
+                    }
+                    return true;
+                }
+                return false;
             }
-            return false;
+            finally {
+                __classPrivateFieldGet(this, _Docker_stoppingInstanceIds, "f").delete(virtualStoppingInstance.id);
+            }
         });
     }
     pauseInstance(instance) {
@@ -299,5 +309,5 @@ class Docker {
     }
 }
 exports.Docker = Docker;
-_Docker_selfContainer = new WeakMap();
+_Docker_selfContainer = new WeakMap(), _Docker_stoppingInstanceIds = new WeakMap();
 //# sourceMappingURL=Docker.js.map

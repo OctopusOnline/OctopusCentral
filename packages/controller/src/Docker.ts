@@ -78,6 +78,7 @@ export class Docker {
   readonly instanceProps: DockerInstanceProps;
 
   #selfContainer?: DockerContainer;
+  #stoppingInstanceIds: Set<Instance['id']> = new Set();
 
   get connected(): Promise<boolean> {
     const client: DockerClient = this.client;
@@ -334,17 +335,25 @@ export class Docker {
   }
 
   async stopInstance(instance: Instance): Promise<boolean> {
-    const container = await this.getContainer(instance);
-    if (container) {
-      try {
-        await container.delete({ force: true });
-      } catch (error) {
-        if ((error as DockerError).statusCode !== 409)
-          throw error;
+    const virtualStoppingInstance = new Instance(instance.id);
+    if (this.#stoppingInstanceIds.has(virtualStoppingInstance.id)) return true;
+
+    this.#stoppingInstanceIds.add(virtualStoppingInstance.id);
+    try {
+      const container = await this.getContainer(instance);
+      if (container) {
+        try {
+          await container.delete({ force: true });
+        } catch (error) {
+          if ((error as DockerError).statusCode !== 409)
+            throw error;
+        }
+        return true;
       }
-      return true;
+      return false;
+    } finally {
+      this.#stoppingInstanceIds.delete(virtualStoppingInstance.id);
     }
-    return false;
   }
 
   async pauseInstance(instance: Instance): Promise<boolean> {
