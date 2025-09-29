@@ -27,7 +27,7 @@ interface InstanceWithHandlers extends Instance {
   _deadHandler: () => void;
 
   _autoRestartTimeout?: NodeJS.Timeout;
-  _restarting: boolean;
+  _restarting?: boolean;
 }
 
 export class Controller extends EventEmitter {
@@ -70,7 +70,7 @@ export class Controller extends EventEmitter {
   }
 
   private addAndSetupInstance(instance: Instance): void {
-    const instanceWithHandlers = { ...instance, _restarting: false } as InstanceWithHandlers;
+    const instanceWithHandlers = instance as InstanceWithHandlers;
     this.#instances.push(instanceWithHandlers);
 
     instanceWithHandlers._connectedHandler = (error?: Error) => {

@@ -70,7 +70,7 @@ class Controller extends node_events_1.default {
         });
     }
     addAndSetupInstance(instance) {
-        const instanceWithHandlers = Object.assign(Object.assign({}, instance), { _restarting: false });
+        const instanceWithHandlers = instance;
         __classPrivateFieldGet(this, _Controller_instances, "f").push(instanceWithHandlers);
         instanceWithHandlers._connectedHandler = (error) => {
             clearTimeout(instanceWithHandlers._autoRestartTimeout);
