@@ -305,6 +305,7 @@ export class Controller extends EventEmitter {
     }, this.instancesFetchInterval);
   }
 
+  // noinspection JSUnusedGlobalSymbols
   async destroy(): Promise<void> {
     this.#running = false;
     clearTimeout(this.#runIntervalTimeout);
