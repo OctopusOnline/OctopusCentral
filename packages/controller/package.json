@@ -9,8 +9,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc && git add dist",
+    "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prebuild": "npm run clean"

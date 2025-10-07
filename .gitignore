@@ -1,5 +1,2 @@
-/.idea
-/test
-node_modules
-*.tsbuildinfo
 /docker-compose.*.yml
+/.env
