@@ -34,7 +34,9 @@ export class Socket extends EventEmitter {
     super();
     this.instance = instance;
     this.server = server;
-    this.io = new IOServer(this.server);
+    this.io = new IOServer(this.server, {
+      cleanupEmptyChildNamespaces: true
+    });
     this.#port = port;
 
     this.setupSocketHandlers();

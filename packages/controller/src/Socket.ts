@@ -28,7 +28,9 @@ export class Socket {
   constructor(controller: Controller, server: HttpServer = http.createServer(express()), port: number = 1778) {
     this.controller = controller;
     this.server = server;
-    this.io = new IOServer(this.server);
+    this.io = new IOServer(this.server, {
+      cleanupEmptyChildNamespaces: true
+    });
     this.#port = port;
 
     this.setupSocketHandlers();
