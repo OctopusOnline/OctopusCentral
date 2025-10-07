@@ -110,6 +110,8 @@ export class CLIServer {
             ? `instance ${ req.instance.id } started`
             : `instance ${ req.instance.id } could not be started`)
       } as CLIResponseValueData);
+
+      delete this.eventBuffer.instance[req.instance.id];
     });
 
     this.express.get([
