@@ -184,7 +184,7 @@ export class Controller extends EventEmitter {
   }
 
   private async loadInstances(): Promise<Instance[]> {
-    return (await this.database.connection.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
+    return (await this.database.pool.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
       .map(({ id, socketHostname }) => new Instance(id, socketHostname));
   }
 
@@ -205,7 +205,7 @@ export class Controller extends EventEmitter {
   }
 
   async updateInstanceSocketHostname(instance: Instance, socketHostname: string, autoReconnect: boolean = false): Promise<void> {
-    await this.database.connection.execute(
+    await this.database.pool.execute(
       `UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`,
       [socketHostname, instance.id]);
     instance.socketHostname = socketHostname;

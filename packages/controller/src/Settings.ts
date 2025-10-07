@@ -13,7 +13,7 @@ export class Settings {
   }
 
   async getAll(): Promise<Setting[]> {
-    const settingsResult = (await this.controller.database.connection.query(`
+    const settingsResult = (await this.controller.database.pool.query(`
         SELECT name, value, type, min, max FROM ${instanceSettingsTableName}
         WHERE instance_id = ?
       `, [this.instance.id])) as {
@@ -34,7 +34,7 @@ export class Settings {
   }
 
   async get(name: string): Promise<Setting> {
-    const settingResult = (await this.controller.database.connection.query(`
+    const settingResult = (await this.controller.database.pool.query(`
         SELECT name, value, type, min, max FROM ${instanceSettingsTableName}
         WHERE instance_id = ? AND name = ?
       `, [this.instance.id, name]))[0] as {
@@ -68,7 +68,7 @@ export class Settings {
       existing.max
     );
 
-    const result = await this.controller.database.connection.query(`
+    const result = await this.controller.database.pool.query(`
         UPDATE ${instanceSettingsTableName}
         SET value = ?, type = ?, min = ?, max = ?
         WHERE instance_id = ? AND name = ?
