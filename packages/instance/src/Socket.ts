@@ -106,6 +106,9 @@ export class Socket extends EventEmitter {
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
 
+      socket.on('healthcheck', () =>
+        this.io.emit('healthy'));
+
       socket.on('start permission', () => {
         this.#startPermission = true;
         this.io.emit('start permission received');

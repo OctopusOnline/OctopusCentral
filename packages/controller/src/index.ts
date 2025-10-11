@@ -93,10 +93,9 @@ export class Controller extends EventEmitter {
 
       try {
         this.emit('instance restartMe', instance);
-        const virtualDeadInstance = new Instance(instance.id);
         await deadPromise;
         await sleep(1e4);
-        await this.restartInstance(virtualDeadInstance)
+        await this.restartInstance(instance)
       } finally {
         instanceWithHandlers._restarting = false;
       }
@@ -109,10 +108,9 @@ export class Controller extends EventEmitter {
           if (instanceWithHandlers._restarting) return;
           instanceWithHandlers._restarting = true;
 
+          this.emit('instance autoRestart', instance);
           try {
-            this.emit('instance autoRestart', instance);
-            const virtualDeadInstance = new Instance(instance.id);
-            await this.restartInstance(virtualDeadInstance);
+            await this.restartInstance(instance);
           } finally {
             instanceWithHandlers._restarting = false;
           }
@@ -213,6 +211,9 @@ export class Controller extends EventEmitter {
   async connectInstances(): Promise<void> {
     for (const instance of this.#instances)
       if (!instance.connected) await instance.connect();
+    for (const instance of this.#instances)
+      if (!await instance.healthcheck())
+        await this.restartInstance(instance);
   }
 
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {

@@ -335,10 +335,9 @@ export class Docker {
   }
 
   async stopInstance(instance: Instance): Promise<boolean> {
-    const virtualStoppingInstance = new Instance(instance.id);
-    if (this.#stoppingInstanceIds.has(virtualStoppingInstance.id)) return true;
+    if (this.#stoppingInstanceIds.has(instance.id)) return true;
 
-    this.#stoppingInstanceIds.add(virtualStoppingInstance.id);
+    this.#stoppingInstanceIds.add(instance.id);
     try {
       const container = await this.getContainer(instance);
       if (container) {
@@ -352,7 +351,7 @@ export class Docker {
       }
       return false;
     } finally {
-      this.#stoppingInstanceIds.delete(virtualStoppingInstance.id);
+      this.#stoppingInstanceIds.delete(instance.id);
     }
   }
 

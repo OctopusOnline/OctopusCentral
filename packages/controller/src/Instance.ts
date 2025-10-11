@@ -12,6 +12,7 @@ export class Instance extends EventEmitter {
 
   #socket?: IOSocket;
 
+  // TODO: store running in DB
   running: boolean = false;
 
   #statusQueue: InstanceStatus[] = [];
@@ -52,7 +53,7 @@ export class Instance extends EventEmitter {
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
-    if (!this.socketProtocol || !this.socketHostname || !this.socketPort) {
+    if (!this.running || !this.socketProtocol || !this.socketHostname || !this.socketPort) {
       this.#restartMe = false;
       return false;
     }
@@ -160,6 +161,23 @@ export class Instance extends EventEmitter {
       const permissionInterval = setInterval(() =>
         this.socket?.emit('start permission'), timeout / 60);
     });
+  }
+
+  async healthcheck(timeout: number = 18e4, interval: number = 1e3): Promise<boolean> {
+    let healthy: boolean = false;
+    let healthyHandler: null | (() => void) = null;
+    return await waitFor(() => {
+      if (!this.running || healthy)
+        return true;
+      if (this.socket) {
+        if (!healthyHandler)
+          this.socket.once('healthy', healthyHandler = () => healthy = true);
+        this.socket.emit('healthcheck');
+      } else if (healthyHandler)
+        healthyHandler = null;
+    }, timeout / interval, interval)
+      .then(result => result || healthy)
+      .finally(() => healthyHandler && this.socket?.off('healthy', healthyHandler));
   }
 
   async disconnect(timeout: number = 1e4, disableAutoRestart: boolean = true): Promise<boolean> {
