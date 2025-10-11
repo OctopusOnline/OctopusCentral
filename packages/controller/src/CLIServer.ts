@@ -89,13 +89,15 @@ export class CLIServer {
       '/i/:id/start',
       '/i/:id/start/:mode'
     ], async (req: RequestWithInstance, res: Response) => {
+      const mode = req.params.mode?.trim() as DockerInstanceMode | undefined;
+
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
 
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
-        try { result = await this.controller.startInstance(req.instance, req.params.mode as DockerInstanceMode) }
+        try { result = await this.controller.startInstance(req.instance, mode) }
         catch (error: any) { result = error }
       }
       this.eventBuffer.instance[req.instance.id].start.booted = true;
