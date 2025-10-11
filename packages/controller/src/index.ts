@@ -96,9 +96,7 @@ export class Controller extends EventEmitter {
         const virtualDeadInstance = new Instance(instance.id);
         await deadPromise;
         await sleep(1e4);
-        await this.stopInstance(virtualDeadInstance);
-        await sleep(1e4);
-        await this.startInstance(virtualDeadInstance, undefined, 12e4);
+        await this.restartInstance(virtualDeadInstance)
       } finally {
         instanceWithHandlers._restarting = false;
       }
@@ -114,9 +112,7 @@ export class Controller extends EventEmitter {
           try {
             this.emit('instance autoRestart', instance);
             const virtualDeadInstance = new Instance(instance.id);
-            await this.stopInstance(virtualDeadInstance);
-            await sleep(1e4);
-            await this.startInstance(virtualDeadInstance, undefined, 12e4);
+            await this.restartInstance(virtualDeadInstance);
           } finally {
             instanceWithHandlers._restarting = false;
           }
@@ -291,6 +287,12 @@ export class Controller extends EventEmitter {
 
     this.emit('instance stopped', instance, result);
     return result;
+  }
+
+  async restartInstance(instance: Instance): Promise<void> {
+    await this.stopInstance(instance);
+    await sleep(5e3);
+    await this.startInstance(instance, undefined, 12e4);
   }
 
   async init(): Promise<void> {
