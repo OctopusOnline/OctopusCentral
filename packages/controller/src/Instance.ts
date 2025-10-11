@@ -12,6 +12,8 @@ export class Instance extends EventEmitter {
 
   #socket?: IOSocket;
 
+  running: boolean = false;
+
   #statusQueue: InstanceStatus[] = [];
   #statusQueueLimit: number = 100;
 

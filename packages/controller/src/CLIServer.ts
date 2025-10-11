@@ -90,6 +90,7 @@ export class CLIServer {
       '/i/:id/start/:mode'
     ], async (req: RequestWithInstance, res: Response) => {
       const mode = req.params.mode?.trim() as DockerInstanceMode | undefined;
+      if (!mode || mode === 'production') req.instance.running = true;
 
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
@@ -161,6 +162,7 @@ export class CLIServer {
       '/instance/:id/stop',
       '/i/:id/stop'
       ], async (req: RequestWithInstance, res: Response) => {
+      req.instance.running = false;
       let result: boolean | Error;
       try { result = await this.controller.stopInstance(req.instance) }
       catch (error: any) { result = error }

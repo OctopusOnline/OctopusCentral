@@ -136,6 +136,7 @@ export class Socket {
           case 'docker start instance':
             instance = this.controller.getInstance(args.id);
             if (instance) {
+              instance.running = true;
               let result: boolean | Error;
 
               const bootStatusEvent = (message: string | null) =>
@@ -173,6 +174,7 @@ export class Socket {
 
           case 'docker stop instance':
             instance = this.controller.getInstance(args.id);
+            if (instance) instance.running = false;
             socket.emit('response controller', 200 as any, sessionId as any,
               (instance ? await this.controller.stopInstance(instance) : undefined) as any);
             break;
