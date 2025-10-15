@@ -22,6 +22,7 @@ export { Docker, Socket, Instance, CLIClient };
 interface InstanceWithHandlers extends Instance {
   _connectedHandler: (error?: Error) => void;
   _disconnectedHandler: () => void;
+  _setRunningHandler: (running: boolean) => void;
   _statusHandler: (status: InstanceStatus) => void;
   _restartMeHandler: (deadPromise?: Promise<void>) => void;
   _deadHandler: () => void;
@@ -87,6 +88,14 @@ export class Controller extends EventEmitter {
       this.socket.sendStatus(instance.id, status);
     }
 
+    instanceWithHandlers._setRunningHandler = async (running: boolean) => {
+      instance.running = running;
+      this.emit('instance set running', instance, running);
+      await this.database.pool.execute(
+        `UPDATE ${instancesTableName} SET running = ? WHERE id = ?`,
+        [running, instance.id]);
+    }
+
     instanceWithHandlers._restartMeHandler = async (deadPromise?: Promise<void>) => {
       if (instanceWithHandlers._restarting) return;
       instanceWithHandlers._restarting = true;
@@ -121,6 +130,7 @@ export class Controller extends EventEmitter {
     instanceWithHandlers.on('socket connected',    instanceWithHandlers._connectedHandler);
     instanceWithHandlers.on('socket disconnected', instanceWithHandlers._disconnectedHandler);
     instanceWithHandlers.on('status received',     instanceWithHandlers._statusHandler);
+    instanceWithHandlers.on('set running',         instanceWithHandlers._setRunningHandler);
     instanceWithHandlers.on('restartMe',           instanceWithHandlers._restartMeHandler);
     instanceWithHandlers.on('dead',                instanceWithHandlers._deadHandler);
   }
@@ -170,6 +180,7 @@ export class Controller extends EventEmitter {
       instanceWithHandlers.off('socket connected',    instanceWithHandlers._connectedHandler);
       instanceWithHandlers.off('socket disconnected', instanceWithHandlers._disconnectedHandler);
       instanceWithHandlers.off('status received',     instanceWithHandlers._statusHandler);
+      instanceWithHandlers.off('set running',         instanceWithHandlers._setRunningHandler);
       instanceWithHandlers.off('restartMe',           instanceWithHandlers._restartMeHandler);
       instanceWithHandlers.off('dead',                instanceWithHandlers._deadHandler);
       await instanceWithHandlers.disconnect();
@@ -178,12 +189,12 @@ export class Controller extends EventEmitter {
   }
 
   private async loadInstances(): Promise<Instance[]> {
-    return (await this.database.pool.query(`SELECT id, socketHostname FROM ${instancesTableName}`) as unknown as {id: number, socketHostname: string}[])
-      .map(({ id, socketHostname }) => new Instance(id, socketHostname));
+    return (await this.database.pool.query(`SELECT id, running, socketHostname FROM ${instancesTableName}`) as unknown as { id: number; running: boolean; socketHostname: string }[])
+      .map(({ id, running, socketHostname }) => new Instance(id, socketHostname, undefined, running));
   }
 
   async fetchSyncInstances(): Promise<Instance[]> {
-    const instances = await this.loadInstances();
+    const instances: Instance[] = await this.loadInstances();
 
     for (const instance of this.#instances)
       if (!instances.some(_instance => _instance.id === instance.id))
@@ -191,7 +202,8 @@ export class Controller extends EventEmitter {
 
     for (const newInstance of instances) {
       await this.addInstance(newInstance);
-      const instance = this.getInstance(newInstance.id)!;
+      const instance: Instance = this.getInstance(newInstance.id)!;
+      instance.running = newInstance.running;
       instance.socketHostname = newInstance.socketHostname;
     }
 
@@ -218,6 +230,8 @@ export class Controller extends EventEmitter {
 
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4): Promise<boolean> {
     this.emit('instance starting', instance);
+
+    instance.running = true;
 
     let bootResult: boolean | undefined,
       dockerResult: boolean | undefined,
@@ -276,6 +290,8 @@ export class Controller extends EventEmitter {
 
   async stopInstance(instance: Instance, preventAutoRestart: boolean = true): Promise<boolean> {
     this.emit('instance stopping', instance);
+
+    instance.running = false;
 
     const autoRestart: boolean = instance.autoRestart;
     if (preventAutoRestart)

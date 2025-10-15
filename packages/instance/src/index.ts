@@ -147,11 +147,17 @@ export class Instance {
       throw new Error(`could not connect to database at '${this.#database!.url}': ${error.message}`);
     }
 
-    await this.database.connection.query(`
+    for (const query of `
       CREATE TABLE IF NOT EXISTS ${instancesTableName} (
         id             INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHostname VARCHAR(255)     NULL
-      )`);
+      );
+      ALTER TABLE ${instancesTableName} 
+        ADD COLUMN IF NOT EXISTS running
+          BOOLEAN NOT NULL DEFAULT FALSE 
+          AFTER id
+    `.split(';').map(query => query.trim()).filter(Boolean))
+      await this.database.connection.query(query);
     await this.settings.initDatabase();
   }
 

@@ -6,20 +6,21 @@ import { InstanceStatus } from '@octopuscentral/types';
 export class Instance extends EventEmitter {
   readonly id: number;
 
+  #running: boolean;
+
   socketProtocol: string = 'http';
   socketHostname?: string;
   socketPort: number;
 
   #socket?: IOSocket;
 
-  // TODO: store running in DB
-  running: boolean = false;
-
   #statusQueue: InstanceStatus[] = [];
   #statusQueueLimit: number = 100;
 
   #restartMe: boolean = false;
   autoRestart: boolean = false;
+
+  get running(): boolean { return this.#running }
 
   get socket(): IOSocket | undefined { return this.#socket }
 
@@ -29,11 +30,17 @@ export class Instance extends EventEmitter {
 
   get restartMe(): boolean { return this.#restartMe }
 
-  constructor(id: number, socketHostname?: string, socketPort: number = 1777) {
+  set running(running: boolean) {
+    this.#running = running;
+    this.emit('set running', running);
+  }
+
+  constructor(id: number, socketHostname?: string, socketPort: number = 1777, running: boolean = false) {
     super();
     this.id = id;
     this.socketHostname = socketHostname;
     this.socketPort = socketPort;
+    this.#running = running;
   }
 
   getStatus(timestamp: number): InstanceStatus | undefined {
