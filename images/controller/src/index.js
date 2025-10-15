@@ -16,10 +16,6 @@ controller.on('instance starting',    instance => console.log(`starting instance
 controller.on('instance started',    (instance, success) => console.log(success ? `started instance ${instance.id}` : `instance ${instance.id} start failed`));
 controller.on('instance stopping',    instance => console.log(`stopping instance ${instance.id}...`));
 controller.on('instance stopped',    (instance,  result) => console.log(result  ? `stopped instance ${instance.id}` : `instance ${instance.id} already stopped`));
-controller.on('instance restartMe',   instance => console.log(`restartMe instance ${instance.id}`));
-controller.on('instance autoRestart', instance => console.log(`auto-restarting instance ${instance.id}`));
-controller.on('instance dead',        instance => console.log(`instance ${instance.id} died`));
-
 
 const instancesFetchInterval = Number(process.env.INSTANCES_FETCH_INTERVAL);
 if (!isNaN(instancesFetchInterval)) controller.instancesFetchInterval = instancesFetchInterval;

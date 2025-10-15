@@ -17,9 +17,6 @@ export class Instance extends EventEmitter {
   #statusQueue: InstanceStatus[] = [];
   #statusQueueLimit: number = 100;
 
-  #restartMe: boolean = false;
-  autoRestart: boolean = false;
-
   get running(): boolean { return this.#running }
 
   get socket(): IOSocket | undefined { return this.#socket }
@@ -27,8 +24,6 @@ export class Instance extends EventEmitter {
   get connected(): boolean { return !!this.#socket }
 
   get statusQueue(): InstanceStatus[] { return this.#statusQueue }
-
-  get restartMe(): boolean { return this.#restartMe }
 
   set running(running: boolean) {
     this.#running = running;
@@ -60,15 +55,11 @@ export class Instance extends EventEmitter {
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
-    if (!this.running || !this.socketProtocol || !this.socketHostname || !this.socketPort) {
-      this.#restartMe = false;
+    if (!this.running || !this.socketProtocol || !this.socketHostname || !this.socketPort)
       return false;
-    }
 
     if (this.connected && reconnect)
       await this.disconnect();
-
-    this.#restartMe = false;
 
     const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
       reconnection: true,
@@ -108,29 +99,6 @@ export class Instance extends EventEmitter {
               return status.timestamp;
             }));
         }
-      ),
-      'restartMe': (
-        () => {
-          if (!this.#restartMe) {
-            this.#restartMe = true;
-            let deadListener: (value: unknown) => void;
-            this.emit('restartMe', Promise.race([
-              new Promise(resolve => {
-                deadListener = resolve;
-                this.once('dead', deadListener);
-              }),
-              sleep(3e4)
-            ]).finally(() => this.off('dead', deadListener)));
-          }
-          this.#socket!.emit('restartMe received');
-        }
-      ),
-      'autoRestart update': (
-        (enabled: boolean) => {
-          this.emit('autoRestart update', enabled);
-          this.autoRestart = enabled;
-          this.#socket!.emit('autoRestart update received');
-        }
       )
     }
 
@@ -140,7 +108,6 @@ export class Instance extends EventEmitter {
     this.#socket!.on('disconnect', () => {
       for (const event in handlers)
         this.#socket!.off(event, handlers[event]);
-      this.emit('dead');
     });
 
     return true;
@@ -187,14 +154,12 @@ export class Instance extends EventEmitter {
       .finally(() => healthyHandler && this.socket?.off('healthy', healthyHandler));
   }
 
-  async disconnect(timeout: number = 1e4, disableAutoRestart: boolean = true): Promise<boolean> {
+  async disconnect(timeout: number = 1e4): Promise<boolean> {
     let success: boolean = true;
 
     if (!this.#socket) return success;
 
     if (this.#socket.connected) {
-      if (disableAutoRestart) this.autoRestart = false;
-
       const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
       this.#socket.disconnect();
 

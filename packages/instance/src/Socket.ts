@@ -18,8 +18,6 @@ export class Socket extends EventEmitter {
   #startPermission: boolean = false;
   #statusQueue: InstanceStatus[] = [];
 
-  #restartMeSent: boolean = false;
-
   get port(): number { return this.#port }
   get running(): boolean { return this.server.listening }
 
@@ -82,26 +80,15 @@ export class Socket extends EventEmitter {
       this.io.emit('status', this.#statusQueue);
   }
 
-  #sendAwaitReceived(event: string, params: unknown[] = [], timeout = 1e4): Promise<boolean> {
-    const sendReceivedPromise = new Promise<void>(resolve =>
-        this.once(`${event} received`, resolve));
-    this.io.emit(event, ...params);
-    return Promise.race([
-      sendReceivedPromise.then(() => true),
-      sleep(timeout).then(() => false)
-    ]);
-  }
-
-  async sendRestartMe(timeout = 3e3): Promise<boolean> {
-    if (this.#restartMeSent) return false;
-    this.#restartMeSent = true;
-
-    return await this.#sendAwaitReceived('restartMe', [], timeout);
-  }
-
-  updateAutoRestart(enabled: boolean, timeout = 1e4): Promise<boolean> {
-    return this.#sendAwaitReceived('autoRestart update', [enabled], timeout);
-  }
+  //#sendAwaitReceived(event: string, params: unknown[] = [], timeout = 1e4): Promise<boolean> {
+  //  const sendReceivedPromise = new Promise<void>(resolve =>
+  //      this.once(`${event} received`, resolve));
+  //  this.io.emit(event, ...params);
+  //  return Promise.race([
+  //    sendReceivedPromise.then(() => true),
+  //    sleep(timeout).then(() => false)
+  //  ]);
+  //}
 
   private setupSocketHandlers() {
     this.io.on('connection', (socket: IOSocket) => {
@@ -145,14 +132,6 @@ export class Socket extends EventEmitter {
 
       socket.on('disconnect', () => {
         socket.removeAllListeners();
-      });
-
-      socket.on('restartMe received', () => {
-        this.emit('restartMe received');
-      });
-
-      socket.on('autoRestart update received', () => {
-        this.emit('autoRestart update received');
       });
 
       this.#sendStatusQueue();

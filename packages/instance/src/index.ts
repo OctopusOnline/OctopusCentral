@@ -5,7 +5,6 @@ import {
   instancesTableName,
   instanceModeEnvVarName,
   instancePortBindingsEnvVarName,
-  instanceAutoRestartEnvVarName,
   DockerInstanceMode,
   InstancePortBinding
 } from '@octopuscentral/types';
@@ -57,10 +56,6 @@ export class Instance {
   get portBindings(): InstancePortBinding[] {
     if (this.#portBindings === undefined) throw new Error('instance.portBindings is not set\nmaybe run init() first?');
     return this.#portBindings!;
-  }
-
-  get autoRestart(): boolean {
-    return process.env[instanceAutoRestartEnvVarName] === 'true';
   }
 
   private parsePortBindingString(bindingString: string): InstancePortBinding {
@@ -172,16 +167,6 @@ export class Instance {
 
   sendStatus(status: InstanceStatusParam): void {
     this.socket.sendStatus(status);
-  }
-
-  restartMe(timeout: number = 3e3): Promise<boolean> {
-    return this.socket.sendRestartMe(timeout);
-  }
-
-  async updateAutoRestart(enabled: boolean, timeout: number = 1e4): Promise<boolean> {
-    const success = await this.socket.updateAutoRestart(enabled, timeout);
-    if (success) process.env[instanceAutoRestartEnvVarName] = String(enabled);
-    return success;
   }
 
   async setSocketHostname(hostname: string): Promise<void> {
