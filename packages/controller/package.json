@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/controller",
-  "version": "1.30.5",
+  "version": "1.31.0-alpha.0",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -22,7 +22,7 @@
     "@types/express": "<5.0.0"
   },
   "dependencies": {
-    "@octopuscentral/instance": "^1.30.4",
+    "@octopuscentral/instance": "^1.31.0-alpha.0",
     "@octopuscentral/types": "^1.30.4",
     "axios": "^1.12.2",
     "express": "<5.0.0",
