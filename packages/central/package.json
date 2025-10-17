@@ -19,7 +19,7 @@
     "prebuild": "npm run clean"
   },
   "dependencies": {
-    "@octopuscentral/types": "^1.31.0",
+    "@octopuscentral/types": "^1.32.0",
     "mariadb": "^3.4.5",
     "socket.io-client": "^4.8.1"
   },
