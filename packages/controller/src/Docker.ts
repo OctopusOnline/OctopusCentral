@@ -247,7 +247,7 @@ export class Docker {
       } catch {
         switch (expression) {
           default: return substring;
-          case 'socketProtocol': return String(instance.socketPort);
+          case 'socketProtocol': return String(instance.socketProtocol);
           case 'socketHostname': return String(instance.socketHostname);
         }
       }
