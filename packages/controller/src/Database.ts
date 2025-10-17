@@ -41,11 +41,6 @@ export class Database {
   }
 
   private async testConnection(): Promise<void> {
-    let connection;
-    try {
-      connection = await this.pool.getConnection();
-    } finally {
-      if (connection) await connection.release();
-    }
+    await this.pool.query('SELECT 1');
   }
 }
