@@ -8,7 +8,7 @@ import { Instance } from './Instance';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-export { Controller, Instance, InstanceSettings };
+export { Database, Controller, Instance, InstanceSettings };
 
 export class Central extends EventEmitter {
   controllersFetchInterval: number = 10000;
@@ -30,7 +30,7 @@ export class Central extends EventEmitter {
 
   async init(): Promise<void> {
     await this.database.connect();
-    await this.database.connection.query(`
+    await this.database.pool.query(`
       CREATE TABLE IF NOT EXISTS ${controllersTableName} (
         id         INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
         socketHost VARCHAR(255)     NULL
@@ -53,7 +53,7 @@ export class Central extends EventEmitter {
 
   private async insertNewController(socketHost?: string): Promise<Controller> {
     return new Controller(
-      Number((await this.database.connection.query(`
+      Number((await this.database.pool.query(`
           INSERT INTO ${controllersTableName} (socketHost)
           VALUES (?)`,
         [socketHost]) as unknown as {insertId:any}).insertId),
@@ -62,7 +62,7 @@ export class Central extends EventEmitter {
 
   private async insertController(controller: Controller): Promise<void> {
     if (!await this.loadController(controller.id))
-      await this.database.connection.execute(`
+      await this.database.pool.execute(`
           INSERT INTO ${controllersTableName} (id, socketHost)
           VALUES (?, ?)`,
         [controller.id, controller.socketHost]);
@@ -83,7 +83,7 @@ export class Central extends EventEmitter {
   }
 
   private async deleteController(controller: Controller): Promise<void> {
-    await this.database.connection.execute(`DELETE FROM ${controllersTableName} WHERE id = ?`, [controller.id])
+    await this.database.pool.execute(`DELETE FROM ${controllersTableName} WHERE id = ?`, [controller.id])
   }
 
   async fetchSyncControllers(): Promise<Controller[]> {
@@ -103,12 +103,12 @@ export class Central extends EventEmitter {
   }
 
   private async loadController(id: number): Promise<Controller | undefined> {
-    return (await this.database.connection.query(`SELECT id, socketHost FROM ${controllersTableName} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
+    return (await this.database.pool.query(`SELECT id, socketHost FROM ${controllersTableName} WHERE id = ?`, [id]) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined))[0];
   }
 
   private async loadControllers(): Promise<Controller[]> {
-    return (await this.database.connection.query(`SELECT id, socketHost FROM ${controllersTableName}`) as unknown as {id: number, socketHost: string|null}[])
+    return (await this.database.pool.query(`SELECT id, socketHost FROM ${controllersTableName}`) as unknown as {id: number, socketHost: string|null}[])
       .map(({ id, socketHost }) => new Controller(id, socketHost || undefined));
   }
 

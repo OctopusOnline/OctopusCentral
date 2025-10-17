@@ -9,7 +9,7 @@ import {
   InstancePortBinding
 } from '@octopuscentral/types';
 import process from 'node:process';
-import { Database } from './Database';
+import { Database } from '@octopuscentral/central';
 import { Setting } from './Setting';
 import { Settings } from './Settings';
 import { Socket, InstanceStatusParam } from './Socket';
@@ -83,8 +83,8 @@ export class Instance {
     await this.init();
   }
 
-  constructor(databaseUrl?: string, id?: number | null) {
-    if (databaseUrl) this.#database = new Database(databaseUrl);
+  constructor(database?: string | Database, id?: number | null) {
+    if (database) this.#database = database instanceof Database ? database : new Database(database);
     this.#id = id;
 
     this.settings = new Settings(this);
@@ -121,8 +121,8 @@ export class Instance {
 
     if (this.#id !== null) {
       if (this.#id === undefined)
-        this.#id = Number((await this.database.connection.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
-      else await this.database.connection.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
+        this.#id = Number((await this.database.pool.query(`INSERT INTO ${instancesTableName} (id) VALUES (NULL)`) as unknown as {insertId:any}).insertId);
+      else await this.database.pool.execute(`INSERT IGNORE INTO ${instancesTableName} (id) VALUES (?)`, [this.#id]);
     }
 
     await this.settings.init();
@@ -152,7 +152,8 @@ export class Instance {
           BOOLEAN NOT NULL DEFAULT FALSE 
           AFTER id
     `.split(';').map(query => query.trim()).filter(Boolean))
-      await this.database.connection.query(query);
+      await this.database.pool.query(query);
+
     await this.settings.initDatabase();
   }
 
@@ -170,6 +171,6 @@ export class Instance {
   }
 
   async setSocketHostname(hostname: string): Promise<void> {
-    await this.database.connection.execute(`UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
+    await this.database.pool.execute(`UPDATE ${instancesTableName} SET socketHostname = ? WHERE id = ?`, [hostname, this.#id]);
   }
 }

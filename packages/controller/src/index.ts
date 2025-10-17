@@ -8,7 +8,7 @@ import {
 import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopuscentral/instance';
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
-import { Database } from './Database';
+import { Database } from '@octopuscentral/central';
 import { waitFor } from './helper';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
@@ -257,7 +257,7 @@ export class Controller extends EventEmitter {
 
   async init(): Promise<void> {
     await this.database.connect();
-    await (new VirtualInstance(this.database.url, null)).initDatabase();
+    await (new VirtualInstance(this.database, null)).initDatabase();
     await this.docker.init();
   }
 

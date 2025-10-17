@@ -22,9 +22,9 @@
     "@types/express": "<5.0.0"
   },
   "dependencies": {
+    "@octopuscentral/central": "^1.31.0",
     "@octopuscentral/types": "^1.31.0",
     "express": "<5.0.0",
-    "mariadb": "^3.4.5",
     "socket.io": "^4.8.1"
   },
   "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"

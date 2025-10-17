@@ -1,28 +1,40 @@
-import mariadb, { Connection } from 'mariadb';
+import mariadb, { Pool } from 'mariadb';
 
 export class Database {
   readonly #url: string;
-  #connection?: Connection;
+  #pool?: Pool;
 
   get url(): string {
     return this.#url;
   }
 
-  get connection(): Connection {
-    if (this.#connection === undefined) throw new Error('database is not connected  ( maybe run init() or start() first? )');
-    return this.#connection!;
+  /** @deprecated */
+  get connection(): Pool {
+    return this.pool;
   }
 
-  constructor(url: string, connection?: Connection) {
+  get pool(): Pool {
+    if (this.#pool === undefined) throw new Error('database is not connected  ( maybe run init() or start() first? )');
+    return this.#pool;
+  }
+
+  constructor(url: string, pool?: Pool) {
     this.#url = url;
-    this.#connection = connection;
+    this.#pool = pool;
   }
 
   async connect(): Promise<void> {
-    if (!this.#connection) this.#connection = await mariadb.createConnection(this.#url);
+    if (!this.#pool) {
+      this.#pool = mariadb.createPool(this.#url);
+      await this.testConnection();
+    }
   }
 
   async disconnect(): Promise<void> {
-    await this.connection.end();
+    await this.pool.end();
+  }
+
+  private async testConnection(): Promise<void> {
+    await this.pool.query('SELECT 1');
   }
 }
