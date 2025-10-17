@@ -9,7 +9,7 @@ import { Instance as VirtualInstance, Setting as VirtualSetting } from '@octopus
 import EventEmitter from 'node:events';
 import { CLIServer } from './CLIServer';
 import { Database } from './Database';
-import { sleep, waitFor } from './helper';
+import { waitFor } from './helper';
 import { Socket } from './Socket';
 import { Docker } from './Docker';
 import { Instance } from './Instance';
