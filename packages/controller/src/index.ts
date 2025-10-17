@@ -81,7 +81,6 @@ export class Controller extends EventEmitter {
     }
 
     instanceWithHandlers._setRunningHandler = async (running: boolean) => {
-      instance.running = running;
       this.emit('instance set running', instance, running);
       await this.database.pool.execute(
         `UPDATE ${instancesTableName} SET running = ? WHERE id = ?`,
