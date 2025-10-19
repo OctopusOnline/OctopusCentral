@@ -107,7 +107,7 @@ export class Instance extends EventEmitter {
 
     this.#socket!.on('disconnect', () => {
       for (const event in handlers)
-        this.#socket!.off(event, handlers[event]);
+        this.#socket?.off(event, handlers[event]);
     });
 
     return true;
