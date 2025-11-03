@@ -1,11 +1,11 @@
-import {
+export {
   tableName as instancesTableName,
   labelPrefix as instanceLabelPrefix,
   PortBinding as InstancePortBinding,
   Status as InstanceStatus
 } from './types/instance';
 
-import {
+export {
   tableName as instanceSettingsTableName,
   SettingValueType,
   SettingValueTypeType,
@@ -13,13 +13,13 @@ import {
   SettingsObjectType
 } from './types/setting';
 
-import {
+export {
   tableName as controllersTableName,
   labelPrefix as controllerLabelPrefix,
   InstanceStatus as ControllerInstanceStatus
 } from './types/controller';
 
-import {
+export {
   serverPort as cliServerPort,
   ResponseValueDataType as CLIResponseValueDataType,
   ResponseListDataType as CLIResponseListDataType,
@@ -30,12 +30,12 @@ import {
   warningCode as cliWarningCode
 } from './types/cli';
 
-import {
+export {
   labelPrefix as centralLabelPrefix,
   CentralInstanceFilter
 } from './types/central';
 
-import {
+export {
   labelPrefix,
   volumeLabelPrefix,
   instanceIdEnvVarName,
@@ -47,38 +47,3 @@ import {
   DockerInstanceProps,
   InstanceMode as DockerInstanceMode
 } from './types/docker';
-
-export {
-  instancesTableName,
-  instanceLabelPrefix,
-  InstancePortBinding,
-  InstanceStatus,
-  instanceSettingsTableName,
-  instanceIdEnvVarName,
-  instanceServiceNameEnvVarName,
-  instanceDatabaseEnvVarName,
-  instanceModeEnvVarName,
-  instancePortBindingsEnvVarName,
-  SettingValueType,
-  SettingValueTypeType,
-  Setting,
-  SettingsObjectType,
-  controllersTableName,
-  controllerLabelPrefix,
-  ControllerInstanceStatus,
-  cliServerPort,
-  CLIResponseValueDataType,
-  CLIResponseListDataType,
-  CLIResponseTableDataType,
-  CLIResponseValueData,
-  CLIResponseListData,
-  CLIResponseTableData,
-  cliWarningCode,
-  centralLabelPrefix,
-  CentralInstanceFilter,
-  labelPrefix,
-  volumeLabelPrefix,
-  DockerClientProps,
-  DockerInstanceProps,
-  DockerInstanceMode
-};
