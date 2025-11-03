@@ -17,5 +17,6 @@
     "watch": "tsc --watch",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "prebuild": "npm run clean"
-  }
+  },
+  "gitHead": "79e3a62b8456417179edc9e616c45287bc7fff7a"
 }

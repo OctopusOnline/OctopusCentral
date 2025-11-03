@@ -23,5 +23,5 @@
     "mariadb": "^3.4.5",
     "socket.io-client": "^4.8.1"
   },
-  "gitHead": "bd7c31b785af5559009dae090562ab61ff594e1d"
+  "gitHead": "79e3a62b8456417179edc9e616c45287bc7fff7a"
 }
