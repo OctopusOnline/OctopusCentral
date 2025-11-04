@@ -1,6 +1,6 @@
 {
   "name": "@octopuscentral/instance",
-  "version": "1.32.2",
+  "version": "1.32.3-alpha.0",
   "description": "",
   "author": "official5ETa",
   "license": "Apache-2.0 license",
@@ -22,8 +22,8 @@
     "@types/express": "<5.0.0"
   },
   "dependencies": {
-    "@octopuscentral/central": "^1.32.2",
-    "@octopuscentral/types": "^1.32.2",
+    "@octopuscentral/central": "^1.32.3-alpha.0",
+    "@octopuscentral/types": "^1.32.3-alpha.0",
     "express": "<5.0.0",
     "socket.io": "^4.8.1"
   },
