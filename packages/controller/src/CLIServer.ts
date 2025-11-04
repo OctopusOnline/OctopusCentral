@@ -95,23 +95,32 @@ export class CLIServer {
       '/i/:id/start',
       '/i/:id/start/:mode'
     ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
+      console.log('[CLIServer]', `[${req.path}]`);
+
       const mode = req.params.mode?.trim() as DockerInstanceMode | undefined;
+      console.log('[CLIServer]', `[${req.path}]`, {mode});
       if (!mode || mode === 'production') req.instance.running = true;
 
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
       let result: boolean | Error;
 
+      console.log('[CLIServer]', `[${req.path}]`, 'waitFor eventBuffer: waitingForStream = false', this.eventBuffer.instance[req.instance.id]);
       if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
         result = new Error('boot stream timeout');
       else {
+        console.log('[CLIServer]', `[${req.path}]`, 'controller startInstance', req.instance.id, mode);
         try { result = await this.controller.startInstance(req.instance, mode) }
         catch (error) { result = error as Error }
       }
+      console.log('[CLIServer]', `[${req.path}]`, {result});
+      console.log('[CLIServer]', `[${req.path}]`, 'set eventBuffer booted "true"');
       this.eventBuffer.instance[req.instance.id].start.booted = true;
 
+      console.log('[CLIServer]', `[${req.path}]`, `writableEnded=${res.writableEnded}`, {result});
       if (!res.writableEnded && result !== true)
         await this.controller.stopInstance(req.instance);
 
+      console.log('[CLIServer]', `[${req.path}]`, 'response json');
       res.json({
         type: 'value',
         data: result instanceof Error
@@ -120,6 +129,7 @@ export class CLIServer {
             : `instance ${ req.instance.id } could not be started`)
       } as CLIResponseValueData);
 
+      console.log('[CLIServer]', `[${req.path}]`, 'delete eventBuffer');
       delete this.eventBuffer.instance[req.instance.id];
     }));
 
@@ -130,35 +140,52 @@ export class CLIServer {
       '/stream/i/:id/start',
       '/stream/i/:id/start/*'
     ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
+      console.log('[CLIServer]', `[${req.path}]`);
+      console.log('[CLIServer]', `[${req.path}]`, 'waitFor eventBuffer: waitingForStream = true', this.eventBuffer.instance[req.instance.id]);
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
-      const bootStatusEvent = (message: string | null) => message !== null && res.write(message);
+      const bootStatusEvent = (message: string | null) => {
+        console.log('[CLIServer]', `[${req.path}]`, '[bootStatusEvent]', message);
+        return message !== null && res.write(message);
+      }
       const connectEvent = async (error?: Error) => {
+        console.log('[CLIServer]', `[${req.path}]`, '[connectEvent]', error?.message, this.eventBuffer.instance[req.instance.id]);
+
         if (!this.eventBuffer.instance[req.instance.id]?.start) {
+          console.log('[CLIServer]', `[${req.path}]`, 'removed instance event "socket connected"');
           req.instance.off('socket connected', connectEvent);
           return;
         }
         else if (error) return;
 
+        console.log('[CLIServer]', `[${req.path}]`, 'removed instance event "socket connected"');
         req.instance.off('socket connected', connectEvent);
+        console.log('[CLIServer]', `[${req.path}]`, 'register instance event "boot status"');
         req.instance.on('boot status', bootStatusEvent);
 
+        console.log('[CLIServer]', `[${req.path}]`, 'set eventBuffer connected "true"', this.eventBuffer.instance[req.instance.id]);
         this.eventBuffer.instance[req.instance.id].start.connected = true;
+        console.log('[CLIServer]', `[${req.path}]`, 'waitFor eventBuffer: booted = true', this.eventBuffer.instance[req.instance.id]);
         await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300);
 
+        console.log('[CLIServer]', `[${req.path}]`, 'removed instance event "boot status"');
         req.instance.off('boot status', bootStatusEvent);
         res.end('');
       };
 
+      console.log('[CLIServer]', `[${req.path}]`, 'register instance event "socket connected"');
       req.instance.on('socket connected', connectEvent);
 
+      console.log('[CLIServer]', `[${req.path}]`, 'set eventBuffer waitingForStream "false"');
       this.eventBuffer.instance[req.instance.id].start.waitingForStream = false;
 
+      console.log('[CLIServer]', `[${req.path}]`, 'waitFor eventBuffer: connected | booted', this.eventBuffer.instance[req.instance.id]);
       if (await Promise.race([
         waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.connected, 300).then(() => false),
         waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.booted, 300).then(() => true)
       ])) {
+        console.log('[CLIServer]', `[${req.path}]`, 'removed instance event "socket connected"', this.eventBuffer.instance[req.instance.id]);
         req.instance.off('socket connected', connectEvent);
         res.end('');
       }
