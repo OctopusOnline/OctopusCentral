@@ -1,9 +1,9 @@
 import { cliServerPort, CLIResponseValueData, CLIResponseTableDataType, CLIResponseValueDataType, DockerInstanceMode } from '@octopuscentral/types';
-import { Controller, Instance } from ".";
 import express, { Request, Response } from 'express';
-import http, { Server as HttpServer } from 'http';
-import { waitFor } from './helper';
+import http from 'http';
+import { Controller, Instance } from '.';
 import { Settings } from './Settings';
+import { waitFor } from './helper';
 
 interface RequestWithInstance extends Request {
   instance: Instance;
@@ -12,8 +12,8 @@ interface RequestWithInstance extends Request {
 export class CLIServer {
   private readonly controller: Controller;
 
-  private readonly server: HttpServer;
-  private readonly express: any;
+  private readonly server: http.Server;
+  private readonly express: express.Express;
 
   private readonly eventBuffer: {
     instance: {
@@ -38,11 +38,14 @@ export class CLIServer {
   private setup(): void {
     this.express.use(express.json());
 
+
     this.express.get('/', (_: Request, res: Response) =>
       res.send('Octopus Central CLI Server'));
 
+
     this.express.get('/serviceName', (_: Request, res: Response) =>
       res.json({ type: 'value', data: this.controller.serviceName } as CLIResponseValueData));
+
 
     this.express.get([
       '/instance/ls',
@@ -61,19 +64,21 @@ export class CLIServer {
       res.json({ type: 'table', data });
     });
 
-    this.express.use([
+
+    this.express.get([
       '/instance/create'
     ], async (_: Request, res: Response) => {
       const instance = await this.controller.createInstance();
       res.json({ type: 'value', data: `instance created with id: ${instance.id}` });
     });
 
+
     this.express.use([
       '/instance/:id/*',
       '/stream/instance/:id/*',
       '/i/:id/*',
       '/stream/i/:id/*',
-    ], (req: RequestWithInstance, res: Response, next: any) => {
+    ], <express.Application> ((req: RequestWithInstance, res: Response, next: express.NextFunction) => {
       req.instance = this.controller.getInstance(Number(req.params.id))!;
       if (!req.instance)
         res.json({
@@ -81,14 +86,15 @@ export class CLIServer {
           data: `instance ${req.params.id} does not exist`
         } as CLIResponseValueData);
       else next();
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/start',
       '/instance/:id/start/:mode',
       '/i/:id/start',
       '/i/:id/start/:mode'
-    ], async (req: RequestWithInstance, res: Response) => {
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       const mode = req.params.mode?.trim() as DockerInstanceMode | undefined;
       if (!mode || mode === 'production') req.instance.running = true;
 
@@ -99,7 +105,7 @@ export class CLIServer {
         result = new Error('boot stream timeout');
       else {
         try { result = await this.controller.startInstance(req.instance, mode) }
-        catch (error: any) { result = error }
+        catch (error) { result = error as Error }
       }
       this.eventBuffer.instance[req.instance.id].start.booted = true;
 
@@ -115,15 +121,15 @@ export class CLIServer {
       } as CLIResponseValueData);
 
       delete this.eventBuffer.instance[req.instance.id];
-    });
+    }));
+
 
     this.express.get([
       '/stream/instance/:id/start',
       '/stream/instance/:id/start/*',
       '/stream/i/:id/start',
       '/stream/i/:id/start/*'
-    ], async (req: RequestWithInstance, res: Response) => {
-
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       if (!await waitFor(() => this.eventBuffer.instance[req.instance.id]?.start?.waitingForStream))
         return res.destroy(new Error('no waitingForStream'));
 
@@ -156,16 +162,17 @@ export class CLIServer {
         req.instance.off('socket connected', connectEvent);
         res.end('');
       }
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/stop',
       '/i/:id/stop'
-      ], async (req: RequestWithInstance, res: Response) => {
+      ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       req.instance.running = false;
       let result: boolean | Error;
       try { result = await this.controller.stopInstance(req.instance) }
-      catch (error: any) { result = error }
+      catch (error) { result = error as Error }
       res.json({
         type: 'value',
         data: result instanceof Error
@@ -173,14 +180,15 @@ export class CLIServer {
             ? `instance ${ req.instance.id } stopped`
             : `instance ${ req.instance.id } already stopped`)
       } as CLIResponseValueData);
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/status',
       '/i/:id/status',
       '/instance/:id/ss',
       '/i/:id/ss'
-    ], async (req: RequestWithInstance, res: Response) => {
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       const status = req.instance.getLastStatus();
       res.json({
         type: 'value',
@@ -191,14 +199,15 @@ export class CLIServer {
           + (status.data ? `data: ${Object.entries(status.data).map(([key, value]) => `- ${key}: ${typeof value === 'string' ? `'${value}'` : value}`).join('\n')}` : '')
           : 'no status available'
       } as CLIResponseValueData);
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/settings',
       '/instance/:id/s/ls',
       '/i/:id/settings',
       '/i/:id/s/ls',
-    ], async (req: RequestWithInstance, res: Response) => {
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
 
       try {
@@ -216,14 +225,15 @@ export class CLIServer {
       }
 
       res.json({ type: 'table', data });
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/setting/:name',
       '/instance/:id/s/:name',
       '/i/:id/setting/:name',
       '/i/:id/s/:name',
-    ], async (req: RequestWithInstance, res: Response) => {
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
 
       try {
@@ -241,14 +251,15 @@ export class CLIServer {
       }
 
       res.json({ type: 'table', data });
-    });
+    }));
+
 
     this.express.get([
       '/instance/:id/setting/:name/set/:value',
       '/instance/:id/s/:name/set/:value',
       '/i/:id/setting/:name/set/:value',
       '/i/:id/s/:name/set/:value',
-    ], async (req: RequestWithInstance, res: Response) => {
+    ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
       const data = { head: ['name', 'value', 'type', 'min', 'max'], rows: [] as CLIResponseValueDataType[][] } as CLIResponseTableDataType;
 
       try {
@@ -267,18 +278,20 @@ export class CLIServer {
       }
 
       res.json({ type: 'table', data });
-    });
+    }));
+
 
     this.express.use((_: Request, res: Response) =>
       res.status(404).send());
   }
 
-  async start(): Promise<void> {
+  start(): Promise<void> {
     return new Promise<void>(resolve =>
-      this.server?.listen(cliServerPort, () => resolve()));
+      this.server.listen(cliServerPort, () => resolve()));
   }
 
-  async stop(): Promise<void> {
-    this.server?.close();
+  stop(): Promise<void> {
+    return new Promise<void>(resolve =>
+      this.server.close(() => resolve()));
   }
 }

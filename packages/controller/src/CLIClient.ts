@@ -24,7 +24,7 @@ export class CLIClient extends EventEmitter {
     output: NodeJS.WritableStream = process.stdout
   ) {
     super();
-    this.rl = readline.createInterface(input as any, output as any);
+    this.rl = readline.createInterface(input, output);
     this.rl.on('close', () => this.stop());
     this.rl.on('SIGINT', () => {
       if (this.abortController) {
@@ -100,7 +100,7 @@ export class CLIClient extends EventEmitter {
       this.request(command),
       this.requestTextStream(command)
     ]);
-    delete this.abortController;
+    this.abortController = undefined;
   }
 
   private async inputLoop(): Promise<void> {
