@@ -55,19 +55,18 @@ export class Instance extends EventEmitter {
   }
 
   async connect(reconnect: boolean = false): Promise<boolean | Error> {
-    if (!this.running || !this.socketProtocol || !this.socketHostname || !this.socketPort)
+    if ((this.connected && !reconnect) || !this.socketProtocol || !this.socketHostname || !this.socketPort)
       return false;
 
-    if (this.connected && reconnect)
+    if (reconnect)
       await this.disconnect();
 
     const socket = io(`${this.socketProtocol}://${this.socketHostname}:${this.socketPort}`, {
       reconnection: true,
       reconnectionAttempts: Infinity
     });
-    this.#socket = socket;
 
-    const connectResult = await new Promise<Error | void>((resolve => {
+    const connectResult = await new Promise<Error | void>(resolve => {
       socket.once('connect', () => {
         this.emit('socket connected');
         resolve();
@@ -76,12 +75,13 @@ export class Instance extends EventEmitter {
         this.emit('socket connect_error', error);
         resolve(error);
       });
-    }))
+    });
 
     if (connectResult instanceof Error) {
       this.#socket = undefined;
       return connectResult;
     }
+    this.#socket = socket;
 
     const handlers: { [event: string]: (...args: any[]) => void } = {
       'boot status': (
@@ -114,26 +114,26 @@ export class Instance extends EventEmitter {
   }
 
   async sendStartPermission(timeout: number = 6e4): Promise<boolean> {
-    await waitFor(() => this.connected)
-    if (!this.connected) return false;
+    if (!await waitFor(() => this.connected, timeout / 200, 200))
+      return false;
 
     return await new Promise(resolve => {
-      const listener = () => {
-        clearTimeout(timeoutTimer);
-        clearInterval(permissionInterval);
+      const startPermissionReceivedEvent = () => {
+        clearTimeout(startPermissionTimeout);
+        clearInterval(startPermissionInterval);
         resolve(true);
-      };
+      }
 
-      const timeoutTimer = setTimeout(() => {
-        this.socket?.off('start permission received', listener);
-        clearInterval(permissionInterval);
+      const startPermissionTimeout = setTimeout(() => {
+        this.#socket?.off('start permission received', startPermissionReceivedEvent);
+        clearInterval(startPermissionInterval);
         resolve(false);
       }, timeout);
 
-      this.socket!.once('start permission received', listener);
+      this.#socket!.once('start permission received', startPermissionReceivedEvent);
 
-      const permissionInterval = setInterval(() =>
-        this.socket?.emit('start permission'), timeout / 60);
+      const startPermissionInterval = setInterval(() =>
+        this.#socket?.emit('start permission'), 200);
     });
   }
 
@@ -157,10 +157,8 @@ export class Instance extends EventEmitter {
   async disconnect(timeout: number = 1e4): Promise<boolean> {
     let success: boolean = true;
 
-    if (!this.#socket) return success;
-
-    if (this.#socket.connected) {
-      const disconnectPromise = new Promise(resolve => this.once('disconnect', resolve));
+    if (this.#socket?.connected) {
+      const disconnectPromise = new Promise(resolve => this.#socket!.once('disconnect', resolve));
       this.#socket.disconnect();
 
       success = await Promise.race<boolean>([

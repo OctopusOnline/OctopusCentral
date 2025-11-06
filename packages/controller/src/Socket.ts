@@ -136,7 +136,6 @@ export class Socket {
           case 'docker start instance':
             instance = this.controller.getInstance(args.id);
             if (instance) {
-              instance.running = true;
               let result: boolean | Error;
 
               const bootStatusEvent = (message: string | null) =>
@@ -153,19 +152,16 @@ export class Socket {
 
               instance.on('socket connected', connectEvent);
 
-              try {
-                result = await Promise.race([
-                  this.controller.startInstance(instance!),
-                  sleep(6e3).then(() => new Error('boot timeout'))
-                ]) as boolean | Error;
-              }
-              catch (error: any) { result = error }
+              result = await Promise.race([
+                sleep(6e4).then(() => new Error('boot timeout')),
+                this.controller.startInstance(instance!, undefined, 6e4, true).catch(error => error as Error)
+              ]);
 
               instance.off('boot status', bootStatusEvent);
 
               if (result !== true) {
                 instance.off('socket connected', connectEvent);
-                await this.controller.stopInstance(instance);
+                await this.controller.stopInstance(instance, true);
                 socket.emit('response controller', 200 as any, sessionId as any, result as any);
               }
             }

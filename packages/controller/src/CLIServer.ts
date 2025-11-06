@@ -95,30 +95,22 @@ export class CLIServer {
       '/i/:id/start',
       '/i/:id/start/:mode'
     ], <express.Application> (async (req: RequestWithInstance, res: Response) => {
-      console.log('[CLIServer]', `[${req.path}]`);
-
-      const mode = req.params.mode?.trim() as DockerInstanceMode | undefined;
+      const mode = (req.params.mode?.trim() || 'production') as DockerInstanceMode;
       console.log('[CLIServer]', `[${req.path}]`, {mode});
-      if (!mode || mode === 'production') req.instance.running = true;
 
       this.eventBuffer.instance[req.instance.id] = { start: { waitingForStream: true, connected: false, booted: false } };
-      let result: boolean | Error;
 
       console.log('[CLIServer]', `[${req.path}]`, 'waitFor eventBuffer: waitingForStream = false', this.eventBuffer.instance[req.instance.id]);
-      if (!await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream))
-        result = new Error('boot stream timeout');
-      else {
-        console.log('[CLIServer]', `[${req.path}]`, 'controller startInstance', req.instance.id, mode);
-        try { result = await this.controller.startInstance(req.instance, mode) }
-        catch (error) { result = error as Error }
-      }
-      console.log('[CLIServer]', `[${req.path}]`, {result});
-      console.log('[CLIServer]', `[${req.path}]`, 'set eventBuffer booted "true"');
+      const result: boolean | Error = await waitFor(() => !this.eventBuffer.instance[req.instance.id].start.waitingForStream)
+        ? await this.controller.startInstance(req.instance, mode, undefined, mode === 'production').catch(error => error as Error)
+        : new Error('boot stream timeout');
+
+      console.log('[CLIServer]', `[${req.path}]`, {result}, 'set eventBuffer booted "true"');
       this.eventBuffer.instance[req.instance.id].start.booted = true;
 
       console.log('[CLIServer]', `[${req.path}]`, `writableEnded=${res.writableEnded}`, {result});
       if (!res.writableEnded && result !== true)
-        await this.controller.stopInstance(req.instance);
+        await this.controller.stopInstance(req.instance, mode === 'production');
 
       console.log('[CLIServer]', `[${req.path}]`, 'response json');
       res.json({
@@ -130,7 +122,7 @@ export class CLIServer {
       } as CLIResponseValueData);
 
       console.log('[CLIServer]', `[${req.path}]`, 'delete eventBuffer');
-      delete this.eventBuffer.instance[req.instance.id];
+      this.eventBuffer.instance.splice(req.instance.id, 1);
     }));
 
 
@@ -172,7 +164,7 @@ export class CLIServer {
         console.log('[CLIServer]', `[${req.path}]`, 'removed instance event "boot status"');
         req.instance.off('boot status', bootStatusEvent);
         res.end('');
-      };
+      }
 
       console.log('[CLIServer]', `[${req.path}]`, 'register instance event "socket connected"');
       req.instance.on('socket connected', connectEvent);

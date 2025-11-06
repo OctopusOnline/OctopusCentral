@@ -187,6 +187,7 @@ export class Controller extends EventEmitter {
   async startInstance(instance: Instance, mode?: DockerInstanceMode, timeout: number = 6e4, updateRunning: boolean = true): Promise<boolean> {
     this.emit('instance starting', instance);
 
+    await instance.disconnect();
     if (updateRunning) instance.running = true;
 
     let bootResult: boolean | undefined,
@@ -200,25 +201,25 @@ export class Controller extends EventEmitter {
     const timeoutController = new AbortController();
     resetTimeout();
 
-    const bootStatusListener = (_: string, reset: boolean) => reset && resetTimeout();
-    instance.on('boot status',        bootStatusListener);
-    instance.on('boot status booted', bootStatusListener);
+    const bootStatusEvent = (_: string, reset: boolean) => reset && resetTimeout();
+    instance.on('boot status',        bootStatusEvent);
+    instance.on('boot status booted', bootStatusEvent);
 
     try {
       await Promise.all([
         Promise.race([
           new Promise(async resolve => {
             instance.once('boot status booted', success => {
-              clearTimeout(timeoutId!);
+              clearTimeout(timeoutId);
               resolve(bootResult = success);
             });
-            if (!await instance.sendStartPermission(timeout))
-              if (bootResult === undefined) resolve(bootResult = false);
+            if (!await instance.sendStartPermission(timeout) && bootResult === undefined)
+              resolve(bootResult = false);
           }),
 
           (async() => {
             await new Promise(resolve => timeoutController.signal.addEventListener('abort', resolve));
-            if (!await waitFor(async() =>
+            if (!await waitFor(async () =>
                 bootResult   !== undefined ||
                 dockerResult !== undefined ||
                 await this.docker.instanceRunning(instance),
@@ -234,8 +235,8 @@ export class Controller extends EventEmitter {
         })()
       ]);
     } finally {
-      instance.off('boot status',        bootStatusListener);
-      instance.off('boot status booted', bootStatusListener);
+      instance.off('boot status',        bootStatusEvent);
+      instance.off('boot status booted', bootStatusEvent);
       clearTimeout(timeoutId!);
     }
 

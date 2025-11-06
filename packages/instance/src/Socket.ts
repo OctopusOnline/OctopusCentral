@@ -94,11 +94,11 @@ export class Socket extends EventEmitter {
     this.io.on('connection', (socket: IOSocket) => {
 
       socket.on('healthcheck', () =>
-        this.io.emit('healthy'));
+        socket.emit('healthy'));
 
       socket.on('start permission', () => {
         this.#startPermission = true;
-        this.io.emit('start permission received');
+        socket.emit('start permission received');
       });
 
       socket.on('status received', (timestamps: number[]) => {
