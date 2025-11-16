@@ -1,5 +1,4 @@
 import { Controller } from '.';
-import express from 'express';
 import http, { Server as HttpServer } from 'http';
 import { Server as IOServer, Socket as IOSocket } from 'socket.io';
 import { sleep } from './helper';
@@ -25,7 +24,7 @@ export class Socket {
     this.#port = port;
   }
 
-  constructor(controller: Controller, server: HttpServer = http.createServer(express()), port: number = 1778) {
+  constructor(controller: Controller, server: HttpServer = http.createServer(), port: number = 1778) {
     this.controller = controller;
     this.server = server;
     this.io = new IOServer(this.server, {

@@ -1,5 +1,5 @@
 import EventEmitter from 'node:events';
-import { io, Socket as IOSocket } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { sleep, waitFor } from './helper';
 import { InstanceStatus } from '@octopuscentral/types';
 
@@ -12,14 +12,14 @@ export class Instance extends EventEmitter {
   socketHostname?: string;
   socketPort: number;
 
-  #socket?: IOSocket;
+  #socket?: Socket;
 
   #statusQueue: InstanceStatus[] = [];
   #statusQueueLimit: number = 100;
 
   get running(): boolean { return this.#running }
 
-  get socket(): IOSocket | undefined { return this.#socket }
+  get socket(): Socket | undefined { return this.#socket }
 
   get connected(): boolean { return !!this.#socket }
 
@@ -143,15 +143,15 @@ export class Instance extends EventEmitter {
     return await waitFor(() => {
       if (!this.running || healthy)
         return true;
-      if (this.socket) {
+      if (this.#socket) {
         if (!healthyHandler)
-          this.socket.once('healthy', healthyHandler = () => healthy = true);
-        this.socket.emit('healthcheck');
+          this.#socket.once('healthy', healthyHandler = () => healthy = true);
+        this.#socket.emit('healthcheck');
       } else if (healthyHandler)
         healthyHandler = null;
     }, timeout / interval, interval)
       .then(result => result || healthy)
-      .finally(() => healthyHandler && this.socket?.off('healthy', healthyHandler));
+      .finally(() => healthyHandler && this.#socket?.off('healthy', healthyHandler));
   }
 
   async disconnect(timeout: number = 1e4): Promise<boolean> {

@@ -1,17 +1,16 @@
-import EventEmitter from "node:events";
-import { sleep, waitFor } from './helper';
+import EventEmitter from 'events';
 import { InstanceStatus } from '@octopuscentral/types';
 import { Instance } from '.';
-import express from 'express';
-import http, { Server as HttpServer } from 'http';
-import { Server as IOServer, Socket as IOSocket } from 'socket.io';
+import http from 'http';
+import io from 'socket.io';
+import { waitFor } from './helper';
 
 export type InstanceStatusParam = Omit<InstanceStatus, 'timestamp'>;
 
 export class Socket extends EventEmitter {
   private readonly instance: Instance;
-  private readonly server: HttpServer;
-  private readonly io: IOServer;
+  private readonly server: http.Server;
+  private readonly io: io.Server;
 
   #port: number;
 
@@ -28,11 +27,11 @@ export class Socket extends EventEmitter {
     this.#port = port;
   }
 
-  constructor(instance: Instance, server: HttpServer = http.createServer(express()), port: number = 1777) {
+  constructor(instance: Instance, server: http.Server = http.createServer(), port: number = 1777) {
     super();
     this.instance = instance;
     this.server = server;
-    this.io = new IOServer(this.server, {
+    this.io = new io.Server(this.server, {
       cleanupEmptyChildNamespaces: true
     });
     this.#port = port;
@@ -41,13 +40,15 @@ export class Socket extends EventEmitter {
   }
 
   async start(): Promise<void> {
-    await new Promise(resolve =>
-      this.server.listen(this.port, () => resolve(this)));
+    if (!this.running)
+      await new Promise<void>(resolve =>
+        this.server.listen(this.#port, () => resolve()));
   }
 
   async stop(): Promise<void> {
-    await new Promise(resolve =>
-      this.server.close(() => resolve(this)));
+    if (this.running)
+      await new Promise<void>(resolve =>
+        this.server.close(() => resolve()));
   }
 
   async awaitStartPermission(timeout: number = 6e4): Promise<boolean> {
@@ -91,7 +92,7 @@ export class Socket extends EventEmitter {
   //}
 
   private setupSocketHandlers() {
-    this.io.on('connection', (socket: IOSocket) => {
+    this.io.on('connection', (socket: io.Socket) => {
 
       socket.on('healthcheck', () =>
         socket.emit('healthy'));
